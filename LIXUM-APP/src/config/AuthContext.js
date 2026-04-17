@@ -44,23 +44,29 @@ export function AuthProvider(props) {
   // === ALIXEN NOTIFICATIONS STATE ===
   var _alixenNotifications = useState([]);
   var alixenNotifications = _alixenNotifications[0], setAlixenNotifications = _alixenNotifications[1];
-  var _notifCount = useState(0);
-  var notifCount = _notifCount[0], setNotifCount = _notifCount[1];
+  var _alixenNotifCount = useState(0);
+  var alixenNotifCount = _alixenNotifCount[0], setAlixenNotifCount = _alixenNotifCount[1];
+
+  // === LIXVERSE USER NOTIFICATIONS STATE ===
+  var _lixverseNotifications = useState([]);
+  var lixverseNotifications = _lixverseNotifications[0], setLixverseNotifications = _lixverseNotifications[1];
+  var _lixverseNotifCount = useState(0);
+  var lixverseNotifCount = _lixverseNotifCount[0], setLixverseNotifCount = _lixverseNotifCount[1];
 
   var fetchAlixenNotifications = useCallback(async function() {
-    if (!userId) { setAlixenNotifications([]); setNotifCount(0); return; }
+    if (!userId) { setAlixenNotifications([]); setAlixenNotifCount(0); return; }
     try {
       var { data, error } = await supabase.rpc('get_unread_notifications', { p_user_id: userId });
       if (error) {
         console.warn('[LIXUM Notifications] RPC error:', error.message || error);
         setAlixenNotifications([]);
-        setNotifCount(0);
+        setAlixenNotifCount(0);
         return;
       }
       if (!Array.isArray(data)) {
         console.warn('[LIXUM Notifications] RPC returned non-array:', typeof data);
         setAlixenNotifications([]);
-        setNotifCount(0);
+        setAlixenNotifCount(0);
         return;
       }
       var sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -68,11 +74,11 @@ export function AuthProvider(props) {
         return n && typeof n === 'object' && n.id && (!n.created_at || new Date(n.created_at) > sevenDaysAgo);
       }).slice(0, 20);
       setAlixenNotifications(filtered);
-      setNotifCount(filtered.length);
+      setAlixenNotifCount(filtered.length);
     } catch (e) {
       console.warn('[LIXUM Notifications] fetch error:', e);
       setAlixenNotifications([]);
-      setNotifCount(0);
+      setAlixenNotifCount(0);
     }
   }, [userId]);
 
@@ -80,7 +86,7 @@ export function AuthProvider(props) {
     try {
       await supabase.rpc('mark_notification_read', { p_user_id: userId, p_notification_id: notifId });
       setAlixenNotifications(function(prev) { return prev.filter(function(n) { return n.id !== notifId; }); });
-      setNotifCount(function(prev) { return Math.max(0, prev - 1); });
+      setAlixenNotifCount(function(prev) { return Math.max(0, prev - 1); });
     } catch (e) {
       console.warn('markNotificationRead error:', e);
     }
@@ -90,9 +96,57 @@ export function AuthProvider(props) {
     try {
       await supabase.rpc('mark_all_notifications_read', { p_user_id: userId });
       setAlixenNotifications([]);
-      setNotifCount(0);
+      setAlixenNotifCount(0);
     } catch (e) {
       console.warn('markAllNotificationsRead error:', e);
+    }
+  }, [userId]);
+
+  var fetchLixverseNotifications = useCallback(async function() {
+    if (!userId) { setLixverseNotifications([]); setLixverseNotifCount(0); return; }
+    try {
+      var { data, error } = await supabase.rpc('get_unread_lixverse_notifications', { p_user_id: userId });
+      if (error) {
+        console.warn('[LIXUM LixVerse Notifs] RPC error:', error.message || error);
+        setLixverseNotifications([]);
+        setLixverseNotifCount(0);
+        return;
+      }
+      if (!Array.isArray(data)) {
+        console.warn('[LIXUM LixVerse Notifs] RPC returned non-array:', typeof data);
+        setLixverseNotifications([]);
+        setLixverseNotifCount(0);
+        return;
+      }
+      var filtered = data.filter(function(n) {
+        return n && typeof n === 'object' && n.id;
+      }).slice(0, 20);
+      setLixverseNotifications(filtered);
+      setLixverseNotifCount(filtered.length);
+    } catch (e) {
+      console.warn('[LIXUM LixVerse Notifs] fetch error:', e);
+      setLixverseNotifications([]);
+      setLixverseNotifCount(0);
+    }
+  }, [userId]);
+
+  var markLixverseNotificationRead = useCallback(async function(notifId) {
+    try {
+      await supabase.rpc('mark_lixverse_notification_read', { p_user_id: userId, p_notification_id: notifId });
+      setLixverseNotifications(function(prev) { return prev.map(function(n) { return n.id === notifId ? Object.assign({}, n, { read_at: new Date().toISOString() }) : n; }); });
+      setLixverseNotifCount(function(prev) { return Math.max(0, prev - 1); });
+    } catch (e) {
+      console.warn('markLixverseNotificationRead error:', e);
+    }
+  }, [userId]);
+
+  var markAllLixverseNotificationsRead = useCallback(async function() {
+    try {
+      await supabase.rpc('mark_all_lixverse_notifications_read', { p_user_id: userId });
+      setLixverseNotifications(function(prev) { return prev.map(function(n) { return Object.assign({}, n, { read_at: new Date().toISOString() }); }); });
+      setLixverseNotifCount(0);
+    } catch (e) {
+      console.warn('markAllLixverseNotificationsRead error:', e);
     }
   }, [userId]);
 
@@ -143,8 +197,9 @@ export function AuthProvider(props) {
       refreshLixFromServer();
       Promise.resolve(supabase.rpc('check_and_generate_notifications', { p_user_id: userId })).then(null, function(e) { console.warn('check_and_generate_notifications error:', e); });
       fetchAlixenNotifications();
+      fetchLixverseNotifications();
     }
-  }, [userId, refreshLixFromServer, fetchAlixenNotifications]);
+  }, [userId, refreshLixFromServer, fetchAlixenNotifications, fetchLixverseNotifications]);
 
   useEffect(function() {
     // 1. Verifier la session existante au demarrage
@@ -175,6 +230,10 @@ export function AuthProvider(props) {
         setEnergyMonthlyUsed(0);
         setMonthlyEnergyResetAt(null);
         setOnboardingUsage({ xscan: 0, gallery: 0, chat: 0, recipe: 0, medic: 0, cartscan: 0 });
+        setAlixenNotifications([]);
+        setAlixenNotifCount(0);
+        setLixverseNotifications([]);
+        setLixverseNotifCount(0);
       }
     });
 
@@ -198,6 +257,10 @@ export function AuthProvider(props) {
       setEnergyMonthlyUsed(0);
       setMonthlyEnergyResetAt(null);
       setOnboardingUsage({ xscan: 0, gallery: 0, chat: 0, recipe: 0, medic: 0, cartscan: 0 });
+      setAlixenNotifications([]);
+      setAlixenNotifCount(0);
+      setLixverseNotifications([]);
+      setLixverseNotifCount(0);
     } catch (err) {
       console.warn('signOut error:', err);
     }
@@ -224,10 +287,15 @@ export function AuthProvider(props) {
         setOnboardingUsage: setOnboardingUsage,
         pushToken: pushToken,
         alixenNotifications: alixenNotifications,
-        notifCount: notifCount,
+        alixenNotifCount: alixenNotifCount,
         fetchAlixenNotifications: fetchAlixenNotifications,
         markNotificationRead: markNotificationRead,
         markAllNotificationsRead: markAllNotificationsRead,
+        lixverseNotifications: lixverseNotifications,
+        lixverseNotifCount: lixverseNotifCount,
+        fetchLixverseNotifications: fetchLixverseNotifications,
+        markLixverseNotificationRead: markLixverseNotificationRead,
+        markAllLixverseNotificationsRead: markAllLixverseNotificationsRead,
       }
     }, props.children)
   );

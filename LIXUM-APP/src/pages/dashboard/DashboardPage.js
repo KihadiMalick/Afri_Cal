@@ -530,7 +530,7 @@ export default function DashboardPage({ navigation }) {
 
       <TooltipOverlay tooltipStep={tooltipStep} setTooltipStep={setTooltipStepPersist} scrollRef={scrollRef} />
 
-      <BottomTabs activeTab="home" medicaiNotifCount={auth.notifCount} onTabPress={function(key) {
+      <BottomTabs activeTab="home" medicaiNotifCount={auth.alixenNotifCount} lixverseNotifCount={auth.lixverseNotifCount} onTabPress={function(key) {
         if (key === 'home') return;
         var routes = { meals: 'Repas', medicai: 'MedicAi', activity: 'Activite', lixverse: 'LixVerse' };
         if (routes[key] && navigation) navigation.navigate(routes[key]);

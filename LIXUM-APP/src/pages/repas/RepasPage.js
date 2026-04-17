@@ -1319,7 +1319,7 @@ export default function RepasPage({ navigation }) {
             activeTab={activeTab}
             onTabPress={handleTabPress}
             lang={lang}
-            medicaiNotifCount={auth.notifCount}
+            medicaiNotifCount={auth.alixenNotifCount}
           />
         ) : null}
 
