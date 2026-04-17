@@ -34,7 +34,7 @@ export default function LixVersePage({ navigation }) {
   var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
   var userEnergy = auth.energy; var refreshLixFromServer = auth.refreshLixFromServer;
   var alixenNotifications = auth.alixenNotifications || [];
-  var alixenNotifCount = auth.notifCount || 0;
+  var alixenNotifCount = auth.alixenNotifCount || 0;
   var markNotificationRead = auth.markNotificationRead;
   var markAllNotificationsRead = auth.markAllNotificationsRead;
   const [activeTab, setActiveTab] = useState('defi');
@@ -979,7 +979,7 @@ export default function LixVersePage({ navigation }) {
 
       <BottomTabs
         activeTab="lixverse"
-        medicaiNotifCount={auth.notifCount}
+        medicaiNotifCount={auth.alixenNotifCount}
         onTabPress={(key) => {
           if (key === 'lixverse') return;
           const pageMap = { home: 'Accueil', meals: 'Repas', medicai: 'MedicAi', activity: 'Activite' };
