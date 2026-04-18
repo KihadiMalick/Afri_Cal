@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Platform, StatusBar, Modal, TextInput, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, Platform, StatusBar, Modal, TextInput, Image, KeyboardAvoidingView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Svg, { Path } from 'react-native-svg';
 import {
   W, wp, fp,
   SUPABASE_URL, SUPABASE_ANON_KEY,
@@ -14,7 +15,7 @@ import {
   getCharEmoji,
 } from './profileConstants';
 import { useAuth } from '../../config/AuthContext';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
 import MetalCard from '../../components/shared/MetalCard';
 
@@ -47,6 +48,7 @@ var ProfileScrollPicker = function(pickerProps) {
 
 export default function ProfilePage({ navigation }) {
   var auth = useAuth();
+  var route = useRoute();
   var userId = auth.userId;
   var lixBalance = auth.lixBalance; var updateLixBalance = auth.updateLixBalance;
   var refreshLixFromServer = auth.refreshLixFromServer;
@@ -84,6 +86,46 @@ export default function ProfilePage({ navigation }) {
   var _toast = useState(null), toast = _toast[0], setToast = _toast[1];
   var t = T[lang] || T.fr;
   var showToast = function(message, color) { setToast({ message: message, color: color || '#00D984' }); setTimeout(function() { setToast(null); }, 2500); };
+
+  var weightInputRef = useRef(null);
+  var _focusedField = useState(null), focusedField = _focusedField[0], setFocusedField = _focusedField[1];
+
+  var ageNum = parseInt(editAge);
+  var weightNum = parseFloat(editWeight);
+  var heightNum = parseFloat(editHeight);
+  var ageInvalid = editAge !== '' && (isNaN(ageNum) || ageNum < 1 || ageNum > 120);
+  var weightInvalid = editWeight !== '' && (isNaN(weightNum) || weightNum < 20 || weightNum > 500);
+  var heightInvalid = editHeight !== '' && (isNaN(heightNum) || heightNum < 50 || heightNum > 250);
+  var nameEmpty = editName.trim() === '';
+  var isFormValid = !ageInvalid && !weightInvalid && !heightInvalid && !nameEmpty && editAge !== '' && editWeight !== '' && editHeight !== '';
+  var hasChanges = !!profile && (
+    editName.trim() !== (profile.full_name || '') ||
+    editAge !== String(profile.age || '') ||
+    editWeight !== String(profile.weight || '') ||
+    editHeight !== String(profile.height || '') ||
+    editLocation !== (profile.city || profile.location || '')
+  );
+  var canSave = isFormValid && hasChanges;
+
+  useEffect(function() {
+    if (showEditProfile && profile) {
+      setEditName(profile.full_name || '');
+      setEditAge(profile.age ? String(profile.age) : '');
+      setEditWeight(profile.weight ? String(profile.weight) : '');
+      setEditHeight(profile.height ? String(profile.height) : '');
+      setEditLocation(profile.city || profile.location || '');
+    }
+  }, [showEditProfile, profile]);
+
+  useEffect(function() {
+    if (route.params && route.params.scrollTo === 'weight') {
+      setShowEditProfile(true);
+      setTimeout(function() {
+        if (weightInputRef.current) weightInputRef.current.focus();
+      }, 600);
+    }
+  }, [route.params]);
+
   useEffect(function() { if (userId) loadProfile(); }, [userId]);
 
   useFocusEffect(useCallback(function() {
