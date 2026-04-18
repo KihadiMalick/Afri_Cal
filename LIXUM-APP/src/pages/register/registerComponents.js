@@ -140,8 +140,18 @@ var ScrollPicker = function(pp) {
 };
 
 function NavigationButtons(props) {
-  var step=props.step, setStep=props.setStep, totalSteps=props.totalSteps;
-  var fd=props.formData, onComplete=props.onComplete, t=props.t, loading=props.loading;
+  var step = props.step;
+  var setStep = props.setStep;
+  var totalSteps = props.totalSteps;
+  var fd = props.formData;
+  var onComplete = props.onComplete;
+  var t = props.t;
+  var loading = props.loading;
+  var onBeforeNext = props.onBeforeNext;
+  var onBeforePrevious = props.onBeforePrevious;
+  var isPhase1OTP = props.isPhase1OTP;
+  var lang = props.lang || 'fr';
+
   var canNext = function(){
     switch(step){
       case 1: return isValidFullName(fd.fullName)&&isValidEmail(fd.email)&&fd.emailAvailable!==false&&fd.email===fd.emailConfirm&&fd.password&&fd.password.length>=8&&fd.password===fd.passwordConfirm;
@@ -154,23 +164,56 @@ function NavigationButtons(props) {
     }
   };
   var enabled = canNext();
+
+  var handleNext = function() {
+    if (isPhase1OTP) return;
+    if (loading) return;
+    if (onBeforeNext) {
+      onBeforeNext();
+      return;
+    }
+    if (step < totalSteps) setStep(step + 1);
+    else if (onComplete) onComplete();
+  };
+
+  var handlePrevious = function() {
+    if (loading) return;
+    if (onBeforePrevious) {
+      var consume = onBeforePrevious();
+      if (consume === false) return;
+    }
+    setStep(step - 1);
+  };
+
+  var nextDisabled = !enabled || loading || isPhase1OTP;
+  var nextOpacity = nextDisabled ? 0.4 : 1;
+
+  var nextLabel;
+  if (isPhase1OTP) {
+    nextLabel = lang === 'fr' ? 'Saisissez le code' : 'Enter the code';
+  } else if (step === totalSteps) {
+    nextLabel = t.createAccount;
+  } else {
+    nextLabel = t.next;
+  }
+
   return (
     <View style={{ flexDirection:'row', paddingHorizontal:20, paddingTop:8, paddingBottom:Platform.OS==='android'?12:8, gap:10 }}>
-      {step>1 ? (
-        <TouchableOpacity onPress={function(){setStep(step-1)}} style={{ flex:0.4, paddingVertical:15, borderRadius:12,
+      {step>1 || isPhase1OTP ? (
+        <TouchableOpacity onPress={handlePrevious} style={{ flex:0.4, paddingVertical:15, borderRadius:12,
           borderWidth:1.2, borderColor:C.metalBorder, backgroundColor:C.bgDeep, alignItems:'center' }}>
           <Ionicons name="arrow-back" size={18} color={C.textSecondary} />
         </TouchableOpacity>
       ) : null}
-      <TouchableOpacity onPress={function(){step<totalSteps?setStep(step+1):onComplete()}}
-        disabled={!enabled||loading} activeOpacity={0.7}
-        style={{ flex:1, borderRadius:12, overflow:'hidden', opacity:(enabled&&!loading)?1:0.4 }}>
-        {step===totalSteps ? (
+      <TouchableOpacity onPress={handleNext}
+        disabled={nextDisabled} activeOpacity={0.7}
+        style={{ flex:1, borderRadius:12, overflow:'hidden', opacity:nextOpacity }}>
+        {step===totalSteps && !isPhase1OTP ? (
           <LinearGradient colors={['#D4AF37','#C5A028','#A68B1B']} start={{x:0,y:0}} end={{x:1,y:1}}
             style={{ flexDirection:'row', alignItems:'center', justifyContent:'center', gap:8, paddingVertical:15, borderRadius:12 }}>
             {loading ? <ActivityIndicator size="small" color={C.bgDeep} /> : (
               <View style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
-                <Text style={{ color:C.bgDeep, fontSize:15, fontWeight:'800', letterSpacing:1 }}>{t.createAccount}</Text>
+                <Text style={{ color:C.bgDeep, fontSize:15, fontWeight:'800', letterSpacing:1 }}>{nextLabel}</Text>
                 <Ionicons name="checkmark-done" size={18} color={C.bgDeep} />
               </View>
             )}
@@ -178,8 +221,12 @@ function NavigationButtons(props) {
         ) : (
           <View style={{ flexDirection:'row', alignItems:'center', justifyContent:'center', gap:8, paddingVertical:15, borderRadius:12,
             backgroundColor:'rgba(0,217,132,0.08)', borderWidth:1.2, borderColor:'rgba(0,217,132,0.3)' }}>
-            <Text style={{ color:C.emerald, fontSize:15, fontWeight:'700' }}>{t.next}</Text>
-            <Ionicons name="arrow-forward" size={16} color={C.emerald} />
+            {loading ? <ActivityIndicator size="small" color={C.emerald} /> : (
+              <View style={{ flexDirection:'row', alignItems:'center', gap:8 }}>
+                <Text style={{ color:C.emerald, fontSize:15, fontWeight:'700' }}>{nextLabel}</Text>
+                {!isPhase1OTP ? <Ionicons name="arrow-forward" size={16} color={C.emerald} /> : null}
+              </View>
+            )}
           </View>
         )}
       </TouchableOpacity>
