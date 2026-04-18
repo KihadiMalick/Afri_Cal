@@ -35,6 +35,7 @@ import AlertSheet from './AlertSheet';
 import { AlixenFace, FunnelBridgeUnified, getWireMode, FRAME_W, FRAME_H, MODULE_H, BRIDGE_TOP } from './alixenzone';
 import PageHeader from '../../components/shared/PageHeader';
 import EnergyGateModal from '../../components/shared/EnergyGateModal';
+import NotificationDetailSheet from '../../components/shared/NotificationDetailSheet';
 var NotificationService = require('../../services/NotificationService');
 
 
@@ -58,6 +59,7 @@ export default function MedicAiPage({ navigation, route }) {
   var _showAlixenNotifs = useState(false);
   var showAlixenNotifs = _showAlixenNotifs[0];
   var setShowAlixenNotifs = _showAlixenNotifs[1];
+  var [selectedNotifDetail, setSelectedNotifDetail] = useState(null);
 
   var getAlixenErrorMessage = function(status, error) {
     if (status === 429) return '⚠️ ALIXEN reçoit beaucoup de demandes. Réessayez dans quelques secondes.';
@@ -199,10 +201,21 @@ export default function MedicAiPage({ navigation, route }) {
     if (params.openSection === 'stats') {
       setCurrentSubPage('medibook');
       setMediBookView('stats');
-      // Clear param to avoid re-triggering on re-focus
       if (navigation.setParams) navigation.setParams({ openSection: undefined });
     }
-  }, [route && route.params && route.params.openSection]);
+    if (params.openSection === 'medibook') {
+      setCurrentSubPage('medibook');
+      if (params.reportSection) {
+        setMediBookView('report');
+        setReportSection(params.reportSection);
+      } else {
+        setMediBookView('landing');
+      }
+      if (navigation.setParams) {
+        navigation.setParams({ openSection: undefined, reportSection: undefined });
+      }
+    }
+  }, [route && route.params && route.params.openSection, route && route.params && route.params.reportSection]);
   const [analysesTab, setAnalysesTab] = useState('done');
   const [medsTab, setMedsTab] = useState('active');
   const [showAddMedSheet, setShowAddMedSheet] = useState(false);
@@ -3776,7 +3789,7 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
                     return (
                       <TouchableOpacity
                         key={notif.id}
-                        onPress={function() { if (!isRead) auth.markNotificationRead(notif.id); }}
+                        onPress={function() { setSelectedNotifDetail(notif); }}
                         activeOpacity={0.7}
                         style={{
                           backgroundColor: isRead ? 'rgba(42,48,59,0.5)' : '#2A303B',
@@ -3809,6 +3822,15 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           </Pressable>
         </Modal>
       )}
+
+      <NotificationDetailSheet
+        visible={selectedNotifDetail !== null}
+        onClose={function() { setSelectedNotifDetail(null); }}
+        notification={selectedNotifDetail}
+        source="alixen"
+        navigation={navigation}
+        onMarkRead={auth.markNotificationRead}
+      />
     </View>
   );
 }
