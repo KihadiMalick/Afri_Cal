@@ -342,6 +342,72 @@ export default function ProfilePage({ navigation }) {
             </Text>
           </MetalCard>
 
+          <Modal visible={showEditProfile} transparent={true} animationType="slide" onRequestClose={function() { setShowEditProfile(false); }}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+              <Pressable onPress={function() { setShowEditProfile(false); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
+                <Pressable onPress={function() {}} style={{ backgroundColor: '#1A2029', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), maxHeight: '90%', paddingTop: wp(12), paddingHorizontal: wp(20), paddingBottom: wp(20) }}>
+                  <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: '#3A3F46', alignSelf: 'center', marginBottom: wp(16) }} />
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: wp(20) }}>
+                    <View style={{ flex: 1, paddingRight: wp(12) }}>
+                      <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Modifier mon profil</Text>
+                      <Text style={{ fontSize: fp(11), color: '#6B7280', marginTop: wp(4) }}>Vos donnees sont privees et chiffrees</Text>
+                    </View>
+                    <Pressable onPress={function() { setShowEditProfile(false); }} style={{ width: wp(32), height: wp(32), borderRadius: wp(16), backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center' }}>
+                      <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
+                        <Path d="M6 6L18 18M18 6L6 18" stroke="#FFF" strokeWidth={1.5} strokeLinecap="round" />
+                      </Svg>
+                    </Pressable>
+                  </View>
+
+                  <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} style={{ maxHeight: wp(460) }}>
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: 1, marginBottom: wp(12), textTransform: 'uppercase' }}>Identite</Text>
+
+                    <View style={{ marginBottom: wp(16) }}>
+                      <Text style={{ fontSize: fp(10), color: focusedField === 'name' ? '#00D984' : (nameEmpty ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>Nom complet</Text>
+                      <TextInput value={editName} onChangeText={setEditName} onFocus={function() { setFocusedField('name'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder="Votre nom" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: nameEmpty ? '#FF3B5C' : (focusedField === 'name' ? '#00D984' : '#3A3F46') }} />
+                    </View>
+
+                    <View style={{ marginBottom: wp(16) }}>
+                      <Text style={{ fontSize: fp(10), color: focusedField === 'age' ? '#00D984' : (ageInvalid ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>Age</Text>
+                      <TextInput value={editAge} onChangeText={setEditAge} onFocus={function() { setFocusedField('age'); }} onBlur={function() { setFocusedField(null); }} keyboardType="numeric" maxLength={3} placeholder="--" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: ageInvalid ? '#FF3B5C' : (focusedField === 'age' ? '#00D984' : '#3A3F46') }} />
+                      {ageInvalid ? <Text style={{ fontSize: fp(11), color: '#FF3B5C', marginTop: wp(4) }}>Doit etre entre 1 et 120</Text> : null}
+                    </View>
+
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: 1, marginBottom: wp(12), marginTop: wp(8), textTransform: 'uppercase' }}>Corps</Text>
+
+                    <View style={{ marginBottom: wp(16) }}>
+                      <Text style={{ fontSize: fp(10), color: focusedField === 'weight' ? '#00D984' : (weightInvalid ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>Poids (kg)</Text>
+                      <TextInput ref={weightInputRef} value={editWeight} onChangeText={setEditWeight} onFocus={function() { setFocusedField('weight'); }} onBlur={function() { setFocusedField(null); }} keyboardType="decimal-pad" maxLength={5} placeholder="--" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: weightInvalid ? '#FF3B5C' : (focusedField === 'weight' ? '#00D984' : '#3A3F46') }} />
+                      {weightInvalid ? <Text style={{ fontSize: fp(11), color: '#FF3B5C', marginTop: wp(4) }}>Doit etre entre 20 et 500 kg</Text> : null}
+                    </View>
+
+                    <View style={{ marginBottom: wp(16) }}>
+                      <Text style={{ fontSize: fp(10), color: focusedField === 'height' ? '#00D984' : (heightInvalid ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>Taille (cm)</Text>
+                      <TextInput value={editHeight} onChangeText={setEditHeight} onFocus={function() { setFocusedField('height'); }} onBlur={function() { setFocusedField(null); }} keyboardType="numeric" maxLength={3} placeholder="--" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: heightInvalid ? '#FF3B5C' : (focusedField === 'height' ? '#00D984' : '#3A3F46') }} />
+                      {heightInvalid ? <Text style={{ fontSize: fp(11), color: '#FF3B5C', marginTop: wp(4) }}>Doit etre entre 50 et 250 cm</Text> : null}
+                    </View>
+
+                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: 1, marginBottom: wp(12), marginTop: wp(8), textTransform: 'uppercase' }}>Localisation</Text>
+
+                    <View style={{ marginBottom: wp(16) }}>
+                      <Text style={{ fontSize: fp(10), color: focusedField === 'location' ? '#00D984' : '#6B7280', marginBottom: wp(4), letterSpacing: 0.5 }}>Ville</Text>
+                      <TextInput value={editLocation} onChangeText={setEditLocation} onFocus={function() { setFocusedField('location'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder="Votre ville" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: focusedField === 'location' ? '#00D984' : '#3A3F46' }} />
+                    </View>
+                  </ScrollView>
+
+                  <View style={{ flexDirection: 'row', gap: wp(12), marginTop: wp(12), paddingTop: wp(12), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' }}>
+                    <Pressable onPress={function() { setShowEditProfile(false); }} style={{ flex: 1, height: wp(48), borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Annuler</Text>
+                    </Pressable>
+                    <Pressable disabled={!canSave} onPress={function() { if (canSave) saveProfile(); }} style={{ flex: 1.2, height: wp(52), backgroundColor: '#00D984', borderRadius: wp(12), justifyContent: 'center', alignItems: 'center', opacity: canSave ? 1 : 0.5 }}>
+                      <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#000' }}>Enregistrer</Text>
+                    </Pressable>
+                  </View>
+                </Pressable>
+              </Pressable>
+            </KeyboardAvoidingView>
+          </Modal>
+
           <Modal visible={showMedicalWarning} transparent animationType="fade" onRequestClose={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }}>
             <Pressable onPress={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
               <Pressable onPress={function() {}} style={{ width: '100%', maxWidth: 320, borderRadius: 20, padding: 24, overflow: 'hidden' }}>
