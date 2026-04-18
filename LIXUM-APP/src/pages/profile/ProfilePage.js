@@ -99,7 +99,7 @@ export default function ProfilePage({ navigation }) {
   var nameEmpty = editName.trim() === '';
   var isFormValid = !ageInvalid && !weightInvalid && !heightInvalid && !nameEmpty && editAge !== '' && editWeight !== '' && editHeight !== '';
   var hasChanges = !!profile && (
-    editName.trim() !== (profile.full_name || '') ||
+    editName.trim() !== (profile.display_name || profile.full_name || '') ||
     editAge !== String(profile.age || '') ||
     editWeight !== String(profile.weight || '') ||
     editHeight !== String(profile.height || '') ||
@@ -109,7 +109,7 @@ export default function ProfilePage({ navigation }) {
 
   useEffect(function() {
     if (showEditProfile && profile) {
-      setEditName(profile.full_name || '');
+      setEditName(profile.display_name || profile.full_name || '');
       setEditAge(profile.age ? String(profile.age) : '');
       setEditWeight(profile.weight ? String(profile.weight) : '');
       setEditHeight(profile.height ? String(profile.height) : '');
@@ -141,7 +141,7 @@ export default function ProfilePage({ navigation }) {
     ]).then(function(responses) { return Promise.all(responses.map(function(r) { return r.json(); })); })
     .then(function(results) {
       var pD = results[0]; var cD = results[1];
-      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
+      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].display_name || pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: userId }) })
         .then(function(r) { return r.json(); }).then(function(d) { if (d) setUserXP(d); }).catch(function(err) { console.warn('[LIXUM] XP fetch error:', err); });
@@ -158,7 +158,7 @@ export default function ProfilePage({ navigation }) {
     var newTDEE = calculateTDEE(newBMR, currentActivityLevel);
     var currentGoal = profile ? profile.goal || 'maintain' : 'maintain';
     var newTarget = calculateDailyTarget(newTDEE, currentGoal, profile ? profile.target_weight_loss : 0, profile ? profile.target_months : 3);
-    var body = { full_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: lang === 'en' ? 'EN' : 'FR' };
+    var body = { display_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: lang === 'en' ? 'EN' : 'FR' };
     fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
       .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); updateLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast(lang === 'fr' ? 'Profil mis \u00e0 jour \u2713' : 'Profile updated \u2713', '#00D984'); })
       .catch(function() { showToast(lang === 'fr' ? 'Erreur de sauvegarde' : 'Save error', '#FF6B6B'); });
@@ -220,7 +220,8 @@ export default function ProfilePage({ navigation }) {
   var subTier = profile && profile.is_premium ? 'Gold' : t.free;
   var subColor = profile && profile.is_premium ? '#D4AF37' : 'rgba(255,255,255,0.3)';
   var avatarEmoji = getCharEmoji(activeCharSlug);
-  var avatarInitial = (profile && profile.full_name ? profile.full_name : 'U').charAt(0).toUpperCase();
+  var displayNameForAvatar = (profile && (profile.display_name || profile.full_name)) || 'U';
+  var avatarInitial = displayNameForAvatar.charAt(0).toUpperCase();
   var avatarColor = activeCharSlug ? '#00D984' : '#4DA6FF';
 
   var renderConnectorCard = function(conn, i) {
@@ -251,7 +252,7 @@ export default function ProfilePage({ navigation }) {
             </View>
             <View style={{ alignItems: 'center' }}>
               <View style={{ width: wp(72), height: wp(72), borderRadius: wp(36), backgroundColor: avatarColor + '15', borderWidth: 2.5, borderColor: avatarColor + '50', justifyContent: 'center', alignItems: 'center', marginBottom: wp(10) }}>{avatarEmoji ? <Text style={{ fontSize: fp(32) }}>{avatarEmoji}</Text> : <Text style={{ fontSize: fp(28), fontWeight: '900', color: avatarColor }}>{avatarInitial}</Text>}</View>
-              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>{profile ? profile.full_name : '...'}</Text>
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>{profile ? (profile.display_name || profile.full_name || 'Utilisateur') : '...'}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginTop: wp(4) }}>
                 <View style={{ backgroundColor: subColor + '20', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), borderWidth: 1, borderColor: subColor + '40' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: subColor }}>{subTier}</Text></View>
                 <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)' }}>{profile ? profile.lixtag : 'LXM-...'}</Text>
@@ -270,6 +271,35 @@ export default function ProfilePage({ navigation }) {
               </View>
             </View>
           </View>
+
+          {profile && !profile.display_name ? (
+            <Pressable
+              onPress={function() { setShowEditProfile(true); }}
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 12,
+                padding: 12,
+                borderRadius: 10,
+                backgroundColor: 'rgba(0, 217, 132, 0.08)',
+                borderWidth: 1,
+                borderColor: 'rgba(0, 217, 132, 0.3)',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+              }}
+            >
+              <Text style={{ fontSize: 18 }}>{'\u2728'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '600' }}>
+                  {lang === 'fr' ? 'Personnalisez votre profil' : 'Personalize your profile'}
+                </Text>
+                <Text style={{ color: '#6B7280', fontSize: 10, marginTop: 2, lineHeight: 14 }}>
+                  {lang === 'fr' ? 'Choisissez comment vous souhaitez \u00eatre appel\u00e9 par LIXUM' : 'Choose how you\'d like LIXUM to address you'}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 16, color: '#00D984' }}>{'\u203A'}</Text>
+            </Pressable>
+          ) : null}
 
           <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8) }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.personalData}</Text></View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: wp(16), gap: wp(8), marginBottom: wp(12) }}>
@@ -363,8 +393,13 @@ export default function ProfilePage({ navigation }) {
                     <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: 1, marginBottom: wp(12), textTransform: 'uppercase' }}>Identite</Text>
 
                     <View style={{ marginBottom: wp(16) }}>
-                      <Text style={{ fontSize: fp(10), color: focusedField === 'name' ? '#00D984' : (nameEmpty ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>Nom complet</Text>
-                      <TextInput value={editName} onChangeText={setEditName} onFocus={function() { setFocusedField('name'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder="Votre nom" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: nameEmpty ? '#FF3B5C' : (focusedField === 'name' ? '#00D984' : '#3A3F46') }} />
+                      <Text style={{ fontSize: fp(10), color: focusedField === 'name' ? '#00D984' : (nameEmpty ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>
+                        {lang === 'fr' ? 'Comment vous appeler' : 'How shall we call you'}
+                      </Text>
+                      <TextInput value={editName} onChangeText={setEditName} onFocus={function() { setFocusedField('name'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder={lang === 'fr' ? 'Malick, Maman, \u2600\ufe0f...' : 'John, Mom, \u2600\ufe0f...'} placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: nameEmpty ? '#FF3B5C' : (focusedField === 'name' ? '#00D984' : '#3A3F46') }} />
+                      <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 4, marginBottom: 12 }}>
+                        {lang === 'fr' ? 'Visible uniquement par vous' : 'Only visible to you'}
+                      </Text>
                     </View>
 
                     <View style={{ marginBottom: wp(16) }}>
