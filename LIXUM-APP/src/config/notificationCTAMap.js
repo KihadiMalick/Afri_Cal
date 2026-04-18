@@ -33,7 +33,7 @@ function openExternal(url) {
 
 export function getAlixenCTA(notification, navigation) {
   if (!notification || !navigation) return null;
-  var type = notification.notification_type;
+  var type = notification.trigger_key;
 
   switch (type) {
     case 'calorie_deficit_3d':
