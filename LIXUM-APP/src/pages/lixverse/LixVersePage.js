@@ -21,6 +21,7 @@ import { useAuth } from '../../config/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { LixGem } from './lixverseComponents';
 import PageHeader from '../../components/shared/PageHeader';
+import NotificationDetailSheet from '../../components/shared/NotificationDetailSheet';
 import DefiTab from './DefiTab';
 import CharactersTab from './CharactersTab';
 import HumanTab from './HumanTab';
@@ -89,6 +90,7 @@ export default function LixVersePage({ navigation }) {
   const stickerShakeAnims = useRef({}).current;
   const [lixAlert, setLixAlert] = useState({ visible: false, title: '', message: '', emoji: '', buttons: [] });
   const [showNotifPanel, setShowNotifPanel] = useState(false);
+  var [selectedNotifDetail, setSelectedNotifDetail] = useState(null);
   var lixverseUnread = auth.lixverseNotifCount || 0;
   var unreadCount = lixverseUnread;
   const [stickerCatalog, setStickerCatalog] = useState([]);
@@ -1024,9 +1026,10 @@ export default function LixVersePage({ navigation }) {
                     return (
                       <Pressable key={notif.id} delayPressIn={120}
                         onPress={function() {
-                          if (!notif.read && markLixverseNotificationRead) {
-                            markLixverseNotificationRead(notif.rawId);
-                          }
+                          var raw = Array.isArray(lixverseNotifications)
+                            ? lixverseNotifications.find(function(n) { return n && n.id === notif.rawId; })
+                            : null;
+                          if (raw) setSelectedNotifDetail(raw);
                         }}
                         style={function(state) { return {
                           backgroundColor: '#2A303B', borderWidth: 1, borderColor: '#3A3F46',
@@ -1081,6 +1084,15 @@ export default function LixVersePage({ navigation }) {
           </LinearGradient>
         </View>
       </Modal>
+
+      <NotificationDetailSheet
+        visible={selectedNotifDetail !== null}
+        onClose={function() { setSelectedNotifDetail(null); }}
+        notification={selectedNotifDetail}
+        source="lixverse"
+        navigation={navigation}
+        onMarkRead={auth.markLixverseNotificationRead}
+      />
     </View>
   );
 }
