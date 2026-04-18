@@ -30,9 +30,10 @@ function GoogleIcon(props) {
 var LogoImg = null;
 try { LogoImg = require('../../../assets/images/logo-lx.png'); } catch (e) { LogoImg = null; }
 
-export default function LoginPage({ navigation }) {
+export default function LoginPage({ navigation, route }) {
+  var prefilledEmail = (route && route.params && route.params.prefilledEmail) || '';
   var _lang = useState('fr'), lang = _lang[0], setLang = _lang[1];
-  var _email = useState(''), email = _email[0], setEmail = _email[1];
+  var _email = useState(prefilledEmail), email = _email[0], setEmail = _email[1];
   var _password = useState(''), password = _password[0], setPassword = _password[1];
   var _showPassword = useState(false), showPassword = _showPassword[0], setShowPassword = _showPassword[1];
   var _loading = useState(false), loading = _loading[0], setLoading = _loading[1];

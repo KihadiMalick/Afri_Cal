@@ -5,9 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { C, SUPABASE_URL, SUPABASE_ANON_KEY, isValidEmail, isValidFullName, getPasswordStrength } from '../registerConstants';
 import { GlassCard, PremiumInput } from '../registerComponents';
 
-function Phase1Identity({ formData, setFormData, t, lang }) {
-  var navigation = useNavigation();
-  var fd = formData;
+function Phase1Identity(props) {
+  var fd = props.formData;
+  var setFormData = props.setFormData;
+  var t = props.t;
+  var lang = props.lang;
+  var navigationFromHook = useNavigation();
+  var navigation = props.navigation || navigationFromHook;
   var validEmail = fd.email ? isValidEmail(fd.email) : false;
   var emailsMatch = validEmail && fd.email === fd.emailConfirm;
   var validName = isValidFullName(fd.fullName);
@@ -41,8 +45,13 @@ function Phase1Identity({ formData, setFormData, t, lang }) {
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <GlassCard sectionIcon="person-outline" sectionLabel={t.identityLabel}>
-        <PremiumInput label={t.fullName} value={fd.fullName} onChangeText={function(v) { u('fullName', v); }}
-          placeholder={lang === 'fr' ? 'Pr\u00e9nom Nom' : 'First Last'} valid={validName} />
+        <PremiumInput
+          label={lang === 'fr' ? 'Comment vous appeler' : 'How shall we call you'}
+          value={fd.fullName}
+          onChangeText={function(v) { u('fullName', v); }}
+          placeholder={lang === 'fr' ? 'Malick, Maman, \u2600\ufe0f...' : 'John, Mom, \u2600\ufe0f...'}
+          valid={validName}
+        />
         {nameStarted && !validName ? (
           <Text style={{ color: '#FF8C42', fontSize: 10, marginTop: -6 }}>
             {lang === 'fr' ? 'Veuillez entrer votre pr\u00e9nom et nom (ex: Jean Dupont)' : 'Please enter first and last name (e.g. John Doe)'}
@@ -73,7 +82,7 @@ function Phase1Identity({ formData, setFormData, t, lang }) {
                 {lang === 'fr' ? 'Cette adresse est d\u00e9j\u00e0 utilis\u00e9e' : 'This email is already taken'}
               </Text>
             </View>
-            <TouchableOpacity onPress={function() { navigation.navigate('Login'); }} style={{ marginTop: 4 }}>
+            <TouchableOpacity onPress={function() { navigation.navigate('Login', { prefilledEmail: fd.email }); }} style={{ marginTop: 4 }}>
               <Text style={{ color: C.emerald, fontSize: 10, fontWeight: '700' }}>
                 {lang === 'fr' ? 'D\u00e9j\u00e0 un compte ? Se connecter \u2192' : 'Already have an account? Sign in \u2192'}
               </Text>
@@ -127,6 +136,14 @@ function Phase1Identity({ formData, setFormData, t, lang }) {
           </Text>
         ) : null}
       </GlassCard>
+
+      <View style={{ marginTop: 24, paddingHorizontal: 8 }}>
+        <Text style={{ fontSize: 11, color: C.textMuted, lineHeight: 16, textAlign: 'center' }}>
+          {lang === 'fr'
+            ? "En continuant, vous acceptez notre Politique de Confidentialit\u00e9. LIXUM ne demande jamais votre vrai nom, ni vos num\u00e9ros d'identit\u00e9. Vos donn\u00e9es de sant\u00e9 sont anonymis\u00e9es et ne sont jamais reli\u00e9es \u00e0 votre identit\u00e9 civile."
+            : "By continuing, you accept our Privacy Policy. LIXUM never asks for your real name or identity numbers. Your health data is anonymized and never linked to your civil identity."}
+        </Text>
+      </View>
     </ScrollView>
   );
 }

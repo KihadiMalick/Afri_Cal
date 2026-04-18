@@ -20,6 +20,7 @@ import {
 } from './registerConstants';
 import { TechBackground, CircularProgress, NavigationButtons } from './registerComponents';
 import Phase1Identity from './phases/Phase1Identity';
+import Phase1bOTP from './phases/Phase1bOTP';
 import Phase2Morphology from './phases/Phase2Morphology';
 import Phase3Activity from './phases/Phase3Activity';
 import Phase4Diet from './phases/Phase4Diet';
@@ -29,6 +30,8 @@ import Phase6Characters from './phases/Phase6Characters';
 export default function RegisterPage({ navigation }) {
   var _lang = useState('fr'), lang = _lang[0], setLang = _lang[1];
   var _step = useState(1), step = _step[0], setStep = _step[1];
+  var _phase1Substep = useState('identity'), phase1Substep = _phase1Substep[0], setPhase1Substep = _phase1Substep[1];
+  var _otpSentAt = useState(null), otpSentAt = _otpSentAt[0], setOtpSentAt = _otpSentAt[1];
   var totalSteps = 6;
   var t = texts[lang];
 
@@ -95,6 +98,82 @@ export default function RegisterPage({ navigation }) {
       }, 800);
       transitionTimersRef.current.push(inner);
     }, 3200));
+  };
+
+  var ONBOARDING_PROGRESS_KEY = 'lixum_onboarding_progress';
+  var PROGRESS_VALIDITY_MS = 10 * 60 * 1000;
+
+  var saveProgress = function() {
+    var snapshot = {
+      step: step,
+      phase1Substep: phase1Substep,
+      formData: fd,
+      timestamp: Date.now(),
+    };
+    AsyncStorage.setItem(ONBOARDING_PROGRESS_KEY, JSON.stringify(snapshot)).catch(function() {});
+  };
+
+  var clearProgress = function() {
+    AsyncStorage.removeItem(ONBOARDING_PROGRESS_KEY).catch(function() {});
+  };
+
+  useEffect(function() {
+    AsyncStorage.getItem(ONBOARDING_PROGRESS_KEY).then(function(json) {
+      if (!json) return;
+      try {
+        var saved = JSON.parse(json);
+        var age = Date.now() - (saved.timestamp || 0);
+        if (age > PROGRESS_VALIDITY_MS) {
+          AsyncStorage.removeItem(ONBOARDING_PROGRESS_KEY);
+          return;
+        }
+        if (saved.formData) sf(saved.formData);
+        if (saved.step) setStep(saved.step);
+        if (saved.phase1Substep) setPhase1Substep(saved.phase1Substep);
+      } catch (e) {
+        AsyncStorage.removeItem(ONBOARDING_PROGRESS_KEY);
+      }
+    }).catch(function() {});
+  }, []);
+
+  useEffect(function() {
+    saveProgress();
+  }, [step, phase1Substep, fd]);
+
+  var handleAdvanceFromIdentity = function() {
+    if (loading) return;
+    setLoading(true);
+    var emailLower = (fd.email || '').trim().toLowerCase();
+    supabase.auth.signInWithOtp({
+      email: emailLower,
+      options: { shouldCreateUser: true },
+    }).then(function(result) {
+      setLoading(false);
+      if (result.error) {
+        showAlert(
+          lang === 'fr' ? 'Erreur' : 'Error',
+          result.error.message || (lang === 'fr' ? 'Impossible d\'envoyer le code. V\u00e9rifiez votre connexion.' : 'Failed to send code. Check your connection.'),
+          [{ text: 'OK' }],
+          '\u26a0\ufe0f'
+        );
+        return;
+      }
+      setOtpSentAt(Date.now());
+      setPhase1Substep('otp');
+    }).catch(function(err) {
+      setLoading(false);
+      showAlert(
+        lang === 'fr' ? 'Erreur' : 'Error',
+        (err && err.message) || (lang === 'fr' ? 'Impossible d\'envoyer le code.' : 'Failed to send code.'),
+        [{ text: 'OK' }],
+        '\u26a0\ufe0f'
+      );
+    });
+  };
+
+  var handleOtpVerified = function() {
+    setPhase1Substep('identity');
+    setStep(2);
   };
 
   var handleRegister = function() {
@@ -208,7 +287,17 @@ export default function RegisterPage({ navigation }) {
               </View>
 
               <View style={{ flex: 1 }}>
-                {step === 1 ? <Phase1Identity formData={fd} setFormData={sf} t={t} lang={lang} /> : null}
+                {step === 1 && phase1Substep === 'identity' ? (
+                  <Phase1Identity formData={fd} setFormData={sf} t={t} lang={lang} navigation={navigation} />
+                ) : null}
+                {step === 1 && phase1Substep === 'otp' ? (
+                  <Phase1bOTP
+                    email={fd.email}
+                    lang={lang}
+                    onVerified={handleOtpVerified}
+                    onResendRequested={handleAdvanceFromIdentity}
+                  />
+                ) : null}
                 {step === 2 ? <Phase2Morphology formData={fd} setFormData={sf} t={t} lang={lang} /> : null}
                 {step === 3 ? <Phase3Activity formData={fd} setFormData={sf} t={t} lang={lang} /> : null}
                 {step === 4 ? <Phase4Diet formData={fd} setFormData={sf} t={t} lang={lang} /> : null}
@@ -216,7 +305,19 @@ export default function RegisterPage({ navigation }) {
                 {step === 6 ? <Phase6Characters lang={lang} /> : null}
               </View>
 
-              <NavigationButtons step={step} setStep={setStep} totalSteps={totalSteps} formData={fd} onComplete={handleRegister} t={t} loading={loading} />
+              <NavigationButtons
+                step={step}
+                setStep={setStep}
+                totalSteps={totalSteps}
+                formData={fd}
+                onComplete={function() { clearProgress(); handleRegister(); }}
+                t={t}
+                lang={lang}
+                loading={loading}
+                onBeforeNext={(step === 1 && phase1Substep === 'identity') ? handleAdvanceFromIdentity : null}
+                onBeforePrevious={(step === 1 && phase1Substep === 'otp') ? function() { setPhase1Substep('identity'); return false; } : null}
+                isPhase1OTP={step === 1 && phase1Substep === 'otp'}
+              />
             </KeyboardAvoidingView>
 
             <Modal visible={lixAlert.visible} transparent animationType="fade" onRequestClose={hideAlert}>
