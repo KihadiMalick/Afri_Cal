@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Platform, StatusBar, Modal, TextInput, Image, KeyboardAvoidingView } from 'react-native';
+import { View, Text, ScrollView, Pressable, Platform, StatusBar, Modal, TextInput, Image, KeyboardAvoidingView, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path } from 'react-native-svg';
+import Markdown from 'react-native-markdown-display';
 import {
   W, wp, fp,
   SUPABASE_URL, SUPABASE_ANON_KEY,
@@ -18,6 +19,56 @@ import { useAuth } from '../../config/AuthContext';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
 import MetalCard from '../../components/shared/MetalCard';
+
+var markdownStyles = {
+  body: { color: '#FFF', fontSize: fp(14), lineHeight: fp(22) },
+  heading1: { color: '#00D984', fontSize: fp(22), fontWeight: 'bold', marginTop: wp(20), marginBottom: wp(12), borderBottomWidth: 1, borderBottomColor: 'rgba(0,217,132,0.3)', paddingBottom: wp(8) },
+  heading2: { color: '#FFF', fontSize: fp(18), fontWeight: 'bold', marginTop: wp(16), marginBottom: wp(8) },
+  heading3: { color: '#00D984', fontSize: fp(16), fontWeight: '600', marginTop: wp(12), marginBottom: wp(6) },
+  heading4: { color: '#8892A0', fontSize: fp(14), fontWeight: '600', marginTop: wp(8), marginBottom: wp(4), textTransform: 'uppercase', letterSpacing: 0.5 },
+  paragraph: { color: '#FFF', fontSize: fp(14), lineHeight: fp(22), marginBottom: wp(10) },
+  strong: { color: '#00D984', fontWeight: 'bold' },
+  em: { color: '#8892A0', fontStyle: 'italic' },
+  bullet_list: { marginVertical: wp(8) },
+  ordered_list: { marginVertical: wp(8) },
+  list_item: { marginBottom: wp(6), color: '#FFF' },
+  bullet_list_icon: { color: '#00D984', marginRight: wp(8) },
+  ordered_list_icon: { color: '#00D984', marginRight: wp(8), fontWeight: 'bold' },
+  link: { color: '#00D984', textDecorationLine: 'underline' },
+  code_inline: { backgroundColor: '#1E2530', color: '#00D984', paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4), fontSize: fp(13) },
+  code_block: { backgroundColor: '#1E2530', color: '#FFF', padding: wp(12), borderRadius: wp(8), marginVertical: wp(8), fontSize: fp(13) },
+  fence: { backgroundColor: '#1E2530', color: '#FFF', padding: wp(12), borderRadius: wp(8), marginVertical: wp(8), fontSize: fp(13) },
+  blockquote: { borderLeftWidth: wp(3), borderLeftColor: '#00D984', paddingLeft: wp(12), backgroundColor: 'rgba(0,217,132,0.05)', paddingVertical: wp(8), marginVertical: wp(8) },
+  hr: { backgroundColor: '#2A303B', height: 1, marginVertical: wp(16) },
+  table: { borderWidth: 1, borderColor: '#2A303B', borderRadius: wp(6), marginVertical: wp(10) },
+  thead: { backgroundColor: '#1E2530' },
+  th: { color: '#00D984', fontWeight: 'bold', padding: wp(8), fontSize: fp(13) },
+  td: { color: '#FFF', padding: wp(8), fontSize: fp(13), borderTopWidth: 1, borderTopColor: '#2A303B' }
+};
+
+var legalStyles = {
+  legalModalRoot: { flex: 1, backgroundColor: '#1E2530' },
+  legalModalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(16), paddingTop: wp(20), paddingBottom: wp(12), backgroundColor: '#252A30', borderBottomWidth: 1, borderBottomColor: '#2A303B' },
+  legalModalTitle: { color: '#FFF', fontSize: fp(18), fontWeight: 'bold', flex: 1 },
+  legalModalClose: { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: '#1E2530', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A303B' },
+  legalModalCloseText: { color: '#FFF', fontSize: fp(16), fontWeight: 'bold' },
+  legalLangSwitch: { flexDirection: 'row', justifyContent: 'center', paddingVertical: wp(10), backgroundColor: '#252A30', gap: wp(8) },
+  legalLangActive: { paddingHorizontal: wp(20), paddingVertical: wp(6), backgroundColor: '#00D984', borderRadius: wp(20) },
+  legalLangInactive: { paddingHorizontal: wp(20), paddingVertical: wp(6), backgroundColor: '#1E2530', borderRadius: wp(20), borderWidth: 1, borderColor: '#2A303B' },
+  legalLangActiveText: { color: '#1E2530', fontWeight: 'bold', fontSize: fp(13) },
+  legalLangInactiveText: { color: '#8892A0', fontWeight: '600', fontSize: fp(13) },
+  legalLoaderContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  legalLoaderText: { color: '#8892A0', fontSize: fp(14), marginTop: wp(12) },
+  legalErrorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: wp(24) },
+  legalErrorIcon: { fontSize: fp(40), marginBottom: wp(16) },
+  legalErrorText: { color: '#8892A0', fontSize: fp(14), textAlign: 'center', marginBottom: wp(20), lineHeight: fp(20) },
+  legalRetryButton: { paddingHorizontal: wp(28), paddingVertical: wp(12), backgroundColor: '#00D984', borderRadius: wp(24) },
+  legalRetryText: { color: '#1E2530', fontWeight: 'bold', fontSize: fp(14) },
+  legalScrollView: { flex: 1 },
+  legalScrollContent: { paddingHorizontal: wp(20), paddingVertical: wp(20), paddingBottom: wp(40) },
+  legalFooter: { marginTop: wp(30), paddingTop: wp(16), borderTopWidth: 1, borderTopColor: '#2A303B', alignItems: 'center' },
+  legalFooterText: { color: '#8892A0', fontSize: fp(11), textAlign: 'center', fontStyle: 'italic' }
+};
 
 var ProfileScrollPicker = function(pickerProps) {
   var values = pickerProps.values, selectedValue = pickerProps.selectedValue, onSelect = pickerProps.onSelect, unit = pickerProps.unit;
@@ -73,18 +124,21 @@ export default function ProfilePage({ navigation }) {
   var _showSubscription = useState(false), showSubscription = _showSubscription[0], setShowSubscription = _showSubscription[1];
   var _showPrivacy = useState(false), showPrivacy = _showPrivacy[0], setShowPrivacy = _showPrivacy[1];
   var _showTerms = useState(false), showTerms = _showTerms[0], setShowTerms = _showTerms[1];
+  var _legalCache = useState({ privacy: { fr: null, en: null }, terms: { fr: null, en: null } }), legalCache = _legalCache[0], setLegalCache = _legalCache[1];
+  var _legalLoading = useState(false), legalLoading = _legalLoading[0], setLegalLoading = _legalLoading[1];
+  var _legalError = useState(null), legalError = _legalError[0], setLegalError = _legalError[1];
   var _showMilestones = useState(false), showMilestones = _showMilestones[0], setShowMilestones = _showMilestones[1];
   var _showLogoutConfirm = useState(false), showLogoutConfirm = _showLogoutConfirm[0], setShowLogoutConfirm = _showLogoutConfirm[1];
   var _showDeleteConfirm = useState(false), showDeleteConfirm = _showDeleteConfirm[0], setShowDeleteConfirm = _showDeleteConfirm[1];
+  var _showContactPicker = useState(false), showContactPicker = _showContactPicker[0], setShowContactPicker = _showContactPicker[1];
   var _editName = useState(''), editName = _editName[0], setEditName = _editName[1];
   var _editAge = useState(''), editAge = _editAge[0], setEditAge = _editAge[1];
   var _editWeight = useState(''), editWeight = _editWeight[0], setEditWeight = _editWeight[1];
   var _editHeight = useState(''), editHeight = _editHeight[0], setEditHeight = _editHeight[1];
   var _editLocation = useState(''), editLocation = _editLocation[0], setEditLocation = _editLocation[1];
-  var _lang = useState('fr'), lang = _lang[0], setLang = _lang[1];
   var _connectedApps = useState({}), connectedApps = _connectedApps[0], setConnectedApps = _connectedApps[1];
   var _toast = useState(null), toast = _toast[0], setToast = _toast[1];
-  var t = T[lang] || T.fr;
+  var t = T.fr;
   var showToast = function(message, color) { setToast({ message: message, color: color || '#00D984' }); setTimeout(function() { setToast(null); }, 2500); };
 
   var weightInputRef = useRef(null);
@@ -106,6 +160,24 @@ export default function ProfilePage({ navigation }) {
     editLocation !== (profile.city || profile.location || '')
   );
   var canSave = isFormValid && hasChanges;
+
+  var XP_MILESTONES = [
+    { level: 10, lix: 500, energy: 20, reward: '1 Carte Rare', icon: '\uD83E\uDD48', color: '#A0A8B8' },
+    { level: 25, lix: 1500, energy: 50, reward: '1 Carte Elite', icon: '\uD83E\uDD47', color: '#F2C94C' },
+    { level: 50, lix: 5000, energy: 100, reward: '1 Carte Mythique', icon: '\uD83D\uDC8E', color: '#00D984' },
+    { level: 75, lix: 10000, energy: 200, reward: '5 Fragments Mythique', icon: '\u2728', color: '#B080FF' },
+    { level: 100, lix: 25000, energy: 500, reward: 'Badge L\u00e9gendaire', icon: '\uD83D\uDC51', color: '#FF8C42' }
+  ];
+
+  var XP_SOURCES = [
+    { label: 'Scanner un repas', value: '+10 XP' },
+    { label: 'Activit\u00e9 physique', value: '+kcal XP' },
+    { label: 'Enregistrer ton mood', value: '+5 XP' },
+    { label: 'Hydratation atteinte', value: '+3 XP' },
+    { label: '\u00c9change avec ALIXEN', value: '+5 XP' },
+    { label: 'Connexion quotidienne', value: '+10 XP' },
+    { label: 'Streak 7 jours', value: '+50 XP' }
+  ];
 
   useEffect(function() {
     if (showEditProfile && profile) {
@@ -141,7 +213,7 @@ export default function ProfilePage({ navigation }) {
     ]).then(function(responses) { return Promise.all(responses.map(function(r) { return r.json(); })); })
     .then(function(results) {
       var pD = results[0]; var cD = results[1];
-      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].display_name || pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
+      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].display_name || pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: userId }) })
         .then(function(r) { return r.json(); }).then(function(d) { if (d) setUserXP(d); }).catch(function(err) { console.warn('[LIXUM] XP fetch error:', err); });
@@ -158,14 +230,14 @@ export default function ProfilePage({ navigation }) {
     var newTDEE = calculateTDEE(newBMR, currentActivityLevel);
     var currentGoal = profile ? profile.goal || 'maintain' : 'maintain';
     var newTarget = calculateDailyTarget(newTDEE, currentGoal, profile ? profile.target_weight_loss : 0, profile ? profile.target_months : 3);
-    var body = { display_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: lang === 'en' ? 'EN' : 'FR' };
+    var body = { display_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: 'FR' };
     fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
-      .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); updateLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast(lang === 'fr' ? 'Profil mis \u00e0 jour \u2713' : 'Profile updated \u2713', '#00D984'); })
-      .catch(function() { showToast(lang === 'fr' ? 'Erreur de sauvegarde' : 'Save error', '#FF6B6B'); });
+      .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); updateLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast('Profil mis \u00e0 jour \u2713', '#00D984'); })
+      .catch(function() { showToast('Erreur de sauvegarde', '#FF6B6B'); });
   };
 
   var saveLocation = function(city) { setEditLocation(city); setShowLocationPicker(false); showToast('\uD83D\uDCCD ' + city, '#FF8C42'); };
-  var toggleConnector = function(connId) { setConnectedApps(function(prev) { var n = Object.assign({}, prev); if (n[connId]) { delete n[connId]; showToast(lang === 'fr' ? 'D\u00e9connect\u00e9' : 'Disconnected', '#FF6B6B'); } else { n[connId] = { connectedAt: new Date().toISOString(), lastSync: new Date().toISOString() }; showToast(lang === 'fr' ? 'Connect\u00e9 \u2713' : 'Connected \u2713', '#00D984'); } return n; }); };
+  var toggleConnector = function(connId) { setConnectedApps(function(prev) { var n = Object.assign({}, prev); if (n[connId]) { delete n[connId]; showToast('D\u00e9connect\u00e9', '#FF6B6B'); } else { n[connId] = { connectedAt: new Date().toISOString(), lastSync: new Date().toISOString() }; showToast('Connect\u00e9 \u2713', '#00D984'); } return n; }); };
   var defaultHydroGoalL = (profile && (profile.gender === 'female' || profile.gender === 'femme')) ? 2.0 : 2.5;
   var currentHydroL = hydroGoalL !== null ? hydroGoalL : defaultHydroGoalL;
   var hydroValues = [];
@@ -201,6 +273,25 @@ export default function ProfilePage({ navigation }) {
   var handleLogout = function() { auth.signOut(); setShowLogoutConfirm(false); };
   var handleDeleteAccount = function() { auth.signOut(); setShowDeleteConfirm(false); };
 
+  var handleCloseMilestones = function() { setShowMilestones(false); };
+  var handleOpenContact = function() { setShowContactPicker(true); };
+  var handleCloseContact = function() { setShowContactPicker(false); };
+
+  var openMailto = function(category) {
+    setShowContactPicker(false);
+    var subject = '[' + category + '] ';
+    var url = 'mailto:contact@lixum.com?subject=' + encodeURIComponent(subject);
+    Linking.openURL(url).catch(function(err) {
+      console.error('Erreur ouverture mail:', err);
+    });
+  };
+
+  var handleContactBug = function() { openMailto('BUG'); };
+  var handleContactSuggestion = function() { openMailto('SUGGESTION'); };
+  var handleContactBilling = function() { openMailto('FACTURATION'); };
+  var handleContactRGPD = function() { openMailto('RGPD'); };
+  var handleContactPartnership = function() { openMailto('PARTENARIAT'); };
+
   var Section = function(props) {
     return (
       <Pressable delayPressIn={120} onPress={props.onPress} style={function(s) { return { flexDirection: 'row', alignItems: 'center', paddingVertical: wp(14), paddingHorizontal: wp(16), backgroundColor: s.pressed ? 'rgba(255,255,255,0.04)' : 'transparent', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' }; }}>
@@ -215,7 +306,7 @@ export default function ProfilePage({ navigation }) {
   var imc = profile && profile.weight && profile.height ? (profile.weight / ((profile.height / 100) * (profile.height / 100))).toFixed(1) : '\u2014';
   var imcNum = parseFloat(imc) || 0;
   var imcColor = imcNum < 18.5 ? '#4DA6FF' : imcNum < 25 ? '#00D984' : imcNum < 30 ? '#FF8C42' : '#FF4444';
-  var imcLabel = imcNum < 18.5 ? (lang === 'fr' ? 'Insuffisance' : 'Underweight') : imcNum < 25 ? 'Normal' : imcNum < 30 ? (lang === 'fr' ? 'Surpoids' : 'Overweight') : (lang === 'fr' ? 'Obésité' : 'Obesity');
+  var imcLabel = imcNum < 18.5 ? 'Insuffisance' : imcNum < 25 ? 'Normal' : imcNum < 30 ? 'Surpoids' : 'Obésité';
   var imcBarPos = Math.min(Math.max(((imcNum - 15) / 25) * 100, 0), 100);
   var subTier = profile && profile.is_premium ? 'Gold' : t.free;
   var subColor = profile && profile.is_premium ? '#D4AF37' : 'rgba(255,255,255,0.3)';
@@ -224,8 +315,58 @@ export default function ProfilePage({ navigation }) {
   var avatarInitial = displayNameForAvatar.charAt(0).toUpperCase();
   var avatarColor = activeCharSlug ? '#00D984' : '#4DA6FF';
 
+  function fetchLegalDocument(docType, language) {
+    if (legalCache[docType] && legalCache[docType][language]) {
+      setLegalLoading(false);
+      setLegalError(null);
+      return;
+    }
+    setLegalLoading(true);
+    setLegalError(null);
+    supabase
+      .rpc('get_current_legal_document', { p_document_type: docType, p_language: language })
+      .then(function(result) {
+        var data = result.data;
+        var error = result.error;
+        if (error) {
+          console.error('[Legal] RPC error:', error);
+          setLegalError('Impossible de charger le document. V\u00e9rifiez votre connexion.');
+          setLegalLoading(false);
+          return;
+        }
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+          setLegalError('Document indisponible pour cette langue.');
+          setLegalLoading(false);
+          return;
+        }
+        var doc = Array.isArray(data) ? data[0] : data;
+        var newCache = Object.assign({}, legalCache);
+        newCache[docType] = Object.assign({}, newCache[docType]);
+        newCache[docType][language] = doc;
+        setLegalCache(newCache);
+        setLegalLoading(false);
+      })
+      .catch(function(err) {
+        console.error('[Legal] Catch:', err);
+        setLegalError('Erreur r\u00e9seau. R\u00e9essayez.');
+        setLegalLoading(false);
+      });
+  }
+
+  useEffect(function() {
+    if (showPrivacy) {
+      fetchLegalDocument('privacy', 'fr');
+    }
+  }, [showPrivacy]);
+
+  useEffect(function() {
+    if (showTerms) {
+      fetchLegalDocument('terms', 'fr');
+    }
+  }, [showTerms]);
+
   var renderConnectorCard = function(conn, i) {
-    var isConnected = !!connectedApps[conn.id]; var dataText = lang === 'fr' ? conn.dataFr : conn.dataEn;
+    var isConnected = !!connectedApps[conn.id]; var dataText = conn.dataFr;
     return (
       <View key={conn.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(12), paddingHorizontal: wp(14), backgroundColor: isConnected ? conn.color + '08' : 'transparent', borderBottomWidth: i < CONNECTORS.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
         <View style={{ width: wp(40), height: wp(40), borderRadius: wp(10), backgroundColor: conn.color + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: isConnected ? 1.5 : 0, borderColor: isConnected ? conn.color + '40' : 'transparent' }}><Text style={{ fontSize: fp(18) }}>{conn.emoji}</Text></View>
@@ -243,12 +384,8 @@ export default function ProfilePage({ navigation }) {
         <StatusBar barStyle="light-content" />
         <ScrollView contentContainerStyle={{ paddingBottom: wp(100) }}>
           <View style={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingBottom: wp(20) }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: wp(16), marginBottom: wp(12) }}>
+            <View style={{ flexDirection: 'row', paddingHorizontal: wp(16), marginBottom: wp(12) }}>
               <Pressable onPress={function() { navigation.goBack(); }} style={{ paddingVertical: wp(5), paddingHorizontal: wp(8) }}><Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.4)' }}>{'\u2190'}</Text></Pressable>
-              <View style={{ flexDirection: 'row', gap: wp(6) }}>
-                <Pressable onPress={function() { setLang('fr'); }} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'transparent' }}><Text style={{ fontSize: fp(14) }}>{'\uD83C\uDDEB\uD83C\uDDF7'}</Text></Pressable>
-                <Pressable onPress={function() { setLang('en'); }} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'transparent' }}><Text style={{ fontSize: fp(14) }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</Text></Pressable>
-              </View>
             </View>
             <View style={{ alignItems: 'center' }}>
               <View style={{ width: wp(72), height: wp(72), borderRadius: wp(36), backgroundColor: avatarColor + '15', borderWidth: 2.5, borderColor: avatarColor + '50', justifyContent: 'center', alignItems: 'center', marginBottom: wp(10) }}>{avatarEmoji ? <Text style={{ fontSize: fp(32) }}>{avatarEmoji}</Text> : <Text style={{ fontSize: fp(28), fontWeight: '900', color: avatarColor }}>{avatarInitial}</Text>}</View>
@@ -265,7 +402,7 @@ export default function ProfilePage({ navigation }) {
                 <View style={{ height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}><LinearGradient colors={['#00D984', '#00B871']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: Math.min(userXP.xp_percent || 0, 100) + '%', height: '100%', borderRadius: wp(4) }} /></View>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingHorizontal: wp(20), marginTop: wp(16) }}>
-                {[{ val: lixBalance, label: 'Lix', color: '#D4AF37' }, { val: userEnergy, label: lang === 'fr' ? '\u00c9nergie' : 'Energy', color: '#FFB800' }, { val: ownedCharacters + '/16', label: 'Cartes', color: '#00D984' }].map(function(s, i) { return (
+                {[{ val: lixBalance, label: 'Lix', color: '#D4AF37' }, { val: userEnergy, label: '\u00c9nergie', color: '#FFB800' }, { val: ownedCharacters + '/16', label: 'Cartes', color: '#00D984' }].map(function(s, i) { return (
                   <View key={i} style={{ alignItems: 'center' }}><Text style={{ fontSize: fp(18), fontWeight: '800', color: s.color }}>{s.val}</Text><Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(2) }}>{s.label}</Text></View>
                 ); })}
               </View>
@@ -291,10 +428,10 @@ export default function ProfilePage({ navigation }) {
               <Text style={{ fontSize: 18 }}>{'\u2728'}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '600' }}>
-                  {lang === 'fr' ? 'Personnalisez votre profil' : 'Personalize your profile'}
+                  Personnalisez votre profil
                 </Text>
                 <Text style={{ color: '#6B7280', fontSize: 10, marginTop: 2, lineHeight: 14 }}>
-                  {lang === 'fr' ? 'Choisissez comment vous souhaitez \u00eatre appel\u00e9 par LIXUM' : 'Choose how you\'d like LIXUM to address you'}
+                  Choisissez comment vous souhaitez être appelé par LIXUM
                 </Text>
               </View>
               <Text style={{ fontSize: 16, color: '#00D984' }}>{'\u203A'}</Text>
@@ -352,7 +489,7 @@ export default function ProfilePage({ navigation }) {
               <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>💧</Text>
               <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', letterSpacing: 1.5 }}>OBJECTIF HYDRATATION</Text>
             </View>
-            <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>Recommande : 2.5L (H) / 2.0L (F)</Text>
+            <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>Recommandé : 2.5L (H) / 2.0L (F)</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ flex: 1 }}>
                 <ProfileScrollPicker values={hydroValues} selectedValue={currentHydroL} onSelect={function(val) { trySetHydroGoal(val); }} unit="L" color="#4DA6FF" height={140} />
@@ -362,13 +499,13 @@ export default function ProfilePage({ navigation }) {
                 <Text style={{ fontSize: fp(14), color: '#8A8F98' }}>L</Text>
                 {currentHydroL === defaultHydroGoalL ? (
                   <View style={{ marginTop: wp(6), backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
-                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>Recommande</Text>
+                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>Recommandé</Text>
                   </View>
                 ) : null}
               </View>
             </View>
             <Text style={{ fontSize: fp(12), marginTop: wp(10), color: currentHydroL === defaultHydroGoalL ? '#8A8F98' : currentHydroL < defaultHydroGoalL ? '#FF8C42' : '#4DA6FF' }}>
-              {currentHydroL === defaultHydroGoalL ? 'Base sur les recommandations EFSA' : currentHydroL < defaultHydroGoalL ? 'Inferieur aux recommandations standards' : 'Superieur aux recommandations standards'}
+              {currentHydroL === defaultHydroGoalL ? 'Bas\u00e9 sur les recommandations EFSA' : currentHydroL < defaultHydroGoalL ? 'Inferieur aux recommandations standards' : 'Superieur aux recommandations standards'}
             </Text>
           </MetalCard>
 
@@ -394,11 +531,11 @@ export default function ProfilePage({ navigation }) {
 
                     <View style={{ marginBottom: wp(16) }}>
                       <Text style={{ fontSize: fp(10), color: focusedField === 'name' ? '#00D984' : (nameEmpty ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>
-                        {lang === 'fr' ? 'Comment vous appeler' : 'How shall we call you'}
+                        Comment vous appeler
                       </Text>
-                      <TextInput value={editName} onChangeText={setEditName} onFocus={function() { setFocusedField('name'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder={lang === 'fr' ? 'Malick, Maman, \u2600\ufe0f...' : 'John, Mom, \u2600\ufe0f...'} placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: nameEmpty ? '#FF3B5C' : (focusedField === 'name' ? '#00D984' : '#3A3F46') }} />
+                      <TextInput value={editName} onChangeText={setEditName} onFocus={function() { setFocusedField('name'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder={'Malick, Maman, \u2600\ufe0f...'} placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: nameEmpty ? '#FF3B5C' : (focusedField === 'name' ? '#00D984' : '#3A3F46') }} />
                       <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 4, marginBottom: 12 }}>
-                        {lang === 'fr' ? 'Visible uniquement par vous' : 'Only visible to you'}
+                        Visible uniquement par vous
                       </Text>
                     </View>
 
@@ -487,7 +624,7 @@ export default function ProfilePage({ navigation }) {
           <View style={{ paddingHorizontal: wp(16), marginTop: wp(16), marginBottom: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.legal}</Text></View>
           <Section icon={'\uD83D\uDD12'} title={t.privacy} color="#9B6DFF" onPress={function() { setShowPrivacy(true); }} />
           <Section icon={'\uD83D\uDCC4'} title={t.terms} color="#FF8C42" onPress={function() { setShowTerms(true); }} />
-          <Section icon={'\uD83D\uDCE7'} title={t.contact} color="#4DA6FF" onPress={function() { showToast('contact@lixum.app', '#4DA6FF'); }} />
+          <Section icon={'\uD83D\uDCE7'} title={t.contact} color="#4DA6FF" onPress={handleOpenContact} />
           <Section icon={'\u2B50'} title={t.rate} color="#D4AF37" onPress={function() { showToast(t.comingSoon, '#D4AF37'); }} />
 
           <Pressable delayPressIn={120} onPress={function() { setShowLogoutConfirm(true); }} style={{ marginHorizontal: wp(16), marginTop: wp(16), marginBottom: wp(16), paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,107,107,0.05)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)' }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FF6B6B' }}>{t.logout}</Text></Pressable>
@@ -514,6 +651,177 @@ export default function ProfilePage({ navigation }) {
               <Pressable delayPressIn={120} onPress={handleDeleteAccount} style={{ paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,59,48,0.12)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', marginBottom: wp(8) }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF3B30' }}>{t.deleteAccount}</Text></Pressable>
               <Pressable onPress={function() { setShowDeleteConfirm(false); }} style={{ paddingVertical: wp(12), alignItems: 'center' }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>{t.cancel}</Text></Pressable>
             </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showMilestones} transparent animationType="fade" onRequestClose={handleCloseMilestones}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: wp(16) }}>
+            <View style={{ backgroundColor: '#1E2530', borderRadius: wp(20), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', maxHeight: '88%', overflow: 'hidden' }}>
+              <View style={{ padding: wp(20), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
+                <Text style={{ color: '#FFF', fontSize: fp(20), fontWeight: '700' }}>Mes paliers XP</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(13), marginTop: wp(4) }}>Progresse pour débloquer des récompenses</Text>
+              </View>
+              <ScrollView contentContainerStyle={{ padding: wp(20) }}>
+                <View style={{ backgroundColor: '#252A30', borderRadius: wp(14), padding: wp(16), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)' }}>
+                  <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600', letterSpacing: 1, marginBottom: wp(8) }}>TON NIVEAU ACTUEL</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(32), fontWeight: '800' }}>NIV {userXP.user_level}</Text>
+                    <Text style={{ color: '#FFF', fontSize: fp(14), marginLeft: wp(12) }}>{userXP.xp_progress} / {userXP.xp_needed} XP</Text>
+                  </View>
+                  <View style={{ height: wp(6), backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(3), marginTop: wp(10), overflow: 'hidden' }}>
+                    <View style={{ height: '100%', width: (userXP.xp_percent || 0) + '%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
+                  </View>
+                </View>
+                {XP_MILESTONES.map(function(m) {
+                  var reached = userXP.user_level >= m.level;
+                  return (
+                    <View key={m.level} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(14), padding: wp(14), marginBottom: wp(10), borderWidth: 1, borderColor: reached ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.05)', opacity: reached ? 1 : 0.55 }}>
+                      <View style={{ width: wp(48), height: wp(48), borderRadius: wp(24), backgroundColor: reached ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: wp(14) }}>
+                        <Text style={{ fontSize: fp(22) }}>{reached ? '\uD83C\uDFC6' : m.icon}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4) }}>
+                          <Text style={{ color: reached ? '#00D984' : '#FFF', fontSize: fp(16), fontWeight: '700' }}>Niveau {m.level}</Text>
+                          {reached ? <Text style={{ color: '#00D984', fontSize: fp(11), marginLeft: wp(8), fontWeight: '600' }}>{'\u2713 ATTEINT'}</Text> : null}
+                        </View>
+                        <Text style={{ color: '#F2C94C', fontSize: fp(12), fontWeight: '600' }}>{m.lix.toLocaleString('fr-FR')} Lix \u00b7 {m.energy} \u00e9</Text>
+                        <Text style={{ color: m.color, fontSize: fp(12), fontWeight: '600', marginTop: wp(2) }}>{m.reward}</Text>
+                      </View>
+                    </View>
+                  );
+                })}
+                <View style={{ marginTop: wp(20), backgroundColor: '#252A30', borderRadius: wp(14), padding: wp(16) }}>
+                  <Text style={{ color: '#FFF', fontSize: fp(14), fontWeight: '700', marginBottom: wp(12) }}>Comment gagner de l'XP ?</Text>
+                  {XP_SOURCES.map(function(s, idx) {
+                    return (
+                      <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: wp(6), borderBottomWidth: idx < XP_SOURCES.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
+                        <Text style={{ color: '#8892A0', fontSize: fp(13) }}>{s.label}</Text>
+                        <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '600' }}>{s.value}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+              <Pressable onPress={handleCloseMilestones} style={{ padding: wp(16), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', alignItems: 'center' }}>
+                <Text style={{ color: '#00D984', fontSize: fp(15), fontWeight: '700' }}>Fermer</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showContactPicker} transparent animationType="fade" onRequestClose={handleCloseContact}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: wp(16) }}>
+            <View style={{ backgroundColor: '#1E2530', borderRadius: wp(20), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', overflow: 'hidden' }}>
+              <View style={{ padding: wp(20), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
+                <Text style={{ color: '#FFF', fontSize: fp(20), fontWeight: '700' }}>Nous contacter</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(13), marginTop: wp(4) }}>Choisis le sujet de ton message</Text>
+              </View>
+              <View style={{ padding: wp(16) }}>
+                <Pressable onPress={handleContactBug} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDC1B'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Bug technique</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+                <Pressable onPress={handleContactSuggestion} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDCA1'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Suggestion fonctionnalité</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+                <Pressable onPress={handleContactBilling} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDCB3'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Facturation / abonnement</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+                <Pressable onPress={handleContactRGPD} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDD12'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Données personnelles (RGPD)</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+                <Pressable onPress={handleContactPartnership} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83E\uDD1D'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Partenariat / business</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+              </View>
+              <View style={{ padding: wp(12), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', alignItems: 'center' }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(11), marginBottom: wp(10) }}>Réponse sous 48h ouvrées</Text>
+                <Pressable onPress={handleCloseContact}>
+                  <Text style={{ color: '#00D984', fontSize: fp(15), fontWeight: '700' }}>Annuler</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showPrivacy} animationType="slide" transparent={false} onRequestClose={function() { setShowPrivacy(false); }}>
+          <View style={legalStyles.legalModalRoot}>
+            <View style={legalStyles.legalModalHeader}>
+              <Text style={legalStyles.legalModalTitle}>Politique de confidentialité</Text>
+              <TouchableOpacity onPress={function() { setShowPrivacy(false); }} style={legalStyles.legalModalClose}>
+                <Text style={legalStyles.legalModalCloseText}>{'\u2715'}</Text>
+              </TouchableOpacity>
+            </View>
+            {legalLoading ? (
+              <View style={legalStyles.legalLoaderContainer}>
+                <ActivityIndicator size="large" color="#00D984" />
+                <Text style={legalStyles.legalLoaderText}>Chargement du document...</Text>
+              </View>
+            ) : legalError ? (
+              <View style={legalStyles.legalErrorContainer}>
+                <Text style={legalStyles.legalErrorIcon}>{'\u26A0\uFE0F'}</Text>
+                <Text style={legalStyles.legalErrorText}>{legalError}</Text>
+                <TouchableOpacity onPress={function() { fetchLegalDocument('privacy', 'fr'); }} style={legalStyles.legalRetryButton}>
+                  <Text style={legalStyles.legalRetryText}>Réessayer</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <ScrollView style={legalStyles.legalScrollView} contentContainerStyle={legalStyles.legalScrollContent} showsVerticalScrollIndicator={false}>
+                <Markdown style={markdownStyles}>
+                  {legalCache.privacy && legalCache.privacy.fr ? legalCache.privacy.fr.content : ''}
+                </Markdown>
+                <View style={legalStyles.legalFooter}>
+                  <Text style={legalStyles.legalFooterText}>
+                    Version {legalCache.privacy && legalCache.privacy.fr ? legalCache.privacy.fr.version : ''}{' \u00B7 '}En vigueur depuis le {legalCache.privacy && legalCache.privacy.fr ? legalCache.privacy.fr.effective_date : ''}
+                  </Text>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </Modal>
+
+        <Modal visible={showTerms} animationType="slide" transparent={false} onRequestClose={function() { setShowTerms(false); }}>
+          <View style={legalStyles.legalModalRoot}>
+            <View style={legalStyles.legalModalHeader}>
+              <Text style={legalStyles.legalModalTitle}>Termes et conditions</Text>
+              <TouchableOpacity onPress={function() { setShowTerms(false); }} style={legalStyles.legalModalClose}>
+                <Text style={legalStyles.legalModalCloseText}>{'\u2715'}</Text>
+              </TouchableOpacity>
+            </View>
+            {legalLoading ? (
+              <View style={legalStyles.legalLoaderContainer}>
+                <ActivityIndicator size="large" color="#00D984" />
+                <Text style={legalStyles.legalLoaderText}>Chargement du document...</Text>
+              </View>
+            ) : legalError ? (
+              <View style={legalStyles.legalErrorContainer}>
+                <Text style={legalStyles.legalErrorIcon}>{'\u26A0\uFE0F'}</Text>
+                <Text style={legalStyles.legalErrorText}>{legalError}</Text>
+                <TouchableOpacity onPress={function() { fetchLegalDocument('terms', 'fr'); }} style={legalStyles.legalRetryButton}>
+                  <Text style={legalStyles.legalRetryText}>Réessayer</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <ScrollView style={legalStyles.legalScrollView} contentContainerStyle={legalStyles.legalScrollContent} showsVerticalScrollIndicator={false}>
+                <Markdown style={markdownStyles}>
+                  {legalCache.terms && legalCache.terms.fr ? legalCache.terms.fr.content : ''}
+                </Markdown>
+                <View style={legalStyles.legalFooter}>
+                  <Text style={legalStyles.legalFooterText}>
+                    Version {legalCache.terms && legalCache.terms.fr ? legalCache.terms.fr.version : ''}{' \u00B7 '}En vigueur depuis le {legalCache.terms && legalCache.terms.fr ? legalCache.terms.fr.effective_date : ''}
+                  </Text>
+                </View>
+              </ScrollView>
+            )}
           </View>
         </Modal>
 
