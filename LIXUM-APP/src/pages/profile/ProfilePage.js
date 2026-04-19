@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Platform, StatusBar, Modal, TextInput, Image, KeyboardAvoidingView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Pressable, Platform, StatusBar, Modal, TextInput, Image, KeyboardAvoidingView, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path } from 'react-native-svg';
@@ -130,6 +130,7 @@ export default function ProfilePage({ navigation }) {
   var _showMilestones = useState(false), showMilestones = _showMilestones[0], setShowMilestones = _showMilestones[1];
   var _showLogoutConfirm = useState(false), showLogoutConfirm = _showLogoutConfirm[0], setShowLogoutConfirm = _showLogoutConfirm[1];
   var _showDeleteConfirm = useState(false), showDeleteConfirm = _showDeleteConfirm[0], setShowDeleteConfirm = _showDeleteConfirm[1];
+  var _showContactPicker = useState(false), showContactPicker = _showContactPicker[0], setShowContactPicker = _showContactPicker[1];
   var _editName = useState(''), editName = _editName[0], setEditName = _editName[1];
   var _editAge = useState(''), editAge = _editAge[0], setEditAge = _editAge[1];
   var _editWeight = useState(''), editWeight = _editWeight[0], setEditWeight = _editWeight[1];
@@ -160,6 +161,24 @@ export default function ProfilePage({ navigation }) {
     editLocation !== (profile.city || profile.location || '')
   );
   var canSave = isFormValid && hasChanges;
+
+  var XP_MILESTONES = [
+    { level: 10, lix: 500, energy: 20, reward: '1 Carte Rare', icon: '\uD83E\uDD48', color: '#A0A8B8' },
+    { level: 25, lix: 1500, energy: 50, reward: '1 Carte Elite', icon: '\uD83E\uDD47', color: '#F2C94C' },
+    { level: 50, lix: 5000, energy: 100, reward: '1 Carte Mythique', icon: '\uD83D\uDC8E', color: '#00D984' },
+    { level: 75, lix: 10000, energy: 200, reward: '5 Fragments Mythique', icon: '\u2728', color: '#B080FF' },
+    { level: 100, lix: 25000, energy: 500, reward: 'Badge L\u00e9gendaire', icon: '\uD83D\uDC51', color: '#FF8C42' }
+  ];
+
+  var XP_SOURCES = [
+    { label: 'Scanner un repas', value: '+10 XP' },
+    { label: 'Activit\u00e9 physique', value: '+kcal XP' },
+    { label: 'Enregistrer ton mood', value: '+5 XP' },
+    { label: 'Hydratation atteinte', value: '+3 XP' },
+    { label: '\u00c9change avec ALIXEN', value: '+5 XP' },
+    { label: 'Connexion quotidienne', value: '+10 XP' },
+    { label: 'Streak 7 jours', value: '+50 XP' }
+  ];
 
   useEffect(function() {
     if (showEditProfile && profile) {
@@ -254,6 +273,25 @@ export default function ProfilePage({ navigation }) {
 
   var handleLogout = function() { auth.signOut(); setShowLogoutConfirm(false); };
   var handleDeleteAccount = function() { auth.signOut(); setShowDeleteConfirm(false); };
+
+  var handleCloseMilestones = function() { setShowMilestones(false); };
+  var handleOpenContact = function() { setShowContactPicker(true); };
+  var handleCloseContact = function() { setShowContactPicker(false); };
+
+  var openMailto = function(category) {
+    setShowContactPicker(false);
+    var subject = '[' + category + '] ';
+    var url = 'mailto:contact@lixum.com?subject=' + encodeURIComponent(subject);
+    Linking.openURL(url).catch(function(err) {
+      console.error('Erreur ouverture mail:', err);
+    });
+  };
+
+  var handleContactBug = function() { openMailto('BUG'); };
+  var handleContactSuggestion = function() { openMailto('SUGGESTION'); };
+  var handleContactBilling = function() { openMailto('FACTURATION'); };
+  var handleContactRGPD = function() { openMailto('RGPD'); };
+  var handleContactPartnership = function() { openMailto('PARTENARIAT'); };
 
   var Section = function(props) {
     return (
@@ -456,7 +494,7 @@ export default function ProfilePage({ navigation }) {
               <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>💧</Text>
               <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', letterSpacing: 1.5 }}>OBJECTIF HYDRATATION</Text>
             </View>
-            <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>Recommande : 2.5L (H) / 2.0L (F)</Text>
+            <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>Recommand\u00e9 : 2.5L (H) / 2.0L (F)</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ flex: 1 }}>
                 <ProfileScrollPicker values={hydroValues} selectedValue={currentHydroL} onSelect={function(val) { trySetHydroGoal(val); }} unit="L" color="#4DA6FF" height={140} />
@@ -466,13 +504,13 @@ export default function ProfilePage({ navigation }) {
                 <Text style={{ fontSize: fp(14), color: '#8A8F98' }}>L</Text>
                 {currentHydroL === defaultHydroGoalL ? (
                   <View style={{ marginTop: wp(6), backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
-                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>Recommande</Text>
+                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>Recommand\u00e9</Text>
                   </View>
                 ) : null}
               </View>
             </View>
             <Text style={{ fontSize: fp(12), marginTop: wp(10), color: currentHydroL === defaultHydroGoalL ? '#8A8F98' : currentHydroL < defaultHydroGoalL ? '#FF8C42' : '#4DA6FF' }}>
-              {currentHydroL === defaultHydroGoalL ? 'Base sur les recommandations EFSA' : currentHydroL < defaultHydroGoalL ? 'Inferieur aux recommandations standards' : 'Superieur aux recommandations standards'}
+              {currentHydroL === defaultHydroGoalL ? 'Bas\u00e9 sur les recommandations EFSA' : currentHydroL < defaultHydroGoalL ? 'Inferieur aux recommandations standards' : 'Superieur aux recommandations standards'}
             </Text>
           </MetalCard>
 
@@ -591,7 +629,7 @@ export default function ProfilePage({ navigation }) {
           <View style={{ paddingHorizontal: wp(16), marginTop: wp(16), marginBottom: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.legal}</Text></View>
           <Section icon={'\uD83D\uDD12'} title={t.privacy} color="#9B6DFF" onPress={function() { setShowPrivacy(true); }} />
           <Section icon={'\uD83D\uDCC4'} title={t.terms} color="#FF8C42" onPress={function() { setShowTerms(true); }} />
-          <Section icon={'\uD83D\uDCE7'} title={t.contact} color="#4DA6FF" onPress={function() { showToast('contact@lixum.app', '#4DA6FF'); }} />
+          <Section icon={'\uD83D\uDCE7'} title={t.contact} color="#4DA6FF" onPress={handleOpenContact} />
           <Section icon={'\u2B50'} title={t.rate} color="#D4AF37" onPress={function() { showToast(t.comingSoon, '#D4AF37'); }} />
 
           <Pressable delayPressIn={120} onPress={function() { setShowLogoutConfirm(true); }} style={{ marginHorizontal: wp(16), marginTop: wp(16), marginBottom: wp(16), paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,107,107,0.05)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)' }}><Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FF6B6B' }}>{t.logout}</Text></Pressable>
@@ -617,6 +655,105 @@ export default function ProfilePage({ navigation }) {
               <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: wp(20) }}>{t.deleteConfirm}</Text>
               <Pressable delayPressIn={120} onPress={handleDeleteAccount} style={{ paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,59,48,0.12)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', marginBottom: wp(8) }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF3B30' }}>{t.deleteAccount}</Text></Pressable>
               <Pressable onPress={function() { setShowDeleteConfirm(false); }} style={{ paddingVertical: wp(12), alignItems: 'center' }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>{t.cancel}</Text></Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showMilestones} transparent animationType="fade" onRequestClose={handleCloseMilestones}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: wp(16) }}>
+            <View style={{ backgroundColor: '#1E2530', borderRadius: wp(20), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', maxHeight: '88%', overflow: 'hidden' }}>
+              <View style={{ padding: wp(20), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
+                <Text style={{ color: '#FFF', fontSize: fp(20), fontWeight: '700' }}>Mes paliers XP</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(13), marginTop: wp(4) }}>Progresse pour d\u00e9bloquer des r\u00e9compenses</Text>
+              </View>
+              <ScrollView contentContainerStyle={{ padding: wp(20) }}>
+                <View style={{ backgroundColor: '#252A30', borderRadius: wp(14), padding: wp(16), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)' }}>
+                  <Text style={{ color: '#8892A0', fontSize: fp(11), fontWeight: '600', letterSpacing: 1, marginBottom: wp(8) }}>TON NIVEAU ACTUEL</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                    <Text style={{ color: '#00D984', fontSize: fp(32), fontWeight: '800' }}>NIV {userXP.user_level}</Text>
+                    <Text style={{ color: '#FFF', fontSize: fp(14), marginLeft: wp(12) }}>{userXP.xp_progress} / {userXP.xp_needed} XP</Text>
+                  </View>
+                  <View style={{ height: wp(6), backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: wp(3), marginTop: wp(10), overflow: 'hidden' }}>
+                    <View style={{ height: '100%', width: (userXP.xp_percent || 0) + '%', backgroundColor: '#00D984', borderRadius: wp(3) }} />
+                  </View>
+                </View>
+                {XP_MILESTONES.map(function(m) {
+                  var reached = userXP.user_level >= m.level;
+                  return (
+                    <View key={m.level} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(14), padding: wp(14), marginBottom: wp(10), borderWidth: 1, borderColor: reached ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.05)', opacity: reached ? 1 : 0.55 }}>
+                      <View style={{ width: wp(48), height: wp(48), borderRadius: wp(24), backgroundColor: reached ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: wp(14) }}>
+                        <Text style={{ fontSize: fp(22) }}>{reached ? '\uD83C\uDFC6' : m.icon}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4) }}>
+                          <Text style={{ color: reached ? '#00D984' : '#FFF', fontSize: fp(16), fontWeight: '700' }}>Niveau {m.level}</Text>
+                          {reached ? <Text style={{ color: '#00D984', fontSize: fp(11), marginLeft: wp(8), fontWeight: '600' }}>{'\u2713 ATTEINT'}</Text> : null}
+                        </View>
+                        <Text style={{ color: '#F2C94C', fontSize: fp(12), fontWeight: '600' }}>{m.lix.toLocaleString('fr-FR')} Lix \u00b7 {m.energy} \u00e9</Text>
+                        <Text style={{ color: m.color, fontSize: fp(12), fontWeight: '600', marginTop: wp(2) }}>{m.reward}</Text>
+                      </View>
+                    </View>
+                  );
+                })}
+                <View style={{ marginTop: wp(20), backgroundColor: '#252A30', borderRadius: wp(14), padding: wp(16) }}>
+                  <Text style={{ color: '#FFF', fontSize: fp(14), fontWeight: '700', marginBottom: wp(12) }}>Comment gagner de l'XP ?</Text>
+                  {XP_SOURCES.map(function(s, idx) {
+                    return (
+                      <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: wp(6), borderBottomWidth: idx < XP_SOURCES.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.05)' }}>
+                        <Text style={{ color: '#8892A0', fontSize: fp(13) }}>{s.label}</Text>
+                        <Text style={{ color: '#00D984', fontSize: fp(13), fontWeight: '600' }}>{s.value}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+              <Pressable onPress={handleCloseMilestones} style={{ padding: wp(16), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', alignItems: 'center' }}>
+                <Text style={{ color: '#00D984', fontSize: fp(15), fontWeight: '700' }}>Fermer</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal visible={showContactPicker} transparent animationType="fade" onRequestClose={handleCloseContact}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: wp(16) }}>
+            <View style={{ backgroundColor: '#1E2530', borderRadius: wp(20), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', overflow: 'hidden' }}>
+              <View style={{ padding: wp(20), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
+                <Text style={{ color: '#FFF', fontSize: fp(20), fontWeight: '700' }}>Nous contacter</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(13), marginTop: wp(4) }}>Choisis le sujet de ton message</Text>
+              </View>
+              <View style={{ padding: wp(16) }}>
+                <Pressable onPress={handleContactBug} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDC1B'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Bug technique</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+                <Pressable onPress={handleContactSuggestion} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDCA1'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Suggestion fonctionnalit\u00e9</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+                <Pressable onPress={handleContactBilling} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDCB3'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Facturation / abonnement</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+                <Pressable onPress={handleContactRGPD} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDD12'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Donn\u00e9es personnelles (RGPD)</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+                <Pressable onPress={handleContactPartnership} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14) }}>
+                  <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83E\uDD1D'}</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Partenariat / business</Text>
+                  <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
+                </Pressable>
+              </View>
+              <View style={{ padding: wp(12), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', alignItems: 'center' }}>
+                <Text style={{ color: '#8892A0', fontSize: fp(11), marginBottom: wp(10) }}>R\u00e9ponse sous 48h ouvr\u00e9es</Text>
+                <Pressable onPress={handleCloseContact}>
+                  <Text style={{ color: '#00D984', fontSize: fp(15), fontWeight: '700' }}>Annuler</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </Modal>
