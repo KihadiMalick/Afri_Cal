@@ -10,7 +10,7 @@ import {
   CONNECTORS,
   activityLevelToIndex, activityIndexToKey,
   calculateBMR, calculateTDEE, calculateDailyTarget,
-  XP_MILESTONES, getNextMilestone, getXPForLevel,
+  XP_MILESTONES, XP_SOURCES, getNextMilestone, getXPForLevel,
   ACTIVITY_LEVELS, DIETS, GOALS,
   T,
   getCharEmoji,
@@ -160,24 +160,6 @@ export default function ProfilePage({ navigation }) {
     editLocation !== (profile.city || profile.location || '')
   );
   var canSave = isFormValid && hasChanges;
-
-  var XP_MILESTONES = [
-    { level: 10, lix: 500, energy: 20, reward: '1 Carte Rare', icon: '\uD83E\uDD48', color: '#A0A8B8' },
-    { level: 25, lix: 1500, energy: 50, reward: '1 Carte Elite', icon: '\uD83E\uDD47', color: '#F2C94C' },
-    { level: 50, lix: 5000, energy: 100, reward: '1 Carte Mythique', icon: '\uD83D\uDC8E', color: '#00D984' },
-    { level: 75, lix: 10000, energy: 200, reward: '5 Fragments Mythique', icon: '\u2728', color: '#B080FF' },
-    { level: 100, lix: 25000, energy: 500, reward: 'Badge L\u00e9gendaire', icon: '\uD83D\uDC51', color: '#FF8C42' }
-  ];
-
-  var XP_SOURCES = [
-    { label: 'Scanner un repas', value: '+10 XP' },
-    { label: 'Activit\u00e9 physique', value: '+kcal XP' },
-    { label: 'Enregistrer ton mood', value: '+5 XP' },
-    { label: 'Hydratation atteinte', value: '+3 XP' },
-    { label: '\u00c9change avec ALIXEN', value: '+5 XP' },
-    { label: 'Connexion quotidienne', value: '+10 XP' },
-    { label: 'Streak 7 jours', value: '+50 XP' }
-  ];
 
   useEffect(function() {
     if (showEditProfile && profile) {
@@ -677,7 +659,7 @@ export default function ProfilePage({ navigation }) {
                   return (
                     <View key={m.level} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(14), padding: wp(14), marginBottom: wp(10), borderWidth: 1, borderColor: reached ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.05)', opacity: reached ? 1 : 0.55 }}>
                       <View style={{ width: wp(48), height: wp(48), borderRadius: wp(24), backgroundColor: reached ? 'rgba(0,217,132,0.15)' : 'rgba(255,255,255,0.05)', justifyContent: 'center', alignItems: 'center', marginRight: wp(14) }}>
-                        <Text style={{ fontSize: fp(22) }}>{reached ? '\uD83C\uDFC6' : m.icon}</Text>
+                        <Text style={{ fontSize: fp(22) }}>{reached ? '\uD83C\uDFC6' : m.emoji}</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(4) }}>

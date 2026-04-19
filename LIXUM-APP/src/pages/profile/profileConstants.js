@@ -64,11 +64,11 @@ function calculateDailyTarget(tdee, goal, targetWeightLoss, targetMonths) {
 }
 
 var XP_MILESTONES = [
-  { level: 10,  lix: 500,    energy: 20,  reward: '1 carte Rare',       rewardEn: '1 Rare card',        emoji: '\uD83C\uDCCF', color: '#4DA6FF' },
-  { level: 25,  lix: 1500,   energy: 50,  reward: '1 carte Elite',      rewardEn: '1 Elite card',       emoji: '\uD83C\uDCB4', color: '#A855F7' },
-  { level: 50,  lix: 5000,   energy: 100, reward: '1 carte Mythique',   rewardEn: '1 Mythic card',      emoji: '\uD83C\uDF1F', color: '#D4AF37' },
-  { level: 75,  lix: 10000,  energy: 200, reward: '5 frags Mythique',   rewardEn: '5 Mythic frags',     emoji: '\uD83D\uDC8E', color: '#FF6B8A' },
-  { level: 100, lix: 25000,  energy: 500, reward: 'Badge L\u00e9gendaire', rewardEn: 'Legendary Badge', emoji: '\uD83D\uDC51', color: '#FFD700' },
+  { level: 10,  lix: 500,    energy: 20,  reward: '1 Carte Rare',          rewardEn: '1 Rare Card',          emoji: '\uD83E\uDD48', color: '#A0A8B8' },
+  { level: 25,  lix: 1500,   energy: 50,  reward: '1 Carte Elite',         rewardEn: '1 Elite Card',         emoji: '\uD83E\uDD47', color: '#F2C94C' },
+  { level: 50,  lix: 5000,   energy: 100, reward: '1 Carte Mythique',      rewardEn: '1 Mythic Card',        emoji: '\uD83D\uDC8E', color: '#00D984' },
+  { level: 75,  lix: 10000,  energy: 200, reward: '5 Fragments Mythique',  rewardEn: '5 Mythic Fragments',   emoji: '\u2728',       color: '#B080FF' },
+  { level: 100, lix: 25000,  energy: 500, reward: 'Badge L\u00e9gendaire', rewardEn: 'Legendary Badge',      emoji: '\uD83D\uDC51', color: '#FF8C42' },
 ];
 
 function getNextMilestone(currentLevel) {
@@ -85,6 +85,16 @@ function getXPForLevel(level) {
   }
   return total;
 }
+
+var XP_SOURCES = [
+  { label: 'Scanner un repas',       labelEn: 'Scan a meal',              value: '+10 XP' },
+  { label: 'Activit\u00e9 physique', labelEn: 'Physical activity',        value: '+kcal XP' },
+  { label: 'Enregistrer ton mood',   labelEn: 'Log your mood',            value: '+5 XP' },
+  { label: 'Hydratation atteinte',   labelEn: 'Hydration goal reached',   value: '+3 XP' },
+  { label: '\u00c9change avec ALIXEN', labelEn: 'Chat with ALIXEN',       value: '+5 XP' },
+  { label: 'Connexion quotidienne',  labelEn: 'Daily login',              value: '+10 XP' },
+  { label: 'Streak 7 jours',         labelEn: '7-day streak',             value: '+50 XP' },
+];
 
 var ACTIVITY_LEVELS = [
   { label: 'S\u00e9dentaire', desc: 'Peu ou pas d\'exercice', emoji: '\uD83D\uDECB\uFE0F' },
@@ -159,7 +169,7 @@ export {
   ACTIVITY_MULTIPLIERS_MAP, ACTIVITY_LEVEL_KEYS,
   activityLevelToIndex, activityIndexToKey,
   calculateBMR, calculateTDEE, calculateDailyTarget,
-  XP_MILESTONES, getNextMilestone, getXPForLevel,
+  XP_MILESTONES, XP_SOURCES, getNextMilestone, getXPForLevel,
   ACTIVITY_LEVELS, DIETS, GOALS,
   T,
   getCharEmoji,
