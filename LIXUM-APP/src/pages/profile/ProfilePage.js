@@ -621,6 +621,94 @@ export default function ProfilePage({ navigation }) {
           </View>
         </Modal>
 
+        <Modal visible={showPrivacy} animationType="slide" transparent={false} onRequestClose={function() { setShowPrivacy(false); }}>
+          <View style={legalStyles.legalModalRoot}>
+            <View style={legalStyles.legalModalHeader}>
+              <Text style={legalStyles.legalModalTitle}>{lang === 'fr' ? 'Politique de confidentialit\u00e9' : 'Privacy Policy'}</Text>
+              <TouchableOpacity onPress={function() { setShowPrivacy(false); }} style={legalStyles.legalModalClose}>
+                <Text style={legalStyles.legalModalCloseText}>{'\u2715'}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={legalStyles.legalLangSwitch}>
+              <TouchableOpacity onPress={function() { setLang('fr'); }} style={lang === 'fr' ? legalStyles.legalLangActive : legalStyles.legalLangInactive}>
+                <Text style={lang === 'fr' ? legalStyles.legalLangActiveText : legalStyles.legalLangInactiveText}>FR</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={function() { setLang('en'); }} style={lang === 'en' ? legalStyles.legalLangActive : legalStyles.legalLangInactive}>
+                <Text style={lang === 'en' ? legalStyles.legalLangActiveText : legalStyles.legalLangInactiveText}>EN</Text>
+              </TouchableOpacity>
+            </View>
+            {legalLoading ? (
+              <View style={legalStyles.legalLoaderContainer}>
+                <ActivityIndicator size="large" color="#00D984" />
+                <Text style={legalStyles.legalLoaderText}>{lang === 'fr' ? 'Chargement du document...' : 'Loading document...'}</Text>
+              </View>
+            ) : legalError ? (
+              <View style={legalStyles.legalErrorContainer}>
+                <Text style={legalStyles.legalErrorIcon}>{'\u26A0\uFE0F'}</Text>
+                <Text style={legalStyles.legalErrorText}>{legalError}</Text>
+                <TouchableOpacity onPress={function() { fetchLegalDocument('privacy', lang); }} style={legalStyles.legalRetryButton}>
+                  <Text style={legalStyles.legalRetryText}>{lang === 'fr' ? 'R\u00e9essayer' : 'Retry'}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <ScrollView style={legalStyles.legalScrollView} contentContainerStyle={legalStyles.legalScrollContent} showsVerticalScrollIndicator={false}>
+                <Markdown style={markdownStyles}>
+                  {legalCache.privacy && legalCache.privacy[lang] ? legalCache.privacy[lang].content : ''}
+                </Markdown>
+                <View style={legalStyles.legalFooter}>
+                  <Text style={legalStyles.legalFooterText}>
+                    {lang === 'fr' ? 'Version' : 'Version'} {legalCache.privacy && legalCache.privacy[lang] ? legalCache.privacy[lang].version : ''}{' \u00B7 '}{lang === 'fr' ? 'En vigueur depuis le' : 'Effective from'} {legalCache.privacy && legalCache.privacy[lang] ? legalCache.privacy[lang].effective_date : ''}
+                  </Text>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </Modal>
+
+        <Modal visible={showTerms} animationType="slide" transparent={false} onRequestClose={function() { setShowTerms(false); }}>
+          <View style={legalStyles.legalModalRoot}>
+            <View style={legalStyles.legalModalHeader}>
+              <Text style={legalStyles.legalModalTitle}>{lang === 'fr' ? 'Termes et conditions' : 'Terms & Conditions'}</Text>
+              <TouchableOpacity onPress={function() { setShowTerms(false); }} style={legalStyles.legalModalClose}>
+                <Text style={legalStyles.legalModalCloseText}>{'\u2715'}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={legalStyles.legalLangSwitch}>
+              <TouchableOpacity onPress={function() { setLang('fr'); }} style={lang === 'fr' ? legalStyles.legalLangActive : legalStyles.legalLangInactive}>
+                <Text style={lang === 'fr' ? legalStyles.legalLangActiveText : legalStyles.legalLangInactiveText}>FR</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={function() { setLang('en'); }} style={lang === 'en' ? legalStyles.legalLangActive : legalStyles.legalLangInactive}>
+                <Text style={lang === 'en' ? legalStyles.legalLangActiveText : legalStyles.legalLangInactiveText}>EN</Text>
+              </TouchableOpacity>
+            </View>
+            {legalLoading ? (
+              <View style={legalStyles.legalLoaderContainer}>
+                <ActivityIndicator size="large" color="#00D984" />
+                <Text style={legalStyles.legalLoaderText}>{lang === 'fr' ? 'Chargement du document...' : 'Loading document...'}</Text>
+              </View>
+            ) : legalError ? (
+              <View style={legalStyles.legalErrorContainer}>
+                <Text style={legalStyles.legalErrorIcon}>{'\u26A0\uFE0F'}</Text>
+                <Text style={legalStyles.legalErrorText}>{legalError}</Text>
+                <TouchableOpacity onPress={function() { fetchLegalDocument('terms', lang); }} style={legalStyles.legalRetryButton}>
+                  <Text style={legalStyles.legalRetryText}>{lang === 'fr' ? 'R\u00e9essayer' : 'Retry'}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <ScrollView style={legalStyles.legalScrollView} contentContainerStyle={legalStyles.legalScrollContent} showsVerticalScrollIndicator={false}>
+                <Markdown style={markdownStyles}>
+                  {legalCache.terms && legalCache.terms[lang] ? legalCache.terms[lang].content : ''}
+                </Markdown>
+                <View style={legalStyles.legalFooter}>
+                  <Text style={legalStyles.legalFooterText}>
+                    {lang === 'fr' ? 'Version' : 'Version'} {legalCache.terms && legalCache.terms[lang] ? legalCache.terms[lang].version : ''}{' \u00B7 '}{lang === 'fr' ? 'En vigueur depuis le' : 'Effective from'} {legalCache.terms && legalCache.terms[lang] ? legalCache.terms[lang].effective_date : ''}
+                  </Text>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </Modal>
+
         {toast ? (
           <View style={{ position: 'absolute', top: Platform.OS === 'android' ? 45 : 60, left: wp(20), right: wp(20), backgroundColor: '#252A30', borderRadius: wp(14), paddingVertical: wp(14), paddingHorizontal: wp(20), flexDirection: 'row', alignItems: 'center', gap: wp(10), borderWidth: 1.5, borderColor: toast.color + '40', zIndex: 9999 }}>
             <View style={{ width: wp(8), height: wp(8), borderRadius: wp(4), backgroundColor: toast.color }} />
