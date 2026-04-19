@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Platform, StatusBar, Modal, TextInput, Image, KeyboardAvoidingView } from 'react-native';
+import { View, Text, ScrollView, Pressable, Platform, StatusBar, Modal, TextInput, Image, KeyboardAvoidingView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Path } from 'react-native-svg';
+import Markdown from 'react-native-markdown-display';
 import {
   W, wp, fp,
   SUPABASE_URL, SUPABASE_ANON_KEY,
@@ -18,6 +19,56 @@ import { useAuth } from '../../config/AuthContext';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
 import MetalCard from '../../components/shared/MetalCard';
+
+var markdownStyles = {
+  body: { color: '#FFF', fontSize: fp(14), lineHeight: fp(22) },
+  heading1: { color: '#00D984', fontSize: fp(22), fontWeight: 'bold', marginTop: wp(20), marginBottom: wp(12), borderBottomWidth: 1, borderBottomColor: 'rgba(0,217,132,0.3)', paddingBottom: wp(8) },
+  heading2: { color: '#FFF', fontSize: fp(18), fontWeight: 'bold', marginTop: wp(16), marginBottom: wp(8) },
+  heading3: { color: '#00D984', fontSize: fp(16), fontWeight: '600', marginTop: wp(12), marginBottom: wp(6) },
+  heading4: { color: '#8892A0', fontSize: fp(14), fontWeight: '600', marginTop: wp(8), marginBottom: wp(4), textTransform: 'uppercase', letterSpacing: 0.5 },
+  paragraph: { color: '#FFF', fontSize: fp(14), lineHeight: fp(22), marginBottom: wp(10) },
+  strong: { color: '#00D984', fontWeight: 'bold' },
+  em: { color: '#8892A0', fontStyle: 'italic' },
+  bullet_list: { marginVertical: wp(8) },
+  ordered_list: { marginVertical: wp(8) },
+  list_item: { marginBottom: wp(6), color: '#FFF' },
+  bullet_list_icon: { color: '#00D984', marginRight: wp(8) },
+  ordered_list_icon: { color: '#00D984', marginRight: wp(8), fontWeight: 'bold' },
+  link: { color: '#00D984', textDecorationLine: 'underline' },
+  code_inline: { backgroundColor: '#1E2530', color: '#00D984', paddingHorizontal: wp(6), paddingVertical: wp(2), borderRadius: wp(4), fontSize: fp(13) },
+  code_block: { backgroundColor: '#1E2530', color: '#FFF', padding: wp(12), borderRadius: wp(8), marginVertical: wp(8), fontSize: fp(13) },
+  fence: { backgroundColor: '#1E2530', color: '#FFF', padding: wp(12), borderRadius: wp(8), marginVertical: wp(8), fontSize: fp(13) },
+  blockquote: { borderLeftWidth: wp(3), borderLeftColor: '#00D984', paddingLeft: wp(12), backgroundColor: 'rgba(0,217,132,0.05)', paddingVertical: wp(8), marginVertical: wp(8) },
+  hr: { backgroundColor: '#2A303B', height: 1, marginVertical: wp(16) },
+  table: { borderWidth: 1, borderColor: '#2A303B', borderRadius: wp(6), marginVertical: wp(10) },
+  thead: { backgroundColor: '#1E2530' },
+  th: { color: '#00D984', fontWeight: 'bold', padding: wp(8), fontSize: fp(13) },
+  td: { color: '#FFF', padding: wp(8), fontSize: fp(13), borderTopWidth: 1, borderTopColor: '#2A303B' }
+};
+
+var legalStyles = {
+  legalModalRoot: { flex: 1, backgroundColor: '#1E2530' },
+  legalModalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: wp(16), paddingTop: wp(20), paddingBottom: wp(12), backgroundColor: '#252A30', borderBottomWidth: 1, borderBottomColor: '#2A303B' },
+  legalModalTitle: { color: '#FFF', fontSize: fp(18), fontWeight: 'bold', flex: 1 },
+  legalModalClose: { width: wp(36), height: wp(36), borderRadius: wp(18), backgroundColor: '#1E2530', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A303B' },
+  legalModalCloseText: { color: '#FFF', fontSize: fp(16), fontWeight: 'bold' },
+  legalLangSwitch: { flexDirection: 'row', justifyContent: 'center', paddingVertical: wp(10), backgroundColor: '#252A30', gap: wp(8) },
+  legalLangActive: { paddingHorizontal: wp(20), paddingVertical: wp(6), backgroundColor: '#00D984', borderRadius: wp(20) },
+  legalLangInactive: { paddingHorizontal: wp(20), paddingVertical: wp(6), backgroundColor: '#1E2530', borderRadius: wp(20), borderWidth: 1, borderColor: '#2A303B' },
+  legalLangActiveText: { color: '#1E2530', fontWeight: 'bold', fontSize: fp(13) },
+  legalLangInactiveText: { color: '#8892A0', fontWeight: '600', fontSize: fp(13) },
+  legalLoaderContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  legalLoaderText: { color: '#8892A0', fontSize: fp(14), marginTop: wp(12) },
+  legalErrorContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: wp(24) },
+  legalErrorIcon: { fontSize: fp(40), marginBottom: wp(16) },
+  legalErrorText: { color: '#8892A0', fontSize: fp(14), textAlign: 'center', marginBottom: wp(20), lineHeight: fp(20) },
+  legalRetryButton: { paddingHorizontal: wp(28), paddingVertical: wp(12), backgroundColor: '#00D984', borderRadius: wp(24) },
+  legalRetryText: { color: '#1E2530', fontWeight: 'bold', fontSize: fp(14) },
+  legalScrollView: { flex: 1 },
+  legalScrollContent: { paddingHorizontal: wp(20), paddingVertical: wp(20), paddingBottom: wp(40) },
+  legalFooter: { marginTop: wp(30), paddingTop: wp(16), borderTopWidth: 1, borderTopColor: '#2A303B', alignItems: 'center' },
+  legalFooterText: { color: '#8892A0', fontSize: fp(11), textAlign: 'center', fontStyle: 'italic' }
+};
 
 var ProfileScrollPicker = function(pickerProps) {
   var values = pickerProps.values, selectedValue = pickerProps.selectedValue, onSelect = pickerProps.onSelect, unit = pickerProps.unit;
@@ -73,6 +124,9 @@ export default function ProfilePage({ navigation }) {
   var _showSubscription = useState(false), showSubscription = _showSubscription[0], setShowSubscription = _showSubscription[1];
   var _showPrivacy = useState(false), showPrivacy = _showPrivacy[0], setShowPrivacy = _showPrivacy[1];
   var _showTerms = useState(false), showTerms = _showTerms[0], setShowTerms = _showTerms[1];
+  var _legalCache = useState({ privacy: { fr: null, en: null }, terms: { fr: null, en: null } }), legalCache = _legalCache[0], setLegalCache = _legalCache[1];
+  var _legalLoading = useState(false), legalLoading = _legalLoading[0], setLegalLoading = _legalLoading[1];
+  var _legalError = useState(null), legalError = _legalError[0], setLegalError = _legalError[1];
   var _showMilestones = useState(false), showMilestones = _showMilestones[0], setShowMilestones = _showMilestones[1];
   var _showLogoutConfirm = useState(false), showLogoutConfirm = _showLogoutConfirm[0], setShowLogoutConfirm = _showLogoutConfirm[1];
   var _showDeleteConfirm = useState(false), showDeleteConfirm = _showDeleteConfirm[0], setShowDeleteConfirm = _showDeleteConfirm[1];
@@ -223,6 +277,56 @@ export default function ProfilePage({ navigation }) {
   var displayNameForAvatar = (profile && (profile.display_name || profile.full_name)) || 'U';
   var avatarInitial = displayNameForAvatar.charAt(0).toUpperCase();
   var avatarColor = activeCharSlug ? '#00D984' : '#4DA6FF';
+
+  function fetchLegalDocument(docType, language) {
+    if (legalCache[docType] && legalCache[docType][language]) {
+      setLegalLoading(false);
+      setLegalError(null);
+      return;
+    }
+    setLegalLoading(true);
+    setLegalError(null);
+    supabase
+      .rpc('get_current_legal_document', { p_document_type: docType, p_language: language })
+      .then(function(result) {
+        var data = result.data;
+        var error = result.error;
+        if (error) {
+          console.error('[Legal] RPC error:', error);
+          setLegalError('Impossible de charger le document. V\u00e9rifiez votre connexion.');
+          setLegalLoading(false);
+          return;
+        }
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+          setLegalError('Document indisponible pour cette langue.');
+          setLegalLoading(false);
+          return;
+        }
+        var doc = Array.isArray(data) ? data[0] : data;
+        var newCache = Object.assign({}, legalCache);
+        newCache[docType] = Object.assign({}, newCache[docType]);
+        newCache[docType][language] = doc;
+        setLegalCache(newCache);
+        setLegalLoading(false);
+      })
+      .catch(function(err) {
+        console.error('[Legal] Catch:', err);
+        setLegalError('Erreur r\u00e9seau. R\u00e9essayez.');
+        setLegalLoading(false);
+      });
+  }
+
+  useEffect(function() {
+    if (showPrivacy) {
+      fetchLegalDocument('privacy', lang);
+    }
+  }, [showPrivacy, lang]);
+
+  useEffect(function() {
+    if (showTerms) {
+      fetchLegalDocument('terms', lang);
+    }
+  }, [showTerms, lang]);
 
   var renderConnectorCard = function(conn, i) {
     var isConnected = !!connectedApps[conn.id]; var dataText = lang === 'fr' ? conn.dataFr : conn.dataEn;
