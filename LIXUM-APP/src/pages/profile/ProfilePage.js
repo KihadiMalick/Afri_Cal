@@ -136,10 +136,9 @@ export default function ProfilePage({ navigation }) {
   var _editWeight = useState(''), editWeight = _editWeight[0], setEditWeight = _editWeight[1];
   var _editHeight = useState(''), editHeight = _editHeight[0], setEditHeight = _editHeight[1];
   var _editLocation = useState(''), editLocation = _editLocation[0], setEditLocation = _editLocation[1];
-  var _lang = useState('fr'), lang = _lang[0], setLang = _lang[1];
   var _connectedApps = useState({}), connectedApps = _connectedApps[0], setConnectedApps = _connectedApps[1];
   var _toast = useState(null), toast = _toast[0], setToast = _toast[1];
-  var t = T[lang] || T.fr;
+  var t = T.fr;
   var showToast = function(message, color) { setToast({ message: message, color: color || '#00D984' }); setTimeout(function() { setToast(null); }, 2500); };
 
   var weightInputRef = useRef(null);
@@ -214,7 +213,7 @@ export default function ProfilePage({ navigation }) {
     ]).then(function(responses) { return Promise.all(responses.map(function(r) { return r.json(); })); })
     .then(function(results) {
       var pD = results[0]; var cD = results[1];
-      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].display_name || pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); if (pD[0].language === 'EN') setLang('en'); else setLang('fr'); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
+      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].display_name || pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: userId }) })
         .then(function(r) { return r.json(); }).then(function(d) { if (d) setUserXP(d); }).catch(function(err) { console.warn('[LIXUM] XP fetch error:', err); });
@@ -231,14 +230,14 @@ export default function ProfilePage({ navigation }) {
     var newTDEE = calculateTDEE(newBMR, currentActivityLevel);
     var currentGoal = profile ? profile.goal || 'maintain' : 'maintain';
     var newTarget = calculateDailyTarget(newTDEE, currentGoal, profile ? profile.target_weight_loss : 0, profile ? profile.target_months : 3);
-    var body = { display_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: lang === 'en' ? 'EN' : 'FR' };
+    var body = { display_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: 'FR' };
     fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
-      .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); updateLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast(lang === 'fr' ? 'Profil mis \u00e0 jour \u2713' : 'Profile updated \u2713', '#00D984'); })
-      .catch(function() { showToast(lang === 'fr' ? 'Erreur de sauvegarde' : 'Save error', '#FF6B6B'); });
+      .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); updateLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast('Profil mis \u00e0 jour \u2713', '#00D984'); })
+      .catch(function() { showToast('Erreur de sauvegarde', '#FF6B6B'); });
   };
 
   var saveLocation = function(city) { setEditLocation(city); setShowLocationPicker(false); showToast('\uD83D\uDCCD ' + city, '#FF8C42'); };
-  var toggleConnector = function(connId) { setConnectedApps(function(prev) { var n = Object.assign({}, prev); if (n[connId]) { delete n[connId]; showToast(lang === 'fr' ? 'D\u00e9connect\u00e9' : 'Disconnected', '#FF6B6B'); } else { n[connId] = { connectedAt: new Date().toISOString(), lastSync: new Date().toISOString() }; showToast(lang === 'fr' ? 'Connect\u00e9 \u2713' : 'Connected \u2713', '#00D984'); } return n; }); };
+  var toggleConnector = function(connId) { setConnectedApps(function(prev) { var n = Object.assign({}, prev); if (n[connId]) { delete n[connId]; showToast('D\u00e9connect\u00e9', '#FF6B6B'); } else { n[connId] = { connectedAt: new Date().toISOString(), lastSync: new Date().toISOString() }; showToast('Connect\u00e9 \u2713', '#00D984'); } return n; }); };
   var defaultHydroGoalL = (profile && (profile.gender === 'female' || profile.gender === 'femme')) ? 2.0 : 2.5;
   var currentHydroL = hydroGoalL !== null ? hydroGoalL : defaultHydroGoalL;
   var hydroValues = [];
@@ -307,7 +306,7 @@ export default function ProfilePage({ navigation }) {
   var imc = profile && profile.weight && profile.height ? (profile.weight / ((profile.height / 100) * (profile.height / 100))).toFixed(1) : '\u2014';
   var imcNum = parseFloat(imc) || 0;
   var imcColor = imcNum < 18.5 ? '#4DA6FF' : imcNum < 25 ? '#00D984' : imcNum < 30 ? '#FF8C42' : '#FF4444';
-  var imcLabel = imcNum < 18.5 ? (lang === 'fr' ? 'Insuffisance' : 'Underweight') : imcNum < 25 ? 'Normal' : imcNum < 30 ? (lang === 'fr' ? 'Surpoids' : 'Overweight') : (lang === 'fr' ? 'Obésité' : 'Obesity');
+  var imcLabel = imcNum < 18.5 ? 'Insuffisance' : imcNum < 25 ? 'Normal' : imcNum < 30 ? 'Surpoids' : 'Obésité';
   var imcBarPos = Math.min(Math.max(((imcNum - 15) / 25) * 100, 0), 100);
   var subTier = profile && profile.is_premium ? 'Gold' : t.free;
   var subColor = profile && profile.is_premium ? '#D4AF37' : 'rgba(255,255,255,0.3)';
@@ -356,18 +355,18 @@ export default function ProfilePage({ navigation }) {
 
   useEffect(function() {
     if (showPrivacy) {
-      fetchLegalDocument('privacy', lang);
+      fetchLegalDocument('privacy', 'fr');
     }
-  }, [showPrivacy, lang]);
+  }, [showPrivacy]);
 
   useEffect(function() {
     if (showTerms) {
-      fetchLegalDocument('terms', lang);
+      fetchLegalDocument('terms', 'fr');
     }
-  }, [showTerms, lang]);
+  }, [showTerms]);
 
   var renderConnectorCard = function(conn, i) {
-    var isConnected = !!connectedApps[conn.id]; var dataText = lang === 'fr' ? conn.dataFr : conn.dataEn;
+    var isConnected = !!connectedApps[conn.id]; var dataText = conn.dataFr;
     return (
       <View key={conn.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(12), paddingHorizontal: wp(14), backgroundColor: isConnected ? conn.color + '08' : 'transparent', borderBottomWidth: i < CONNECTORS.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
         <View style={{ width: wp(40), height: wp(40), borderRadius: wp(10), backgroundColor: conn.color + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: isConnected ? 1.5 : 0, borderColor: isConnected ? conn.color + '40' : 'transparent' }}><Text style={{ fontSize: fp(18) }}>{conn.emoji}</Text></View>
@@ -385,12 +384,8 @@ export default function ProfilePage({ navigation }) {
         <StatusBar barStyle="light-content" />
         <ScrollView contentContainerStyle={{ paddingBottom: wp(100) }}>
           <View style={{ paddingTop: Platform.OS === 'android' ? 50 : 60, paddingBottom: wp(20) }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: wp(16), marginBottom: wp(12) }}>
+            <View style={{ flexDirection: 'row', paddingHorizontal: wp(16), marginBottom: wp(12) }}>
               <Pressable onPress={function() { navigation.goBack(); }} style={{ paddingVertical: wp(5), paddingHorizontal: wp(8) }}><Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.4)' }}>{'\u2190'}</Text></Pressable>
-              <View style={{ flexDirection: 'row', gap: wp(6) }}>
-                <Pressable onPress={function() { setLang('fr'); }} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'fr' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'fr' ? 'rgba(0,217,132,0.08)' : 'transparent' }}><Text style={{ fontSize: fp(14) }}>{'\uD83C\uDDEB\uD83C\uDDF7'}</Text></Pressable>
-                <Pressable onPress={function() { setLang('en'); }} style={{ paddingHorizontal: wp(8), paddingVertical: wp(5), borderRadius: wp(6), borderWidth: 1, borderColor: lang === 'en' ? 'rgba(0,217,132,0.4)' : 'rgba(255,255,255,0.08)', backgroundColor: lang === 'en' ? 'rgba(0,217,132,0.08)' : 'transparent' }}><Text style={{ fontSize: fp(14) }}>{'\uD83C\uDDEC\uD83C\uDDE7'}</Text></Pressable>
-              </View>
             </View>
             <View style={{ alignItems: 'center' }}>
               <View style={{ width: wp(72), height: wp(72), borderRadius: wp(36), backgroundColor: avatarColor + '15', borderWidth: 2.5, borderColor: avatarColor + '50', justifyContent: 'center', alignItems: 'center', marginBottom: wp(10) }}>{avatarEmoji ? <Text style={{ fontSize: fp(32) }}>{avatarEmoji}</Text> : <Text style={{ fontSize: fp(28), fontWeight: '900', color: avatarColor }}>{avatarInitial}</Text>}</View>
@@ -407,7 +402,7 @@ export default function ProfilePage({ navigation }) {
                 <View style={{ height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}><LinearGradient colors={['#00D984', '#00B871']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: Math.min(userXP.xp_percent || 0, 100) + '%', height: '100%', borderRadius: wp(4) }} /></View>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingHorizontal: wp(20), marginTop: wp(16) }}>
-                {[{ val: lixBalance, label: 'Lix', color: '#D4AF37' }, { val: userEnergy, label: lang === 'fr' ? '\u00c9nergie' : 'Energy', color: '#FFB800' }, { val: ownedCharacters + '/16', label: 'Cartes', color: '#00D984' }].map(function(s, i) { return (
+                {[{ val: lixBalance, label: 'Lix', color: '#D4AF37' }, { val: userEnergy, label: '\u00c9nergie', color: '#FFB800' }, { val: ownedCharacters + '/16', label: 'Cartes', color: '#00D984' }].map(function(s, i) { return (
                   <View key={i} style={{ alignItems: 'center' }}><Text style={{ fontSize: fp(18), fontWeight: '800', color: s.color }}>{s.val}</Text><Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(2) }}>{s.label}</Text></View>
                 ); })}
               </View>
@@ -433,10 +428,10 @@ export default function ProfilePage({ navigation }) {
               <Text style={{ fontSize: 18 }}>{'\u2728'}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: '#00D984', fontSize: 12, fontWeight: '600' }}>
-                  {lang === 'fr' ? 'Personnalisez votre profil' : 'Personalize your profile'}
+                  Personnalisez votre profil
                 </Text>
                 <Text style={{ color: '#6B7280', fontSize: 10, marginTop: 2, lineHeight: 14 }}>
-                  {lang === 'fr' ? 'Choisissez comment vous souhaitez \u00eatre appel\u00e9 par LIXUM' : 'Choose how you\'d like LIXUM to address you'}
+                  Choisissez comment vous souhaitez être appelé par LIXUM
                 </Text>
               </View>
               <Text style={{ fontSize: 16, color: '#00D984' }}>{'\u203A'}</Text>
@@ -494,7 +489,7 @@ export default function ProfilePage({ navigation }) {
               <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>💧</Text>
               <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', letterSpacing: 1.5 }}>OBJECTIF HYDRATATION</Text>
             </View>
-            <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>Recommand\u00e9 : 2.5L (H) / 2.0L (F)</Text>
+            <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>Recommandé : 2.5L (H) / 2.0L (F)</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ flex: 1 }}>
                 <ProfileScrollPicker values={hydroValues} selectedValue={currentHydroL} onSelect={function(val) { trySetHydroGoal(val); }} unit="L" color="#4DA6FF" height={140} />
@@ -504,7 +499,7 @@ export default function ProfilePage({ navigation }) {
                 <Text style={{ fontSize: fp(14), color: '#8A8F98' }}>L</Text>
                 {currentHydroL === defaultHydroGoalL ? (
                   <View style={{ marginTop: wp(6), backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
-                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>Recommand\u00e9</Text>
+                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>Recommandé</Text>
                   </View>
                 ) : null}
               </View>
@@ -536,11 +531,11 @@ export default function ProfilePage({ navigation }) {
 
                     <View style={{ marginBottom: wp(16) }}>
                       <Text style={{ fontSize: fp(10), color: focusedField === 'name' ? '#00D984' : (nameEmpty ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>
-                        {lang === 'fr' ? 'Comment vous appeler' : 'How shall we call you'}
+                        Comment vous appeler
                       </Text>
-                      <TextInput value={editName} onChangeText={setEditName} onFocus={function() { setFocusedField('name'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder={lang === 'fr' ? 'Malick, Maman, \u2600\ufe0f...' : 'John, Mom, \u2600\ufe0f...'} placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: nameEmpty ? '#FF3B5C' : (focusedField === 'name' ? '#00D984' : '#3A3F46') }} />
+                      <TextInput value={editName} onChangeText={setEditName} onFocus={function() { setFocusedField('name'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder={'Malick, Maman, \u2600\ufe0f...'} placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: nameEmpty ? '#FF3B5C' : (focusedField === 'name' ? '#00D984' : '#3A3F46') }} />
                       <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 4, marginBottom: 12 }}>
-                        {lang === 'fr' ? 'Visible uniquement par vous' : 'Only visible to you'}
+                        Visible uniquement par vous
                       </Text>
                     </View>
 
@@ -664,7 +659,7 @@ export default function ProfilePage({ navigation }) {
             <View style={{ backgroundColor: '#1E2530', borderRadius: wp(20), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)', maxHeight: '88%', overflow: 'hidden' }}>
               <View style={{ padding: wp(20), borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' }}>
                 <Text style={{ color: '#FFF', fontSize: fp(20), fontWeight: '700' }}>Mes paliers XP</Text>
-                <Text style={{ color: '#8892A0', fontSize: fp(13), marginTop: wp(4) }}>Progresse pour d\u00e9bloquer des r\u00e9compenses</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(13), marginTop: wp(4) }}>Progresse pour débloquer des récompenses</Text>
               </View>
               <ScrollView contentContainerStyle={{ padding: wp(20) }}>
                 <View style={{ backgroundColor: '#252A30', borderRadius: wp(14), padding: wp(16), marginBottom: wp(20), borderWidth: 1, borderColor: 'rgba(0,217,132,0.2)' }}>
@@ -729,7 +724,7 @@ export default function ProfilePage({ navigation }) {
                 </Pressable>
                 <Pressable onPress={handleContactSuggestion} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
                   <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDCA1'}</Text>
-                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Suggestion fonctionnalit\u00e9</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Suggestion fonctionnalité</Text>
                   <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
                 </Pressable>
                 <Pressable onPress={handleContactBilling} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
@@ -739,7 +734,7 @@ export default function ProfilePage({ navigation }) {
                 </Pressable>
                 <Pressable onPress={handleContactRGPD} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14), marginBottom: wp(8) }}>
                   <Text style={{ fontSize: fp(22), marginRight: wp(14) }}>{'\uD83D\uDD12'}</Text>
-                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Donn\u00e9es personnelles (RGPD)</Text>
+                  <Text style={{ flex: 1, color: '#FFF', fontSize: fp(15), fontWeight: '600' }}>Données personnelles (RGPD)</Text>
                   <Text style={{ color: '#8892A0', fontSize: fp(18) }}>{'\u203A'}</Text>
                 </Pressable>
                 <Pressable onPress={handleContactPartnership} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#252A30', borderRadius: wp(12), padding: wp(14) }}>
@@ -749,7 +744,7 @@ export default function ProfilePage({ navigation }) {
                 </Pressable>
               </View>
               <View style={{ padding: wp(12), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)', alignItems: 'center' }}>
-                <Text style={{ color: '#8892A0', fontSize: fp(11), marginBottom: wp(10) }}>R\u00e9ponse sous 48h ouvr\u00e9es</Text>
+                <Text style={{ color: '#8892A0', fontSize: fp(11), marginBottom: wp(10) }}>Réponse sous 48h ouvrées</Text>
                 <Pressable onPress={handleCloseContact}>
                   <Text style={{ color: '#00D984', fontSize: fp(15), fontWeight: '700' }}>Annuler</Text>
                 </Pressable>
@@ -761,40 +756,32 @@ export default function ProfilePage({ navigation }) {
         <Modal visible={showPrivacy} animationType="slide" transparent={false} onRequestClose={function() { setShowPrivacy(false); }}>
           <View style={legalStyles.legalModalRoot}>
             <View style={legalStyles.legalModalHeader}>
-              <Text style={legalStyles.legalModalTitle}>{lang === 'fr' ? 'Politique de confidentialit\u00e9' : 'Privacy Policy'}</Text>
+              <Text style={legalStyles.legalModalTitle}>Politique de confidentialité</Text>
               <TouchableOpacity onPress={function() { setShowPrivacy(false); }} style={legalStyles.legalModalClose}>
                 <Text style={legalStyles.legalModalCloseText}>{'\u2715'}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={legalStyles.legalLangSwitch}>
-              <TouchableOpacity onPress={function() { setLang('fr'); }} style={lang === 'fr' ? legalStyles.legalLangActive : legalStyles.legalLangInactive}>
-                <Text style={lang === 'fr' ? legalStyles.legalLangActiveText : legalStyles.legalLangInactiveText}>FR</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={function() { setLang('en'); }} style={lang === 'en' ? legalStyles.legalLangActive : legalStyles.legalLangInactive}>
-                <Text style={lang === 'en' ? legalStyles.legalLangActiveText : legalStyles.legalLangInactiveText}>EN</Text>
               </TouchableOpacity>
             </View>
             {legalLoading ? (
               <View style={legalStyles.legalLoaderContainer}>
                 <ActivityIndicator size="large" color="#00D984" />
-                <Text style={legalStyles.legalLoaderText}>{lang === 'fr' ? 'Chargement du document...' : 'Loading document...'}</Text>
+                <Text style={legalStyles.legalLoaderText}>Chargement du document...</Text>
               </View>
             ) : legalError ? (
               <View style={legalStyles.legalErrorContainer}>
                 <Text style={legalStyles.legalErrorIcon}>{'\u26A0\uFE0F'}</Text>
                 <Text style={legalStyles.legalErrorText}>{legalError}</Text>
-                <TouchableOpacity onPress={function() { fetchLegalDocument('privacy', lang); }} style={legalStyles.legalRetryButton}>
-                  <Text style={legalStyles.legalRetryText}>{lang === 'fr' ? 'R\u00e9essayer' : 'Retry'}</Text>
+                <TouchableOpacity onPress={function() { fetchLegalDocument('privacy', 'fr'); }} style={legalStyles.legalRetryButton}>
+                  <Text style={legalStyles.legalRetryText}>Réessayer</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <ScrollView style={legalStyles.legalScrollView} contentContainerStyle={legalStyles.legalScrollContent} showsVerticalScrollIndicator={false}>
                 <Markdown style={markdownStyles}>
-                  {legalCache.privacy && legalCache.privacy[lang] ? legalCache.privacy[lang].content : ''}
+                  {legalCache.privacy && legalCache.privacy.fr ? legalCache.privacy.fr.content : ''}
                 </Markdown>
                 <View style={legalStyles.legalFooter}>
                   <Text style={legalStyles.legalFooterText}>
-                    {lang === 'fr' ? 'Version' : 'Version'} {legalCache.privacy && legalCache.privacy[lang] ? legalCache.privacy[lang].version : ''}{' \u00B7 '}{lang === 'fr' ? 'En vigueur depuis le' : 'Effective from'} {legalCache.privacy && legalCache.privacy[lang] ? legalCache.privacy[lang].effective_date : ''}
+                    Version {legalCache.privacy && legalCache.privacy.fr ? legalCache.privacy.fr.version : ''}{' \u00B7 '}En vigueur depuis le {legalCache.privacy && legalCache.privacy.fr ? legalCache.privacy.fr.effective_date : ''}
                   </Text>
                 </View>
               </ScrollView>
@@ -805,40 +792,32 @@ export default function ProfilePage({ navigation }) {
         <Modal visible={showTerms} animationType="slide" transparent={false} onRequestClose={function() { setShowTerms(false); }}>
           <View style={legalStyles.legalModalRoot}>
             <View style={legalStyles.legalModalHeader}>
-              <Text style={legalStyles.legalModalTitle}>{lang === 'fr' ? 'Termes et conditions' : 'Terms & Conditions'}</Text>
+              <Text style={legalStyles.legalModalTitle}>Termes et conditions</Text>
               <TouchableOpacity onPress={function() { setShowTerms(false); }} style={legalStyles.legalModalClose}>
                 <Text style={legalStyles.legalModalCloseText}>{'\u2715'}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={legalStyles.legalLangSwitch}>
-              <TouchableOpacity onPress={function() { setLang('fr'); }} style={lang === 'fr' ? legalStyles.legalLangActive : legalStyles.legalLangInactive}>
-                <Text style={lang === 'fr' ? legalStyles.legalLangActiveText : legalStyles.legalLangInactiveText}>FR</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={function() { setLang('en'); }} style={lang === 'en' ? legalStyles.legalLangActive : legalStyles.legalLangInactive}>
-                <Text style={lang === 'en' ? legalStyles.legalLangActiveText : legalStyles.legalLangInactiveText}>EN</Text>
               </TouchableOpacity>
             </View>
             {legalLoading ? (
               <View style={legalStyles.legalLoaderContainer}>
                 <ActivityIndicator size="large" color="#00D984" />
-                <Text style={legalStyles.legalLoaderText}>{lang === 'fr' ? 'Chargement du document...' : 'Loading document...'}</Text>
+                <Text style={legalStyles.legalLoaderText}>Chargement du document...</Text>
               </View>
             ) : legalError ? (
               <View style={legalStyles.legalErrorContainer}>
                 <Text style={legalStyles.legalErrorIcon}>{'\u26A0\uFE0F'}</Text>
                 <Text style={legalStyles.legalErrorText}>{legalError}</Text>
-                <TouchableOpacity onPress={function() { fetchLegalDocument('terms', lang); }} style={legalStyles.legalRetryButton}>
-                  <Text style={legalStyles.legalRetryText}>{lang === 'fr' ? 'R\u00e9essayer' : 'Retry'}</Text>
+                <TouchableOpacity onPress={function() { fetchLegalDocument('terms', 'fr'); }} style={legalStyles.legalRetryButton}>
+                  <Text style={legalStyles.legalRetryText}>Réessayer</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <ScrollView style={legalStyles.legalScrollView} contentContainerStyle={legalStyles.legalScrollContent} showsVerticalScrollIndicator={false}>
                 <Markdown style={markdownStyles}>
-                  {legalCache.terms && legalCache.terms[lang] ? legalCache.terms[lang].content : ''}
+                  {legalCache.terms && legalCache.terms.fr ? legalCache.terms.fr.content : ''}
                 </Markdown>
                 <View style={legalStyles.legalFooter}>
                   <Text style={legalStyles.legalFooterText}>
-                    {lang === 'fr' ? 'Version' : 'Version'} {legalCache.terms && legalCache.terms[lang] ? legalCache.terms[lang].version : ''}{' \u00B7 '}{lang === 'fr' ? 'En vigueur depuis le' : 'Effective from'} {legalCache.terms && legalCache.terms[lang] ? legalCache.terms[lang].effective_date : ''}
+                    Version {legalCache.terms && legalCache.terms.fr ? legalCache.terms.fr.version : ''}{' \u00B7 '}En vigueur depuis le {legalCache.terms && legalCache.terms.fr ? legalCache.terms.fr.effective_date : ''}
                   </Text>
                 </View>
               </ScrollView>
