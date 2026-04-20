@@ -217,7 +217,7 @@ export default function RegisterPage({ navigation }) {
         method: 'POST',
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (accessToken || SUPABASE_ANON_KEY) },
         body: JSON.stringify({
-          p_user_id: userId, p_full_name: fd.fullName.trim(), p_lixtag: clientLixTag,
+          p_user_id: userId, p_display_name: fd.fullName.trim(), p_lixtag: clientLixTag,
           p_age: parseInt(fd.age) || 25, p_weight: parseFloat(fd.weight) || 70, p_height: parseFloat(fd.height) || 175,
           p_gender: fd.gender, p_activity_level: ACTIVITY_LABELS_DB[fd.activityLevel] || 'moderate',
           p_dietary_regime: fd.diet, p_goal: fd.goal,
