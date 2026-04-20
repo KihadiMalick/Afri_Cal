@@ -153,7 +153,7 @@ export default function ProfilePage({ navigation }) {
   var nameEmpty = editName.trim() === '';
   var isFormValid = !ageInvalid && !weightInvalid && !heightInvalid && !nameEmpty && editAge !== '' && editWeight !== '' && editHeight !== '';
   var hasChanges = !!profile && (
-    editName.trim() !== (profile.display_name || profile.full_name || '') ||
+    editName.trim() !== (profile.display_name || '') ||
     editAge !== String(profile.age || '') ||
     editWeight !== String(profile.weight || '') ||
     editHeight !== String(profile.height || '') ||
@@ -163,7 +163,7 @@ export default function ProfilePage({ navigation }) {
 
   useEffect(function() {
     if (showEditProfile && profile) {
-      setEditName(profile.display_name || profile.full_name || '');
+      setEditName(profile.display_name || '');
       setEditAge(profile.age ? String(profile.age) : '');
       setEditWeight(profile.weight ? String(profile.weight) : '');
       setEditHeight(profile.height ? String(profile.height) : '');
@@ -195,7 +195,7 @@ export default function ProfilePage({ navigation }) {
     ]).then(function(responses) { return Promise.all(responses.map(function(r) { return r.json(); })); })
     .then(function(results) {
       var pD = results[0]; var cD = results[1];
-      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].display_name || pD[0].full_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
+      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].display_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: userId }) })
         .then(function(r) { return r.json(); }).then(function(d) { if (d) setUserXP(d); }).catch(function(err) { console.warn('[LIXUM] XP fetch error:', err); });
@@ -300,7 +300,7 @@ export default function ProfilePage({ navigation }) {
   var subTier = tierInfo.label;
   var subColor = tierInfo.color;
   var avatarEmoji = getCharEmoji(activeCharSlug);
-  var displayNameForAvatar = (profile && (profile.display_name || profile.full_name)) || 'U';
+  var displayNameForAvatar = (profile && profile.display_name) || 'U';
   var avatarInitial = displayNameForAvatar.charAt(0).toUpperCase();
   var avatarColor = activeCharSlug ? '#00D984' : '#4DA6FF';
 
@@ -378,7 +378,7 @@ export default function ProfilePage({ navigation }) {
             </View>
             <View style={{ alignItems: 'center' }}>
               <View style={{ width: wp(72), height: wp(72), borderRadius: wp(36), backgroundColor: avatarColor + '15', borderWidth: 2.5, borderColor: avatarColor + '50', justifyContent: 'center', alignItems: 'center', marginBottom: wp(10) }}>{avatarEmoji ? <Text style={{ fontSize: fp(32) }}>{avatarEmoji}</Text> : <Text style={{ fontSize: fp(28), fontWeight: '900', color: avatarColor }}>{avatarInitial}</Text>}</View>
-              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>{profile ? (profile.display_name || profile.full_name || 'Utilisateur') : '...'}</Text>
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>{profile ? (profile.display_name || 'Utilisateur') : '...'}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginTop: wp(4) }}>
                 <View style={{ backgroundColor: subColor + '20', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), borderWidth: 1, borderColor: subColor + '40' }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: subColor }}>{subTier}</Text></View>
                 <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)' }}>{profile ? profile.lixtag : 'LXM-...'}</Text>
