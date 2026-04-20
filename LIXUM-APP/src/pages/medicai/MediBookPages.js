@@ -3420,7 +3420,6 @@ export const MediBookContent = (props) => {
     var patientHeight = (profile && profile.height) ? profile.height + ' cm' : '';
     var patientWeight = (profile && profile.weight) ? profile.weight + ' kg' : '';
     var patientBlood = (profile && profile.blood_type) || '';
-    var patientTag = (profile && profile.lix_tag) || '';
 
     var escH = function(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
 
@@ -3445,7 +3444,6 @@ export const MediBookContent = (props) => {
     var infoItems = [];
     if (patientAge) infoItems.push('Âge : ' + escH(patientAge));
     if (patientSex) infoItems.push('Sexe : ' + escH(patientSex));
-    if (patientTag) infoItems.push('LixTag : ' + escH(patientTag));
     var infoLine2Items = [];
     if (patientHeight) infoLine2Items.push('Taille : ' + escH(patientHeight));
     if (patientWeight) infoLine2Items.push('Poids : ' + escH(patientWeight));
