@@ -743,9 +743,9 @@ export default function LixVersePage({ navigation }) {
     loadAll();
     (async () => {
       try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=full_name', { headers: HEADERS });
+        const res = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=lixtag', { headers: HEADERS });
         const d = await res.json();
-        if (d && d[0]) setUserNameAvatar(d[0].full_name || '');
+        if (d && d[0]) setUserNameAvatar(d[0].lixtag || '');
       } catch (e) {}
     })();
     fetchChallengeScores().then(scores => setChallengeScores(scores));
