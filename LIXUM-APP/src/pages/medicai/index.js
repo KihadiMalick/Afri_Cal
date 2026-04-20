@@ -464,10 +464,10 @@ export default function MedicAiPage({ navigation, route }) {
     // Avatar profil
     (async () => {
       try {
-        const pRes = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=full_name,lix_balance', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } });
+        const pRes = await fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId + '&select=display_name,lix_balance', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } });
         const pD = await pRes.json();
         if (pD && pD[0]) {
-          setUserNameAvatar(pD[0].full_name || '');
+          setUserNameAvatar(pD[0].display_name || '');
           updateLixBalance(pD[0].lix_balance || 0);
         }
         const cRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_user_characters?user_id=eq.' + userId + '&is_active=eq.true&select=character_slug', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _authTokenRef.current } });
@@ -780,7 +780,7 @@ export default function MedicAiPage({ navigation, route }) {
   const generateGreeting = (profile, summary) => {
     const hour = new Date().getHours();
     const timeGreeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-    const name = profile?.full_name?.split(' ')[0] || 'cher membre';
+    const name = profile?.display_name?.split(' ')[0] || 'cher membre';
 
     let greeting = '';
 
