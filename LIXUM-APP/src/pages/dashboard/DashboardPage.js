@@ -199,17 +199,17 @@ export default function DashboardPage({ navigation }) {
     if (!userId) { showToast('⚠️ Connectez-vous d\'abord', '#FF6B6B'); return; }
     if (realLixBalance < 100) { setLixAlert({ visible: true, missing: 100 - realLixBalance, type: 'hydration' }); return; }
     try {
-      var newBalance = realLixBalance - 100;
-      var unlockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      var { data, error } = await supabase.from('users_profile').update({ lix_balance: newBalance, hydration_history_unlocked_until: unlockUntil }).eq('user_id', userId).select('lix_balance, hydration_history_unlocked_until').single();
-      if (error) { showToast('⚠️ Erreur Supabase: ' + error.message, '#FF6B6B'); return; }
-      if (data) {
-        updateLixBalance(data.lix_balance);
-        setHistoryUnlockedUntil(data.hydration_history_unlocked_until);
+      var { data, error } = await supabase.rpc('unlock_hydration_history', { p_user_id: userId });
+      if (error) { showToast('⚠️ Erreur: ' + error.message, '#FF6B6B'); return; }
+      if (data && data[0] && data[0].success) {
+        updateLixBalance(realLixBalance - 100);
+        setHistoryUnlockedUntil(data[0].unlocked_until);
+        fetchWeeklyHydration();
+        showToast('💎 Historique débloqué ! -100 Lix', '#00D984');
+        try { var Vibration = require('react-native').Vibration; Vibration.vibrate([0, 30, 50, 30]); } catch(e) {}
+      } else {
+        showToast('⚠️ ' + (data && data[0] && data[0].message ? data[0].message : 'Erreur — réessayez'), '#FF6B6B');
       }
-      fetchWeeklyHydration();
-      showToast('💎 Historique débloqué ! -100 Lix', '#00D984');
-      try { var Vibration = require('react-native').Vibration; Vibration.vibrate([0, 30, 50, 30]); } catch(e) {}
     } catch(err) { showToast('⚠️ Erreur — réessayez', '#FF6B6B'); }
   };
 
