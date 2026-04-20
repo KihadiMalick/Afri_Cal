@@ -1076,7 +1076,7 @@ export default function MedicAiPage({ navigation, route }) {
     }
 
     return langPrefix + `DONNÉES UTILISATEUR (${today}) :
-- Nom : ${userProfile.full_name || 'N/A'}
+- LixTag : ${userProfile.lixtag || 'N/A'}
 - Âge : ${userProfile.age || 'N/A'} ans | Sexe : ${userProfile.gender || 'N/A'}
 - Poids : ${userProfile.weight || 'N/A'} kg | Taille : ${userProfile.height || 'N/A'} cm
 - Objectif : ${userProfile.goal || 'N/A'} | Cible : ${userProfile.daily_calorie_target || userProfile.tdee || 'N/A'} kcal/jour
