@@ -479,7 +479,7 @@ export default function RecettesScreen({
 
       var profileRes = await supabase
         .from('users_profile')
-        .select('full_name, daily_calorie_target, weight, gender, activity_level, dietary_regime, current_mood, current_weather, bmr, tdee')
+        .select('display_name, daily_calorie_target, weight, gender, activity_level, dietary_regime, current_mood, current_weather, bmr, tdee')
         .eq('user_id', userId)
         .maybeSingle();
       var profile = profileRes.data || {};
@@ -529,7 +529,7 @@ export default function RecettesScreen({
       var timeOfDay = hour < 10 ? 'morning' : hour < 14 ? 'midday' : hour < 17 ? 'afternoon' : hour < 20 ? 'evening' : 'night';
 
       var ctx = {
-        userName: (profile.full_name || '').split(' ')[0] || 'Membre',
+        userName: (profile.display_name || '').split(' ')[0] || 'Membre',
         hour: hour,
         minutes: minutes,
         timeOfDay: timeOfDay,
