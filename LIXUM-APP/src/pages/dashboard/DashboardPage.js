@@ -288,7 +288,7 @@ export default function DashboardPage({ navigation }) {
       var today = new Date().toISOString().split('T')[0];
       var todayStart = today + 'T00:00:00';
       var [profileRes, summaryRes, mealsRes, moodRes, activitiesRes] = await Promise.all([
-        supabase.from('users_profile').select('full_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until, custom_hydration_goal_ml').eq('user_id', userId).single(),
+        supabase.from('users_profile').select('display_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until, custom_hydration_goal_ml').eq('user_id', userId).single(),
         supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', today).single(),
         supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, photo_url, source, meal_type').eq('user_id', userId).eq('date', today).order('created_at', { ascending: false }).limit(1),
         supabase.from('moods').select('mood_level, weather').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }).limit(1),
@@ -296,7 +296,7 @@ export default function DashboardPage({ navigation }) {
       ]);
       var profile = profileRes.data;
       if (profile) {
-        setUserName(profile.full_name || ''); setRealDailyTarget(profile.daily_calorie_target || 2330);
+        setUserName(profile.display_name || ''); setRealDailyTarget(profile.daily_calorie_target || 2330);
         setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
         setHistoryUnlockedUntil(profile.hydration_history_unlocked_until || null);
         setStatsUnlockedUntil(profile.stats_unlocked_until || null);
