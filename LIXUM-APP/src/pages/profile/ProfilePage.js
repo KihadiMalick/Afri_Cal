@@ -290,8 +290,15 @@ export default function ProfilePage({ navigation }) {
   var imcColor = imcNum < 18.5 ? '#4DA6FF' : imcNum < 25 ? '#00D984' : imcNum < 30 ? '#FF8C42' : '#FF4444';
   var imcLabel = imcNum < 18.5 ? 'Insuffisance' : imcNum < 25 ? 'Normal' : imcNum < 30 ? 'Surpoids' : 'Obésité';
   var imcBarPos = Math.min(Math.max(((imcNum - 15) / 25) * 100, 0), 100);
-  var subTier = profile && profile.is_premium ? 'Gold' : t.free;
-  var subColor = profile && profile.is_premium ? '#D4AF37' : 'rgba(255,255,255,0.3)';
+  var tierInfo = (function() {
+    var tier = (auth && auth.subscriptionTier) || 'free';
+    if (tier === 'platinum') return { label: 'Platinum', color: '#00D984' };
+    if (tier === 'gold')     return { label: 'Gold',     color: '#D4AF37' };
+    if (tier === 'silver')   return { label: 'Silver',   color: '#C0C0C0' };
+    return { label: t.free, color: 'rgba(255,255,255,0.3)' };
+  })();
+  var subTier = tierInfo.label;
+  var subColor = tierInfo.color;
   var avatarEmoji = getCharEmoji(activeCharSlug);
   var displayNameForAvatar = (profile && (profile.display_name || profile.full_name)) || 'U';
   var avatarInitial = displayNameForAvatar.charAt(0).toUpperCase();
