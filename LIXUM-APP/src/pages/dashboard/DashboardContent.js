@@ -6,14 +6,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, Ellipse, Circle as SvgCircle, Line as SvgLine, G, Rect } from 'react-native-svg';
 import MetalCard from '../../components/shared/MetalCard';
-import LockIcon from '../../components/shared/LockIcon';
 import {
   wp, fp, DAILY_OBJECTIVE, H,
   suggestActivities, ACTIVITY_ICONS, ACTIVITY_LABELS,
   formatNumberFR, formatTimeFR,
   REACTOR_SIZE, DNA_WIDTH,
 } from './dashboardConstants';
-import { LixGemIcon, LixCoinIcon, ForkKnifeIcon, StatsIcon } from './dashboardIcons';
+import { LixGemIcon, ForkKnifeIcon, StatsIcon } from './dashboardIcons';
 import { EcgPulse, ReactorCore, DnaHelix, HydrationCardCompact } from './dashboardComponents';
 var AlixenIcon = require('../../components/AlixenIcon');
 
@@ -556,19 +555,14 @@ const DashboardContent = ({
       )}
 
       <MetalCard style={{ marginHorizontal: 0, marginBottom: wp(12), ...(tooltipStep > 0 && { opacity: 0.05, zIndex: 0 }) }} onPress={function() { if (onOpenStats) onOpenStats(); }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8), paddingRight: wp(16) }}>
-          <StatsIcon />
-          <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700', letterSpacing: wp(1), marginLeft: wp(8) }}>MES STATS</Text>
-          <Text style={{ color: '#6B7280', fontSize: fp(10), marginLeft: wp(4) }}></Text>
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wp(8), paddingRight: wp(16) }}>
-          <LockIcon size={wp(14)} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.08)', borderRadius: wp(8), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
-            <LixCoinIcon size={wp(12)} />
-            <Text style={{ color: '#00D984', fontSize: fp(11), fontWeight: '700', marginLeft: wp(3) }}>200 Lix</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: wp(16) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <StatsIcon />
+            <Text style={{ color: '#EAEEF3', fontSize: fp(14), fontWeight: '700', letterSpacing: wp(1), marginLeft: wp(8) }}>MES STATS</Text>
           </View>
-          <Text style={{ color: '#6B7280', fontSize: fp(10) }}>pour débloquer</Text>
+          <Text style={{ color: '#6B7280', fontSize: fp(18), fontWeight: '300' }}>›</Text>
         </View>
+        <Text style={{ color: '#8892A0', fontSize: fp(11), marginTop: wp(6), paddingRight: wp(16) }}>Voir mes statistiques</Text>
       </MetalCard>
     </ScrollView>
 
