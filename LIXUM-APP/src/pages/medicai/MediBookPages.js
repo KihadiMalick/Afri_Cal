@@ -3410,7 +3410,7 @@ export const MediBookContent = (props) => {
     var today = new Date();
     var dateStr = today.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-    var patientName = (profile && profile.full_name) || 'Patient';
+    var patientName = (profile && profile.lixtag) || 'Patient';
     var patientAge = '';
     if (profile && profile.date_of_birth) {
       var bd = new Date(profile.date_of_birth);
@@ -3630,7 +3630,7 @@ export const MediBookContent = (props) => {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(result.uri, {
           mimeType: 'application/pdf',
-          dialogTitle: 'MediBook — ' + ((userProfile && userProfile.full_name) || 'Patient'),
+          dialogTitle: 'MediBook — ' + ((userProfile && userProfile.lixtag) || 'Patient'),
           UTI: 'com.adobe.pdf',
         });
       } else {
