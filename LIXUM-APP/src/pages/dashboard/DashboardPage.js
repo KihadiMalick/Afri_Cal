@@ -96,8 +96,6 @@ export default function DashboardPage({ navigation }) {
   var statsLoading = _statsLoading[0]; var setStatsLoading = _statsLoading[1];
   var _weeklyStats = useState(null);
   var weeklyStats = _weeklyStats[0]; var setWeeklyStats = _weeklyStats[1];
-  var _statsUnlockedUntil = useState(null);
-  var statsUnlockedUntil = _statsUnlockedUntil[0]; var setStatsUnlockedUntil = _statsUnlockedUntil[1];
   const [showBeverageModal, setShowBeverageModal] = useState(false);
   const [beverageToast, setBeverageToast] = useState(null);
   var beverageToastTimerRef = useRef(null);
@@ -226,19 +224,6 @@ export default function DashboardPage({ navigation }) {
     }
   };
 
-  var unlockStatsWithLix = async function() {
-    if (realLixBalance < 200) { setLixAlert({ visible: true, missing: 200 - realLixBalance, type: 'stats' }); return; }
-    try {
-      var newBalance = realLixBalance - 200;
-      var unlockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      var { data, error } = await supabase.from('users_profile').update({ lix_balance: newBalance, stats_unlocked_until: unlockUntil }).eq('user_id', userId).select('lix_balance, stats_unlocked_until').single();
-      if (error) { console.warn('unlockStats update error:', error); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); return; }
-      if (data) { updateLixBalance(data.lix_balance); setStatsUnlockedUntil(data.stats_unlocked_until); }
-      fetchWeeklyStats();
-      try { var Vibration = require('react-native').Vibration; Vibration.vibrate([0, 30, 50, 30]); } catch(e) {}
-    } catch(err) { console.warn('unlockStatsWithLix error:', err); showToast('⚠️ Erreur — réessayez', '#FF6B6B'); }
-  };
-
   var fetchWeeklyStats = async function() {
     if (!userId) return;
     setStatsLoading(true);
@@ -288,7 +273,7 @@ export default function DashboardPage({ navigation }) {
       var today = new Date().toISOString().split('T')[0];
       var todayStart = today + 'T00:00:00';
       var [profileRes, summaryRes, mealsRes, moodRes, activitiesRes] = await Promise.all([
-        supabase.from('users_profile').select('display_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, stats_unlocked_until, custom_hydration_goal_ml').eq('user_id', userId).single(),
+        supabase.from('users_profile').select('display_name, daily_calorie_target, lix_balance, energy, gender, hydration_history_unlocked_until, custom_hydration_goal_ml').eq('user_id', userId).single(),
         supabase.from('daily_summary').select('total_calories, total_protein, total_carbs, total_fat').eq('user_id', userId).eq('date', today).single(),
         supabase.from('meals').select('food_name, calories, protein_g, carbs_g, fat_g, meal_time, photo_url, source, meal_type').eq('user_id', userId).eq('date', today).order('created_at', { ascending: false }).limit(1),
         supabase.from('moods').select('mood_level, weather').eq('user_id', userId).gte('created_at', todayStart).order('created_at', { ascending: false }).limit(1),
@@ -299,7 +284,6 @@ export default function DashboardPage({ navigation }) {
         setUserName(profile.display_name || ''); setRealDailyTarget(profile.daily_calorie_target || 2330);
         setRealGender(profile.gender === 'female' || profile.gender === 'femme' ? 'femme' : 'homme');
         setHistoryUnlockedUntil(profile.hydration_history_unlocked_until || null);
-        setStatsUnlockedUntil(profile.stats_unlocked_until || null);
         setCustomHydroGoal(profile.custom_hydration_goal_ml || null);
       }
       var summary = summaryRes.data;
@@ -346,7 +330,6 @@ export default function DashboardPage({ navigation }) {
   var isUnlockedByLix = function(unlockedUntil) { return unlockedUntil && new Date(unlockedUntil) > new Date(); };
   var hasActivePower = function(actionType) { return pagePowers.some(function(p) { return p.action_type === actionType && p.unlocked; }); };
   var isHydrationHistoryUnlocked = function() { return isUnlockedByLix(historyUnlockedUntil) || hasActivePower('modal_inline'); };
-  var isStatsUnlocked = function() { return isUnlockedByLix(statsUnlockedUntil) || hasActivePower('stats_report'); };
 
   var gender = realGender;
   var hydrationGoalBase = customHydroGoal || (gender === 'homme' ? 2500 : 2000);
@@ -435,13 +418,8 @@ export default function DashboardPage({ navigation }) {
             if (routes[tab] && navigation) navigation.navigate(routes[tab]);
           }}
           showToast={showToast}
-          onOpenStats={async function() {
-            if (isStatsUnlocked()) {
-              navigation.navigate('MedicAi', { openSection: 'stats' });
-            } else {
-              await unlockStatsWithLix();
-              if (realLixBalance >= 200) navigation.navigate('MedicAi', { openSection: 'stats' });
-            }
+          onOpenStats={function() {
+            if (navigation) navigation.navigate('MedicAi', { openSection: 'stats' });
           }}
         />
       </SafeAreaView>
