@@ -244,8 +244,8 @@ export default function RepasPage({ navigation }) {
       loadPagePowers();
       (async () => {
         try {
-          const { data: profile } = await supabase.from('users_profile').select('full_name').eq('user_id', userId).maybeSingle();
-          if (profile) setUserNameAvatar(profile.full_name || '');
+          const { data: profile } = await supabase.from('users_profile').select('display_name').eq('user_id', userId).maybeSingle();
+          if (profile) setUserNameAvatar(profile.display_name || '');
           const { data: chars } = await supabase.from('lixverse_user_characters').select('character_slug').eq('user_id', userId).eq('is_active', true).maybeSingle();
           if (chars) setActiveCharAvatar({ slug: chars.character_slug });
         } catch (e) {}
