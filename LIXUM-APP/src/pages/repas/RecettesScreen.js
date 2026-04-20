@@ -610,37 +610,34 @@ export default function RecettesScreen({
 
   var checkAlixenRecipeCost = function() {
     if (alixenHasOwlPass) return { allowed: true, cost: 0, reason: 'owl' };
-    if (!alixenFreeUsedToday) return { allowed: true, cost: 0, reason: 'free' };
-    if (lixBalance >= 50) return { allowed: true, cost: 50, reason: 'lix' };
-    return { allowed: false, cost: 50, reason: 'insufficient' };
+    // Le trial onboarding est vérifié côté serveur (compteur recipe_used < 1).
+    // Côté client, on est optimiste : si l'user a >= 8 énergie OU s'il pourrait
+    // avoir un trial, on autorise. Le serveur tranchera (et pourra accorder gratuit).
+    if (userEnergy >= 8) return { allowed: true, cost: 8, reason: 'energy' };
+    // Fallback : solde énergie insuffisant, mais peut-être que le trial est dispo
+    // → on laisse quand même le serveur essayer en mode "optimistic"
+    return { allowed: true, cost: 8, reason: 'try_trial' };
   };
 
-  var deductAlixenLix = async function(cost) {
-    if (cost <= 0) return true;
+  var deductAlixenEnergy = async function() {
     try {
-      var res = await supabase.rpc('deduct_lix', {
-        p_user_id: userId,
-        p_amount: cost,
-        p_reason: 'alixen_recipe',
-      });
+      var res = await supabase.rpc('deduct_alixen_recipe', { p_user_id: userId });
       if (res.error) {
-        var currentRes = await supabase
-          .from('users_profile')
-          .select('lix_balance')
-          .eq('user_id', userId)
-          .single();
-        var current = (currentRes.data || {}).lix_balance || 0;
-        if (current < cost) return false;
-        await supabase
-          .from('users_profile')
-          .update({ lix_balance: current - cost })
-          .eq('user_id', userId);
+        console.error('Deduct alixen recipe RPC error:', res.error);
+        return { ok: false, reason: 'rpc_error' };
       }
-      setLixBalance(function(prev) { return prev - cost; });
-      return true;
+      if (!res.data || res.data.success !== true) {
+        console.warn('Deduct alixen recipe refused:', res.data && res.data.message);
+        return { ok: false, reason: (res.data && res.data.error) || 'unknown', message: res.data && res.data.message };
+      }
+      // Success : refléter le solde serveur côté client
+      if (res.data.energy_remaining != null && typeof updateEnergy === 'function') {
+        updateEnergy(res.data.energy_remaining);
+      }
+      return { ok: true, reason: res.data.reason, cost: res.data.energy_cost };
     } catch (e) {
-      console.error('Deduct lix error:', e);
-      return false;
+      console.error('Deduct alixen recipe exception:', e);
+      return { ok: false, reason: 'exception' };
     }
   };
 
@@ -1346,9 +1343,9 @@ export default function RecettesScreen({
                         paddingHorizontal: wp(10), paddingVertical: wp(4),
                         borderRadius: wp(8), borderWidth: 1, borderColor: 'rgba(212,175,55,0.2)',
                       }}>
-                        <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>💎</Text>
+                        <Text style={{ fontSize: fp(10), marginRight: wp(4) }}>⚡</Text>
                         <Text style={{ color: '#D4AF37', fontSize: fp(9), fontWeight: '700' }}>
-                          50 Lix par recette
+                          8 énergie par recette
                         </Text>
                         <Text style={{ color: '#5A6070', fontSize: fp(8), marginLeft: wp(6) }}>
                           ou 🦉 Emerald Owl Niv2
@@ -1431,33 +1428,33 @@ export default function RecettesScreen({
                       <Pressable
                         onPress={function() {
                           var costCheck = checkAlixenRecipeCost();
-                          if (!costCheck.allowed) {
-                            showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
+                          var proceedSurprise = function() {
+                            setAlixenCategory('surprise');
+                            setAlixenRecipeScreen('proposals');
+                            setAlixenLoading(true);
+                            generateAlixenProposals('surprise');
+                          };
+                          if (costCheck.reason === 'owl') {
+                            proceedSurprise();
                             return;
                           }
-                          if (costCheck.cost > 0) {
-                            showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
-                              confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
-                              onConfirm: function() {
-                                closeModal();
-                                deductAlixenLix(50).then(function(success) {
-                                  if (success) {
-                                    setAlixenCategory('surprise');
-                                    setAlixenRecipeScreen('proposals');
-                                    setAlixenLoading(true);
-                                    generateAlixenProposals('surprise');
-                                  } else {
-                                    showModal('error', 'Lix insuffisants', '⚠️ Impossible de débiter les Lix. Vérifiez votre solde.');
-                                  }
-                                });
-                              },
-                            });
-                            return;
-                          }
-                          setAlixenCategory('surprise');
-                          setAlixenRecipeScreen('proposals');
-                          setAlixenLoading(true);
-                          generateAlixenProposals('surprise');
+                          showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 8 énergie.\n\nSolde : ' + userEnergy + ' énergie', {
+                            confirmText: 'Confirmer (8 énergie)', cancelText: 'Annuler',
+                            onConfirm: function() {
+                              closeModal();
+                              deductAlixenEnergy().then(function(result) {
+                                if (result.ok) {
+                                  proceedSurprise();
+                                } else if (result.reason === 'insufficient_energy') {
+                                  showModal('error', '⚡ Énergie insuffisante', (result.message || 'Il te faut 8 énergie pour une recette ALIXEN.') + '\n\nAlternatives :\n• Attends de regagner de l\'énergie\n• Débloque Emerald Owl Niv2 pour des recettes illimitées');
+                                } else if (result.reason === 'rpc_error' || result.reason === 'exception') {
+                                  showModal('error', 'Erreur réseau', '⚠️ Impossible de contacter le serveur. Réessayez.');
+                                } else {
+                                  showModal('error', 'Erreur', '⚠️ ' + (result.message || 'Impossible de débiter l\'énergie.'));
+                                }
+                              });
+                            },
+                          });
                         }}
                         style={function(state) { return { opacity: state.pressed ? 0.85 : 1, marginBottom: wp(8) }; }}
                       >
@@ -1560,35 +1557,34 @@ export default function RecettesScreen({
                               onPress={function() {
                                 if (selectedRegion === r.key) { setSelectedRegion(null); return; }
                                 var costCheck = checkAlixenRecipeCost();
-                                if (!costCheck.allowed) {
-                                  showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
+                                var proceedRegion = function() {
+                                  setSelectedRegion(r.key);
+                                  setAlixenCategory('filtered');
+                                  setAlixenRecipeScreen('proposals');
+                                  setAlixenLoading(true);
+                                  generateAlixenProposals('filtered', { region: r.key });
+                                };
+                                if (costCheck.reason === 'owl') {
+                                  proceedRegion();
                                   return;
                                 }
-                                if (costCheck.cost > 0) {
-                                  showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
-                                    confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
-                                    onConfirm: function() {
-                                      closeModal();
-                                      deductAlixenLix(50).then(function(success) {
-                                        if (success) {
-                                          setSelectedRegion(r.key);
-                                          setAlixenCategory('filtered');
-                                          setAlixenRecipeScreen('proposals');
-                                          setAlixenLoading(true);
-                                          generateAlixenProposals('filtered', { region: r.key });
-                                        } else {
-                                          showModal('error', 'Lix insuffisants', '⚠️ Impossible de débiter les Lix. Vérifiez votre solde.');
-                                        }
-                                      });
-                                    },
-                                  });
-                                  return;
-                                }
-                                setSelectedRegion(r.key);
-                                setAlixenCategory('filtered');
-                                setAlixenRecipeScreen('proposals');
-                                setAlixenLoading(true);
-                                generateAlixenProposals('filtered', { region: r.key });
+                                showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 8 énergie.\n\nSolde : ' + userEnergy + ' énergie', {
+                                  confirmText: 'Confirmer (8 énergie)', cancelText: 'Annuler',
+                                  onConfirm: function() {
+                                    closeModal();
+                                    deductAlixenEnergy().then(function(result) {
+                                      if (result.ok) {
+                                        proceedRegion();
+                                      } else if (result.reason === 'insufficient_energy') {
+                                        showModal('error', '⚡ Énergie insuffisante', (result.message || 'Il te faut 8 énergie pour une recette ALIXEN.') + '\n\nAlternatives :\n• Attends de regagner de l\'énergie\n• Débloque Emerald Owl Niv2 pour des recettes illimitées');
+                                      } else if (result.reason === 'rpc_error' || result.reason === 'exception') {
+                                        showModal('error', 'Erreur réseau', '⚠️ Impossible de contacter le serveur. Réessayez.');
+                                      } else {
+                                        showModal('error', 'Erreur', '⚠️ ' + (result.message || 'Impossible de débiter l\'énergie.'));
+                                      }
+                                    });
+                                  },
+                                });
                               }}
                               style={function(state) {
                                 return {
@@ -1621,35 +1617,34 @@ export default function RecettesScreen({
                               onPress={function() {
                                 if (selectedType === t.key) { setSelectedType(null); return; }
                                 var costCheck = checkAlixenRecipeCost();
-                                if (!costCheck.allowed) {
-                                  showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nAlternatives :\n• Reviens demain pour ta recette gratuite\n• Obtiens des Lix dans le LixVerse\n• Débloque Emerald Owl Niv2 pour des recettes illimitées', { type: 'confirm', confirmText: 'Aller au LixVerse', cancelText: 'OK', onConfirm: function() { closeModal(); if (onNavigate) onNavigate('lixverse'); onClose(); } });
+                                var proceedType = function() {
+                                  setSelectedType(t.key);
+                                  setAlixenCategory('filtered');
+                                  setAlixenRecipeScreen('proposals');
+                                  setAlixenLoading(true);
+                                  generateAlixenProposals('filtered', { type: t.key });
+                                };
+                                if (costCheck.reason === 'owl') {
+                                  proceedType();
                                   return;
                                 }
-                                if (costCheck.cost > 0) {
-                                  showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 50 Lix.\n\nSolde : ' + lixBalance + ' Lix', {
-                                    confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
-                                    onConfirm: function() {
-                                      closeModal();
-                                      deductAlixenLix(50).then(function(success) {
-                                        if (success) {
-                                          setSelectedType(t.key);
-                                          setAlixenCategory('filtered');
-                                          setAlixenRecipeScreen('proposals');
-                                          setAlixenLoading(true);
-                                          generateAlixenProposals('filtered', { type: t.key });
-                                        } else {
-                                          showModal('error', 'Lix insuffisants', '⚠️ Impossible de débiter les Lix. Vérifiez votre solde.');
-                                        }
-                                      });
-                                    },
-                                  });
-                                  return;
-                                }
-                                setSelectedType(t.key);
-                                setAlixenCategory('filtered');
-                                setAlixenRecipeScreen('proposals');
-                                setAlixenLoading(true);
-                                generateAlixenProposals('filtered', { type: t.key });
+                                showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 8 énergie.\n\nSolde : ' + userEnergy + ' énergie', {
+                                  confirmText: 'Confirmer (8 énergie)', cancelText: 'Annuler',
+                                  onConfirm: function() {
+                                    closeModal();
+                                    deductAlixenEnergy().then(function(result) {
+                                      if (result.ok) {
+                                        proceedType();
+                                      } else if (result.reason === 'insufficient_energy') {
+                                        showModal('error', '⚡ Énergie insuffisante', (result.message || 'Il te faut 8 énergie pour une recette ALIXEN.') + '\n\nAlternatives :\n• Attends de regagner de l\'énergie\n• Débloque Emerald Owl Niv2 pour des recettes illimitées');
+                                      } else if (result.reason === 'rpc_error' || result.reason === 'exception') {
+                                        showModal('error', 'Erreur réseau', '⚠️ Impossible de contacter le serveur. Réessayez.');
+                                      } else {
+                                        showModal('error', 'Erreur', '⚠️ ' + (result.message || 'Impossible de débiter l\'énergie.'));
+                                      }
+                                    });
+                                  },
+                                });
                               }}
                               style={function(state) {
                                 return {
@@ -2170,29 +2165,32 @@ export default function RecettesScreen({
                     <Pressable
                       onPress={function() {
                         var costCheck = checkAlixenRecipeCost();
-                        if (!costCheck.allowed) {
-                          showModal('error', '💎 Lix insuffisants', 'Il te faut 50 Lix pour une recette ALIXEN.\n\nReviens demain pour ta recette gratuite ou obtiens des Lix dans le LixVerse.');
+                        var proceedMyIngredients = function() {
+                          setAlixenRecipeScreen('proposals');
+                          setAlixenLoading(true);
+                          generateAlixenProposals('my_ingredients');
+                        };
+                        if (costCheck.reason === 'owl') {
+                          proceedMyIngredients();
                           return;
                         }
-                        if (costCheck.cost > 0) {
-                          showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 50 Lix.\nSolde : ' + lixBalance + ' Lix', {
-                            confirmText: 'Confirmer (50 Lix)', cancelText: 'Annuler',
-                            onConfirm: function() {
-                              closeModal();
-                              deductAlixenLix(50).then(function(success) {
-                                if (success) {
-                                  setAlixenRecipeScreen('proposals');
-                                  setAlixenLoading(true);
-                                  generateAlixenProposals('my_ingredients');
-                                }
-                              });
-                            },
-                          });
-                          return;
-                        }
-                        setAlixenRecipeScreen('proposals');
-                        setAlixenLoading(true);
-                        generateAlixenProposals('my_ingredients');
+                        showModal('confirm', 'Recette ALIXEN', 'Cette génération coûte 8 énergie.\nSolde : ' + userEnergy + ' énergie', {
+                          confirmText: 'Confirmer (8 énergie)', cancelText: 'Annuler',
+                          onConfirm: function() {
+                            closeModal();
+                            deductAlixenEnergy().then(function(result) {
+                              if (result.ok) {
+                                proceedMyIngredients();
+                              } else if (result.reason === 'insufficient_energy') {
+                                showModal('error', '⚡ Énergie insuffisante', (result.message || 'Il te faut 8 énergie pour une recette ALIXEN.') + '\n\nAlternatives :\n• Attends de regagner de l\'énergie\n• Débloque Emerald Owl Niv2 pour des recettes illimitées');
+                              } else if (result.reason === 'rpc_error' || result.reason === 'exception') {
+                                showModal('error', 'Erreur réseau', '⚠️ Impossible de contacter le serveur. Réessayez.');
+                              } else {
+                                showModal('error', 'Erreur', '⚠️ ' + (result.message || 'Impossible de débiter l\'énergie.'));
+                              }
+                            });
+                          },
+                        });
                       }}
                       style={function(state) {
                         return {
