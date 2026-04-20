@@ -201,9 +201,9 @@ export default function ActivityPage({ navigation }) {
       loadPagePowers();
       (async () => {
         try {
-          const { data: profile } = await supabase.from('users_profile').select('full_name, lix_balance, weight').eq('user_id', userId).maybeSingle();
+          const { data: profile } = await supabase.from('users_profile').select('display_name, lix_balance, weight').eq('user_id', userId).maybeSingle();
           if (profile) {
-            setUserNameAvatar(profile.full_name || '');
+            setUserNameAvatar(profile.display_name || '');
             updateLixBalance(profile.lix_balance || 0);
             if (profile.weight) setUserWeight(profile.weight);
           }
