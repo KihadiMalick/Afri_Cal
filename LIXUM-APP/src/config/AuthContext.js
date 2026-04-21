@@ -29,12 +29,6 @@ export function AuthProvider(props) {
   var _subscriptionExpiresAt = useState(null);
   var subscriptionExpiresAt = _subscriptionExpiresAt[0], setSubscriptionExpiresAt = _subscriptionExpiresAt[1];
 
-  var _energyMonthlyUsed = useState(0);
-  var energyMonthlyUsed = _energyMonthlyUsed[0], setEnergyMonthlyUsed = _energyMonthlyUsed[1];
-
-  var _monthlyEnergyResetAt = useState(null);
-  var monthlyEnergyResetAt = _monthlyEnergyResetAt[0], setMonthlyEnergyResetAt = _monthlyEnergyResetAt[1];
-
   var _onboardingUsage = useState({ xscan: 0, gallery: 0, chat: 0, recipe: 0, medic: 0, cartscan: 0 });
   var onboardingUsage = _onboardingUsage[0], setOnboardingUsage = _onboardingUsage[1];
 
@@ -163,7 +157,7 @@ export function AuthProvider(props) {
     try {
       var { data } = await supabase
         .from('users_profile')
-        .select('lix_balance, energy, subscription_tier, subscription_expires_at, energy_monthly_used, monthly_energy_reset_at, onboarding_xscan_used, onboarding_gallery_used, onboarding_chat_used, onboarding_recipe_used, onboarding_medic_used, onboarding_cartscan_used')
+        .select('lix_balance, energy, subscription_tier, subscription_expires_at, onboarding_xscan_used, onboarding_gallery_used, onboarding_chat_used, onboarding_recipe_used, onboarding_medic_used, onboarding_cartscan_used')
         .eq('user_id', userId)
         .single();
       if (data) {
@@ -171,8 +165,6 @@ export function AuthProvider(props) {
         setEnergy(data.energy || 20);
         setSubscriptionTier(data.subscription_tier || 'free');
         setSubscriptionExpiresAt(data.subscription_expires_at || null);
-        setEnergyMonthlyUsed(data.energy_monthly_used || 0);
-        setMonthlyEnergyResetAt(data.monthly_energy_reset_at || null);
         setOnboardingUsage({
           xscan: data.onboarding_xscan_used || 0,
           gallery: data.onboarding_gallery_used || 0,
@@ -227,8 +219,6 @@ export function AuthProvider(props) {
         setEnergy(20);
         setSubscriptionTier('free');
         setSubscriptionExpiresAt(null);
-        setEnergyMonthlyUsed(0);
-        setMonthlyEnergyResetAt(null);
         setOnboardingUsage({ xscan: 0, gallery: 0, chat: 0, recipe: 0, medic: 0, cartscan: 0 });
         setAlixenNotifications([]);
         setAlixenNotifCount(0);
@@ -254,8 +244,6 @@ export function AuthProvider(props) {
       setEnergy(20);
       setSubscriptionTier('free');
       setSubscriptionExpiresAt(null);
-      setEnergyMonthlyUsed(0);
-      setMonthlyEnergyResetAt(null);
       setOnboardingUsage({ xscan: 0, gallery: 0, chat: 0, recipe: 0, medic: 0, cartscan: 0 });
       setAlixenNotifications([]);
       setAlixenNotifCount(0);
@@ -280,9 +268,6 @@ export function AuthProvider(props) {
         refreshLixFromServer: refreshLixFromServer,
         subscriptionTier: subscriptionTier,
         subscriptionExpiresAt: subscriptionExpiresAt,
-        energyMonthlyUsed: energyMonthlyUsed,
-        setEnergyMonthlyUsed: setEnergyMonthlyUsed,
-        monthlyEnergyResetAt: monthlyEnergyResetAt,
         onboardingUsage: onboardingUsage,
         setOnboardingUsage: setOnboardingUsage,
         pushToken: pushToken,
