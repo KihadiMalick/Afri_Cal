@@ -397,14 +397,28 @@ const MoodModal = ({ visible, onClose, onMoodSaved }) => {
                             return;
                           }
                           var moodNumeric = moodResult === 'excited' ? 5 : moodResult === 'happy' ? 4 : moodResult === 'chill' ? 3 : moodResult === 'sad' ? 2 : 1;
-                          await supabase.from('moods').insert({
+                          var moodInsertRes = await supabase.from('moods').insert({
                             user_id: userId, mood_level: moodNumeric,
                             weather: selectedWeather, tap_count: tapCount,
                             max_gauge_percent: Math.round(moodLevel),
                           });
+                          if (moodInsertRes && moodInsertRes.error) {
+                            console.warn('Mood insert error:', moodInsertRes.error);
+                            throw moodInsertRes.error;
+                          }
                           await supabase.from('users_profile').update({
                             current_mood: moodNumeric, current_weather: selectedWeather, last_mood_at: new Date().toISOString(),
                           }).eq('user_id', userId);
+
+                          try {
+                            Promise.resolve(supabase.rpc('add_user_xp', {
+                              p_user_id: userId,
+                              p_xp_amount: 5,
+                              p_source: 'mood',
+                              p_bonus_from: moodResult
+                            })).then(null, function(e) { console.warn('add_user_xp mood error:', e); });
+                          } catch (e) { console.warn('add_user_xp mood exception:', e); }
+
                           if (onMoodSaved) onMoodSaved(moodResult, selectedWeather);
                         } catch (e) {
                           console.warn('Mood save error:', e);

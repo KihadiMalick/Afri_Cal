@@ -293,6 +293,16 @@ export default function ManualEntryScreen({ visible, onClose, onMealSaved, initi
       }
 
       setSaveManualSuccess(true);
+
+      try {
+        Promise.resolve(supabase.rpc('add_user_xp', {
+          p_user_id: userId,
+          p_xp_amount: 10,
+          p_source: 'manual_meal',
+          p_bonus_from: 'manual'
+        })).then(null, function(e) { console.warn('add_user_xp manual_meal error:', e); });
+      } catch (e) { console.warn('add_user_xp manual_meal exception:', e); }
+
       setTimeout(() => {
         onMealSaved();
         closeManualEntry();

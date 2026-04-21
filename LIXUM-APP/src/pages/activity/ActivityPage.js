@@ -311,6 +311,17 @@ export default function ActivityPage({ navigation }) {
         p_water_lost_ml: Math.round(waterLost),
       });
       if (error) { alert('Erreur : ' + error.message); return false; }
+
+      try {
+        var xpKcal = Math.max(1, Math.round(caloriesBurned));
+        Promise.resolve(supabase.rpc('add_user_xp', {
+          p_user_id: userId,
+          p_xp_amount: xpKcal,
+          p_source: 'activity',
+          p_bonus_from: activityType
+        })).then(null, function(e) { console.warn('add_user_xp activity error:', e); });
+      } catch (e) { console.warn('add_user_xp activity exception:', e); }
+
       if (pagePowers.length > 0) { await runPostSaveHooks(activityType, caloriesBurned, durationMin); } else { setHookResults({}); }
       await loadTodayActivities();
       fetchSmartData();

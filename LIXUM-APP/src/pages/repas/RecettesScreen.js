@@ -377,6 +377,15 @@ export default function RecettesScreen({
 
       if (summaryError) console.warn('Summary update warning:', summaryError);
 
+      try {
+        Promise.resolve(supabase.rpc('add_user_xp', {
+          p_user_id: userId,
+          p_xp_amount: 10,
+          p_source: 'recipe_meal',
+          p_bonus_from: 'recipe'
+        })).then(null, function(e) { console.warn('add_user_xp recipe_meal error:', e); });
+      } catch (e) { console.warn('add_user_xp recipe_meal exception:', e); }
+
       setShowAddConfirm(false);
       setSelectedSlot(null);
       setAddingMeal(false);
