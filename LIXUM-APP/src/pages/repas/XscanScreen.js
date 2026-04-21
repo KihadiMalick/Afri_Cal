@@ -900,6 +900,15 @@ const XscanScreen = forwardRef(function XscanScreen({
 
       setSaveSuccess(true);
 
+      try {
+        Promise.resolve(supabase.rpc('add_user_xp', {
+          p_user_id: userId,
+          p_xp_amount: 10,
+          p_source: 'scan_meal',
+          p_bonus_from: 'xscan'
+        })).then(null, function(e) { console.warn('add_user_xp scan_meal error:', e); });
+      } catch (e) { console.warn('add_user_xp scan_meal exception:', e); }
+
       setTimeout(() => {
         onMealSaved();
         // Reset tous les states
