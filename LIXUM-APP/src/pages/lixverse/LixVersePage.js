@@ -249,10 +249,55 @@ export default function LixVersePage({ navigation }) {
   async function switchActiveCharacter(slug) {
     try {
       const data = await supaRpc('set_active_character', { p_user_id: userId, p_slug: slug });
+
       if (data?.success) {
         setActiveCharSlug(slug);
         setUserCollection(prev => prev.map(c => ({ ...c, is_active: c.slug === slug })));
+        return;
       }
+
+      if (data?.error === 'cooldown_active') {
+        showLixAlert(
+          '⏱️ Ton compagnon a besoin de repos',
+          data.message || ('Patiente encore ' + (data.remaining_minutes || 0) + ' min avant de changer de compagnon.'),
+          [{ text: 'Compris', style: 'cancel' }],
+          '⏱️'
+        );
+        return;
+      }
+
+      if (data?.error === 'character_not_owned') {
+        showLixAlert(
+          '🔒 Carte non débloquée',
+          'Tu dois d\'abord obtenir ce caractère au Niveau 1 (fragments requis).',
+          [{ text: 'Compris', style: 'cancel' }],
+          '🔒'
+        );
+        return;
+      }
+
+      if (data?.error === 'already_active') {
+        showLixAlert(
+          '✨ Compagnon déjà actif',
+          'Ce caractère est déjà ton compagnon actuel.',
+          [{ text: 'OK', style: 'cancel' }],
+          '✨'
+        );
+        return;
+      }
+
+      if (data?.error === 'character_not_found') {
+        console.error('Character not found in catalog:', slug);
+        showLixAlert(
+          '⚠️ Erreur',
+          'Ce caractère n\'existe pas. Réessaie plus tard.',
+          [{ text: 'Fermer', style: 'cancel' }],
+          '⚠️'
+        );
+        return;
+      }
+
+      console.error('Unknown switchActiveCharacter error:', data);
     } catch (e) {
       console.error('Switch character error:', e);
     }
