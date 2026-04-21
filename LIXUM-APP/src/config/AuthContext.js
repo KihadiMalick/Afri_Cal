@@ -190,6 +190,7 @@ export function AuthProvider(props) {
       Promise.resolve(supabase.rpc('check_and_generate_notifications', { p_user_id: userId })).then(null, function(e) { console.warn('check_and_generate_notifications error:', e); });
       fetchAlixenNotifications();
       fetchLixverseNotifications();
+      Promise.resolve(supabase.rpc('claim_daily_login_xp', { p_user_id: userId })).then(null, function(e) { console.warn('claim_daily_login_xp error:', e); });
     }
   }, [userId, refreshLixFromServer, fetchAlixenNotifications, fetchLixverseNotifications]);
 
