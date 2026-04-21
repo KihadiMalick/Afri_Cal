@@ -124,6 +124,15 @@ const BeverageModal = ({
         p_sugar_cubes: bevSugarKnown ? 0 : sugarCubes,
       });
       if (error) console.warn('add_beverage_log error:', error.message);
+
+      try {
+        Promise.resolve(supabase.rpc('add_user_xp', {
+          p_user_id: userId,
+          p_xp_amount: 3,
+          p_source: 'hydration',
+          p_bonus_from: bevName
+        })).then(null, function(e) { console.warn('add_user_xp hydration beverage error:', e); });
+      } catch (e) { console.warn('add_user_xp hydration beverage exception:', e); }
     } catch (err) {
       console.warn('saveBeverage error:', err);
     }

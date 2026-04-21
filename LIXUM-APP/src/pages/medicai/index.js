@@ -1222,6 +1222,16 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
         }
         const data = await response.json();
+
+        try {
+          Promise.resolve(supabase.rpc('add_user_xp', {
+            p_user_id: userId,
+            p_xp_amount: 5,
+            p_source: 'alixen_chat',
+            p_bonus_from: 'image'
+          })).then(null, function(e) { console.warn('add_user_xp alixen_chat image error:', e); });
+        } catch (e) { console.warn('add_user_xp alixen_chat image exception:', e); }
+
         const replyText = data.message || data.error || '⚠️ ALIXEN est en mise à jour. Réessayez dans quelques instants.';
 
         const alixenParsed = parseAlixenResponse(replyText);
@@ -1349,6 +1359,16 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
           setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
         }
         const data = await response.json();
+
+        try {
+          Promise.resolve(supabase.rpc('add_user_xp', {
+            p_user_id: userId,
+            p_xp_amount: 5,
+            p_source: 'alixen_chat',
+            p_bonus_from: 'quick_reply'
+          })).then(null, function(e) { console.warn('add_user_xp alixen_chat quick_reply error:', e); });
+        } catch (e) { console.warn('add_user_xp alixen_chat quick_reply exception:', e); }
+
         const replyText = data.message || data.error || '⚠️ ALIXEN est en mise à jour. Réessayez dans quelques instants.';
 
         const alixenParsed = parseAlixenResponse(replyText);
@@ -1845,6 +1865,16 @@ Le dernier choix DOIT toujours être [CHOIX:PRÉCISER:Autre chose...] pour perme
         setEnergyGateData(gateData); setIsLoading(false); setCardIsLoading(false); return;
       }
       const data = await response.json();
+
+      try {
+        Promise.resolve(supabase.rpc('add_user_xp', {
+          p_user_id: userId,
+          p_xp_amount: 5,
+          p_source: 'alixen_chat',
+          p_bonus_from: 'text'
+        })).then(null, function(e) { console.warn('add_user_xp alixen_chat text error:', e); });
+      } catch (e) { console.warn('add_user_xp alixen_chat text exception:', e); }
+
       const replyText = data.message || data.error || "Erreur de connexion.";
 
       const alixenParsed = parseAlixenResponse(replyText);

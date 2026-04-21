@@ -78,6 +78,16 @@ const HydrationModal = ({
         p_sugar_cubes: 0,
       });
       if (res.error) { console.warn('confirmDrink error:', res.error.message); setIsAdding(false); return; }
+
+      try {
+        Promise.resolve(supabase.rpc('add_user_xp', {
+          p_user_id: userId,
+          p_xp_amount: 3,
+          p_source: 'hydration',
+          p_bonus_from: 'water'
+        })).then(null, function(e) { console.warn('add_user_xp hydration water error:', e); });
+      } catch (e) { console.warn('add_user_xp hydration water exception:', e); }
+
       var logId = null;
       try {
         var latest = await supabase.from('hydration_logs').select('id').eq('user_id', userId).order('logged_at', { ascending: false }).limit(1);
