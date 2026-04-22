@@ -273,7 +273,8 @@ export default function ProfilePage({ navigation }) {
         p_user_id: userId,
         p_reason: reasonFinal,
         p_ip_hash: null,
-        p_user_agent: Platform.OS + '/' + String(Platform.Version)
+        p_user_agent: Platform.OS + '/' + String(Platform.Version),
+        p_reason_codes: selectedReasons && selectedReasons.length > 0 ? selectedReasons : null
       });
 
       if (res.error) {
