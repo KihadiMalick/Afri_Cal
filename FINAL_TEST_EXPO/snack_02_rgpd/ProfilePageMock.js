@@ -165,10 +165,49 @@ function ProfilePageMock() {
     <View style={{ flex: 1 }}>
       <LinearGradient colors={['#1A1D22', '#252A30', '#1E2328']} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ paddingBottom: wp(100) }} showsVerticalScrollIndicator={false}>
-          {/* Sections ajoutees progressivement en Phases 3d-3i */}
-          <View style={{ padding: wp(24), alignItems: 'center' }}>
-            <Text style={{ color: '#8892A0', fontSize: fp(14) }}>{'ProfilePageMock skeleton — sections en cours d\'ajout'}</Text>
+
+          {/* ====== SECTION 1 : HEADER (copie fidele l.427-451 prod) ====== */}
+          <View style={{ paddingTop: Platform.OS === 'android' ? 20 : 30, paddingBottom: wp(20) }}>
+            <View style={{ flexDirection: 'row', paddingHorizontal: wp(16), marginBottom: wp(12) }}>
+              <Pressable onPress={function() {}} style={{ paddingVertical: wp(5), paddingHorizontal: wp(8) }}>
+                <Text style={{ fontSize: fp(18), color: 'rgba(255,255,255,0.4)' }}>{'←'}</Text>
+              </Pressable>
+            </View>
+            <View style={{ alignItems: 'center' }}>
+              <View style={{ width: wp(72), height: wp(72), borderRadius: wp(36), backgroundColor: avatarColor + '15', borderWidth: 2.5, borderColor: avatarColor + '50', justifyContent: 'center', alignItems: 'center', marginBottom: wp(10) }}>
+                <Text style={{ fontSize: fp(28), fontWeight: '900', color: avatarColor }}>{avatarInitial}</Text>
+              </View>
+              <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>{profile.display_name || 'Utilisateur'}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6), marginTop: wp(4) }}>
+                <View style={{ backgroundColor: tierInfo.color + '20', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(2), borderWidth: 1, borderColor: tierInfo.color + '40' }}>
+                  <Text style={{ fontSize: fp(10), fontWeight: '700', color: tierInfo.color }}>{tierInfo.label}</Text>
+                </View>
+                <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.3)' }}>{profile.lixtag || 'LXM-...'}</Text>
+              </View>
+              <View style={{ width: '100%', paddingHorizontal: wp(32), marginTop: wp(14) }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: wp(6) }}>
+                  <View style={{ backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3), borderWidth: 1, borderColor: 'rgba(0,217,132,0.25)' }}>
+                    <Text style={{ fontSize: fp(11), fontWeight: '800', color: '#00D984', letterSpacing: 1 }}>{'NIV ' + userXP.user_level}</Text>
+                  </View>
+                  <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.35)' }}>{userXP.xp_progress + ' / ' + userXP.xp_needed + ' XP'}</Text>
+                </View>
+                <View style={{ height: wp(8), borderRadius: wp(4), backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                  <LinearGradient colors={['#00D984', '#00B871']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ width: Math.min(userXP.xp_percent || 0, 100) + '%', height: '100%', borderRadius: wp(4) }} />
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingHorizontal: wp(20), marginTop: wp(16) }}>
+                {[{ val: lixBalance, label: 'Lix', color: '#D4AF37' }, { val: energy, label: 'Énergie', color: '#FFB800' }, { val: ownedCharacters + '/16', label: 'Cartes', color: '#00D984' }].map(function(s, i) {
+                  return (
+                    <View key={i} style={{ alignItems: 'center' }}>
+                      <Text style={{ fontSize: fp(18), fontWeight: '800', color: s.color }}>{s.val}</Text>
+                      <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(2) }}>{s.label}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
           </View>
+
         </ScrollView>
 
         <DeleteAccountModal
