@@ -112,11 +112,9 @@ var DIETS = [
   { key: 'halal', label: 'Halal', emoji: '\uD83C\uDF19', color: '#00BFA6' },
 ];
 
-var GOALS = [
-  { key: 'lose', label: 'Perte de poids', emoji: '\uD83D\uDCC9', color: '#00BFA6' },
-  { key: 'maintain', label: 'Maintien', emoji: '\u2696\uFE0F', color: '#00D984' },
-  { key: 'gain', label: 'Prise de masse', emoji: '\uD83D\uDCC8', color: '#D4AF37' },
-];
+// GOALS centralise dans src/constants/GOALS.js (Ionicons + labels FR/EN).
+// Re-export pour preserver les imports existants (ex: ProfilePage l.14).
+import GOALS from '../../constants/GOALS';
 
 var T = {
   fr: {

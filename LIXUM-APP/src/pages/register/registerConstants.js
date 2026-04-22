@@ -39,11 +39,6 @@ var texts = {
       { key: 'keto', label: 'K\u00e9to', desc: 'Faible en glucides, riche en lipides', emoji: '\uD83E\uDD51', color: '#D4AF37' },
       { key: 'halal', label: 'Halal', desc: 'Conforme aux pr\u00e9ceptes islamiques', emoji: '\uD83C\uDF19', color: '#00BFA6' },
     ],
-    goals: [
-      { key: 'lose', label: 'Perte de poids', icon: 'trending-down-outline', color: '#00BFA6' },
-      { key: 'maintain', label: 'Maintien', icon: 'swap-horizontal-outline', color: '#00D984' },
-      { key: 'gain', label: 'Prise de masse', icon: 'trending-up-outline', color: '#D4AF37' },
-    ],
     kgLabel: function (g) { return 'KG \u00c0 ' + (g === 'lose' ? 'PERDRE' : 'GAGNER'); },
     yourPace: 'Votre rythme',
     paceLabels: ['Ambitieux', 'Raisonnable', 'R\u00e9aliste'],
@@ -78,11 +73,6 @@ var texts = {
       { key: 'vegan', label: 'Vegan', desc: 'No animal products', emoji: '\uD83C\uDF31', color: '#00D984' },
       { key: 'keto', label: 'Keto', desc: 'Low carb, high fat', emoji: '\uD83E\uDD51', color: '#D4AF37' },
       { key: 'halal', label: 'Halal', desc: 'Islamic dietary laws', emoji: '\uD83C\uDF19', color: '#00BFA6' },
-    ],
-    goals: [
-      { key: 'lose', label: 'Weight loss', icon: 'trending-down-outline', color: '#00BFA6' },
-      { key: 'maintain', label: 'Stay fit', icon: 'swap-horizontal-outline', color: '#00D984' },
-      { key: 'gain', label: 'Weight gain', icon: 'trending-up-outline', color: '#D4AF37' },
     ],
     kgLabel: function (g) { return 'KG TO ' + (g === 'lose' ? 'LOSE' : 'GAIN'); },
     yourPace: 'Your pace',
