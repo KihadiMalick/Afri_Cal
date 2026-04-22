@@ -28,6 +28,7 @@ function getKeyword(language) {
 
 function ReasonCheckbox(props) {
   var label = props.label;
+  var icon = props.icon;
   var checked = props.checked;
   var onToggle = props.onToggle;
   var disabled = props.disabled;
@@ -54,6 +55,7 @@ function ReasonCheckbox(props) {
       <View style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: checked ? COLORS.emerald : COLORS.borderIdle, backgroundColor: checked ? COLORS.emerald : 'transparent', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
         {checked ? <Text style={{ color: '#000', fontSize: 14, fontWeight: '900' }}>{'✓'}</Text> : null}
       </View>
+      {icon ? <Text style={{ fontSize: 16, marginRight: 8 }}>{icon}</Text> : null}
       <Text style={{ flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' }}>
         {label}
       </Text>
@@ -94,14 +96,46 @@ function DeleteAccountModal(props) {
   var scaleAnim = useRef(new Animated.Value(1)).current;
   var glowAnim = useRef(new Animated.Value(0)).current;
 
-  var reasonKeys = [
-    { id: 'no_longer_use', label: t.deleteReasonNoLongerUse },
-    { id: 'too_expensive', label: t.deleteReasonTooExpensive },
-    { id: 'too_complex', label: t.deleteReasonTooComplex },
-    { id: 'bugs', label: t.deleteReasonBugs },
-    { id: 'privacy', label: t.deleteReasonPrivacy },
-    { id: 'other', label: t.deleteReasonOther }
-  ];
+  var _dynamicReasons = useState(null);
+  var dynamicReasons = _dynamicReasons[0];
+  var setDynamicReasons = _dynamicReasons[1];
+
+  var _reasonsLoading = useState(false);
+  var reasonsLoading = _reasonsLoading[0];
+  var setReasonsLoading = _reasonsLoading[1];
+
+  // D-JS (Snack mock) : simule le fetch RPC get_active_deletion_reasons via setTimeout
+  // pour reproduire la latence reseau sans toucher a Supabase.
+  useEffect(function() {
+    if (!visible) return;
+    if (dynamicReasons !== null) return;
+    setReasonsLoading(true);
+    var timer = setTimeout(function() {
+      setReasonsLoading(false);
+      setDynamicReasons([
+        { code: 'no_longer_use', label: language === 'EN' ? 'I no longer use the app' : 'Je n\'utilise plus l\'app', icon: '📉', display_order: 1 },
+        { code: 'too_expensive', label: language === 'EN' ? 'Subscription too expensive' : 'Abonnement trop cher', icon: '💸', display_order: 2 },
+        { code: 'too_complex', label: language === 'EN' ? 'App too complicated' : 'App trop compliquée', icon: '🤯', display_order: 3 },
+        { code: 'bugs', label: language === 'EN' ? 'Bugs / Technical issues' : 'Bugs / Problèmes techniques', icon: '🐛', display_order: 4 },
+        { code: 'privacy_concerns', label: language === 'EN' ? 'Privacy protection' : 'Protection de ma vie privée', icon: '🔒', display_order: 5 },
+        { code: 'other', label: language === 'EN' ? 'Other' : 'Autre', icon: '💬', display_order: 6 }
+      ]);
+    }, 500);
+    return function() { clearTimeout(timer); };
+  }, [visible, language]);
+
+  var reasonKeys = dynamicReasons !== null
+    ? dynamicReasons.map(function(r) {
+        return { id: r.code, label: r.label, icon: r.icon };
+      })
+    : [
+        { id: 'no_longer_use', label: t.deleteReasonNoLongerUse, icon: '📉' },
+        { id: 'too_expensive', label: t.deleteReasonTooExpensive, icon: '💸' },
+        { id: 'too_complex', label: t.deleteReasonTooComplex, icon: '🤯' },
+        { id: 'bugs', label: t.deleteReasonBugs, icon: '🐛' },
+        { id: 'privacy_concerns', label: t.deleteReasonPrivacy, icon: '🔒' },
+        { id: 'other', label: t.deleteReasonOther, icon: '💬' }
+      ];
 
   function resetAll() {
     setSelectedReasons({});
@@ -215,11 +249,18 @@ function DeleteAccountModal(props) {
                 {t.deleteReasonSectionTitle}
               </Text>
 
+              {reasonsLoading ? (
+                <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={COLORS.emerald} />
+                </View>
+              ) : null}
+
               {reasonKeys.map(function(r) {
                 return (
                   <ReasonCheckbox
                     key={r.id}
                     label={r.label}
+                    icon={r.icon}
                     checked={!!selectedReasons[r.id]}
                     disabled={isDeleting}
                     onToggle={function() { toggleReason(r.id); }}
