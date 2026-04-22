@@ -335,7 +335,35 @@ function ProfilePageMock() {
           <Section icon={'📧'} title={t.contact} color="#4DA6FF" onPress={function() {}} />
           <Section icon={'⭐'} title={t.rate} color="#D4AF37" onPress={function() {}} />
 
+          {/* ====== SECTION 10 : Logout + Delete + Footer (l.672-674 prod) ====== */}
+          <Pressable delayPressIn={120} onPress={function() { setShowLogoutConfirm(true); }} style={{ marginHorizontal: wp(16), marginTop: wp(16), marginBottom: wp(16), paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,107,107,0.05)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.15)' }}>
+            <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FF6B6B' }}>{t.logout}</Text>
+          </Pressable>
+          <Pressable onPress={function() { setShowDelete(true); }} style={{ marginHorizontal: wp(16), marginBottom: wp(16), alignItems: 'center' }}>
+            <Text style={{ fontSize: fp(12), color: 'rgba(255,107,107,0.4)' }}>{'Supprimer mon compte'}</Text>
+          </Pressable>
+          <View style={{ alignItems: 'center', paddingBottom: wp(20) }}>
+            <Text style={{ fontSize: fp(10), color: 'rgba(255,255,255,0.15)' }}>{'LIXUM v1.0.0-beta'}</Text>
+            <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.1)', marginTop: wp(2) }}>{t.madeWith}</Text>
+          </View>
+
         </ScrollView>
+
+        {/* ====== Modal logout confirm (l.676-685 prod) ====== */}
+        <Modal visible={showLogoutConfirm} transparent animationType="fade" onRequestClose={function() { setShowLogoutConfirm(false); }}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
+            <View style={{ backgroundColor: '#1A1D22', borderRadius: wp(20), padding: wp(24), width: '100%', borderWidth: 1, borderColor: 'rgba(255,107,107,0.2)' }}>
+              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: fp(8) }}>{t.logout}</Text>
+              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: wp(20) }}>{t.logoutConfirm}</Text>
+              <Pressable delayPressIn={120} onPress={handleLogout} style={{ paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,107,107,0.12)', borderWidth: 1, borderColor: 'rgba(255,107,107,0.25)', marginBottom: wp(8) }}>
+                <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF6B6B' }}>{t.logout}</Text>
+              </Pressable>
+              <Pressable onPress={function() { setShowLogoutConfirm(false); }} style={{ paddingVertical: wp(12), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>{t.cancel}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
 
         <DeleteAccountModal
           visible={showDelete}
