@@ -19,6 +19,7 @@ import { useAuth } from '../../config/AuthContext';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
 import MetalCard from '../../components/shared/MetalCard';
+import DeleteAccountModal from '../../components/profile/DeleteAccountModal';
 
 var markdownStyles = {
   body: { color: '#FFF', fontSize: fp(14), lineHeight: fp(22) },
@@ -138,6 +139,7 @@ export default function ProfilePage({ navigation }) {
   var _editLocation = useState(''), editLocation = _editLocation[0], setEditLocation = _editLocation[1];
   var _connectedApps = useState({}), connectedApps = _connectedApps[0], setConnectedApps = _connectedApps[1];
   var _toast = useState(null), toast = _toast[0], setToast = _toast[1];
+  var _isDeletingAccount = useState(false), isDeletingAccount = _isDeletingAccount[0], setIsDeletingAccount = _isDeletingAccount[1];
   var t = T.fr;
   var showToast = function(message, color) { setToast({ message: message, color: color || '#00D984' }); setTimeout(function() { setToast(null); }, 2500); };
 
@@ -253,7 +255,57 @@ export default function ProfilePage({ navigation }) {
   };
 
   var handleLogout = function() { auth.signOut(); setShowLogoutConfirm(false); };
-  var handleDeleteAccount = function() { auth.signOut(); setShowDeleteConfirm(false); };
+
+  var handleDeleteAccount = async function(selectedReasons, reasonOther) {
+    if (!userId) {
+      showToast(t.deleteGenericError || 'Erreur', '#FF6B6B');
+      return;
+    }
+    setIsDeletingAccount(true);
+    try {
+      var reasonParts = (selectedReasons || []).slice();
+      if (reasonOther && reasonOther.length > 0) {
+        reasonParts.push('other: ' + reasonOther);
+      }
+      var reasonFinal = reasonParts.length > 0 ? reasonParts.join(' | ') : null;
+
+      var res = await supabase.rpc('request_account_deletion', {
+        p_user_id: userId,
+        p_reason: reasonFinal,
+        p_ip_hash: null,
+        p_user_agent: Platform.OS + '/' + String(Platform.Version)
+      });
+
+      if (res.error) {
+        console.warn('request_account_deletion error:', res.error);
+        showToast(t.deleteGenericError || 'Erreur', '#FF6B6B');
+        setIsDeletingAccount(false);
+        return;
+      }
+
+      var data = res.data;
+
+      if (!data || data.success === false) {
+        if (data && data.error === 'admin_cannot_be_deleted') {
+          showToast(t.deleteAdminBlocked || 'Admin bloque', '#FF6B6B');
+        } else {
+          showToast(t.deleteGenericError || 'Erreur', '#FF6B6B');
+        }
+        setIsDeletingAccount(false);
+        return;
+      }
+
+      setShowDeleteConfirm(false);
+      setIsDeletingAccount(false);
+      if (auth.triggerAccountDeletedSuccess) {
+        auth.triggerAccountDeletedSuccess(data.scheduled_hard_delete_at);
+      }
+    } catch (err) {
+      console.warn('handleDeleteAccount exception:', err);
+      showToast(t.deleteGenericError || 'Erreur', '#FF6B6B');
+      setIsDeletingAccount(false);
+    }
+  };
 
   var handleCloseMilestones = function() { setShowMilestones(false); };
   var handleOpenContact = function() { setShowContactPicker(true); };
@@ -632,16 +684,13 @@ export default function ProfilePage({ navigation }) {
           </View>
         </Modal>
 
-        <Modal visible={showDeleteConfirm} transparent animationType="fade" onRequestClose={function() { setShowDeleteConfirm(false); }}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(24) }}>
-            <View style={{ backgroundColor: '#1A1D22', borderRadius: wp(20), padding: wp(24), width: '100%', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)' }}>
-              <Text style={{ fontSize: fp(18), fontWeight: '700', color: '#FFF', textAlign: 'center', marginBottom: fp(8) }}>{t.deleteAccount}</Text>
-              <Text style={{ fontSize: fp(13), color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: wp(20) }}>{t.deleteConfirm}</Text>
-              <Pressable delayPressIn={120} onPress={handleDeleteAccount} style={{ paddingVertical: wp(14), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(255,59,48,0.12)', borderWidth: 1, borderColor: 'rgba(255,59,48,0.3)', marginBottom: wp(8) }}><Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FF3B30' }}>{t.deleteAccount}</Text></Pressable>
-              <Pressable onPress={function() { setShowDeleteConfirm(false); }} style={{ paddingVertical: wp(12), alignItems: 'center' }}><Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.3)' }}>{t.cancel}</Text></Pressable>
-            </View>
-          </View>
-        </Modal>
+        <DeleteAccountModal
+          visible={showDeleteConfirm}
+          onClose={function() { if (!isDeletingAccount) setShowDeleteConfirm(false); }}
+          onConfirm={handleDeleteAccount}
+          isDeleting={isDeletingAccount}
+          language={auth.language || 'FR'}
+        />
 
         <Modal visible={showMilestones} transparent animationType="fade" onRequestClose={handleCloseMilestones}>
           <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: wp(16) }}>
