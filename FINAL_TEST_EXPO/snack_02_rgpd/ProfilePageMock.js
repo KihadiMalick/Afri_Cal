@@ -208,6 +208,65 @@ function ProfilePageMock() {
             </View>
           </View>
 
+          {/* ====== SECTION 2 : DONNEES PERSONNELLES 4 cards 2x2 (l.482-490 prod) ====== */}
+          <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8) }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.personalData}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: wp(16), gap: wp(8), marginBottom: wp(12) }}>
+            {[
+              { label: t.age, val: profile.age + ' ' + t.years, color: '#D4AF37' },
+              { label: t.weight, val: profile.weight + ' ' + t.kg, color: '#00D984' },
+              { label: t.height, val: profile.height + ' ' + t.cm, color: '#00BFA6' },
+              { label: t.bmi, val: imcFormatted, color: imcColor }
+            ].map(function(d, i) {
+              return (
+                <View key={i} style={{ width: (W - wp(40)) / 2, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginBottom: wp(4) }}>{d.label}</Text>
+                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: d.color }}>{d.val}</Text>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* ====== SECTION 3 : IMC MetalCard visuelle (l.491-524 prod) ====== */}
+          <View style={{ paddingHorizontal: wp(16), marginBottom: wp(16) }}>
+            <MetalCard>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={{ color: '#00D984', fontSize: fp(12), fontWeight: '800', letterSpacing: 1.5 }}>{'IMC'}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                  <Text style={{ color: imcColor, fontSize: fp(22), fontWeight: '900' }}>{imcFormatted}</Text>
+                  <Text style={{ color: '#6B7280', fontSize: fp(10), marginLeft: 4 }}>{'kg/m²'}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                <View style={{ backgroundColor: imcColor + '20', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: imcColor + '40' }}>
+                  <Text style={{ color: imcColor, fontSize: fp(11), fontWeight: '700' }}>{imcLabel}</Text>
+                </View>
+              </View>
+              <View style={{ height: 8, borderRadius: 4, overflow: 'hidden', flexDirection: 'row', marginBottom: 6 }}>
+                <View style={{ flex: 18.5, backgroundColor: '#4DA6FF', opacity: 0.3 }} />
+                <View style={{ flex: 6.4, backgroundColor: '#00D984', opacity: 0.3 }} />
+                <View style={{ flex: 5, backgroundColor: '#FF8C42', opacity: 0.3 }} />
+                <View style={{ flex: 10, backgroundColor: '#FF4444', opacity: 0.3 }} />
+              </View>
+              <View style={{ position: 'relative', height: 12, marginBottom: 4 }}>
+                <View style={{ position: 'absolute', left: imcBarPosPercent + '%', marginLeft: -5, width: 10, height: 10, borderRadius: 5, backgroundColor: imcColor, borderWidth: 2, borderColor: '#1E2530' }} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ color: '#6B7280', fontSize: 8 }}>{'15'}</Text>
+                <Text style={{ color: '#6B7280', fontSize: 8 }}>{'18.5'}</Text>
+                <Text style={{ color: '#6B7280', fontSize: 8 }}>{'25'}</Text>
+                <Text style={{ color: '#6B7280', fontSize: 8 }}>{'30'}</Text>
+                <Text style={{ color: '#6B7280', fontSize: 8 }}>{'40'}</Text>
+              </View>
+            </MetalCard>
+          </View>
+
+          {/* ====== SECTION 4 : Bouton Modifier mon profil (l.526 prod) ====== */}
+          <Pressable delayPressIn={120} onPress={function() {}} style={{ marginHorizontal: wp(16), marginBottom: wp(20), paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}>
+            <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984' }}>{t.editProfile}</Text>
+          </Pressable>
+
         </ScrollView>
 
         <DeleteAccountModal
