@@ -300,6 +300,25 @@ function ProfilePageMock() {
             </Text>
           </MetalCard>
 
+          {/* ====== SECTION 6 : PARAMETRES (l.652-655 prod) ====== */}
+          <View style={{ paddingHorizontal: wp(16), marginBottom: wp(4) }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.settings}</Text>
+          </View>
+          <Section icon={'📍'} title={t.location} subtitle={t.locationSub} color="#FF8C42" rightText={t.notDefined} onPress={function() {}} />
+          <Section icon={'⭐'} title={t.subscription} subtitle={t.subscriptionSub} color="#D4AF37" rightText={tierInfo.label} onPress={function() {}} />
+          <Section icon={'🔔'} title={t.notifications} subtitle={t.notifSub} color="#4DA6FF" rightText={t.comingSoon} onPress={function() {}} />
+
+          {/* ====== SECTION 7 : CONNECTEURS (l.657-660 prod) ====== */}
+          <View style={{ paddingHorizontal: wp(16), marginTop: wp(16), marginBottom: wp(4) }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.connectors}</Text>
+          </View>
+          <Text style={{ paddingHorizontal: wp(16), fontSize: fp(11), color: 'rgba(255,255,255,0.3)', marginBottom: wp(8) }}>{t.connectorsDesc}</Text>
+          <View style={{ marginHorizontal: wp(16), borderRadius: wp(14), overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', marginBottom: wp(16) }}>
+            {CONNECTORS.map(function(conn, i) {
+              return renderConnectorCard(conn, i, Object.assign({ __lang: lang.language }, t), false, function() {});
+            })}
+          </View>
+
         </ScrollView>
 
         <DeleteAccountModal
