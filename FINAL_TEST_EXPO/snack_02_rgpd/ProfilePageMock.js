@@ -319,6 +319,22 @@ function ProfilePageMock() {
             })}
           </View>
 
+          {/* ====== SECTION 8 : APPRENDRE (l.661-663 prod) ====== */}
+          <View style={{ paddingHorizontal: wp(16), marginBottom: wp(4) }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.learn}</Text>
+          </View>
+          <Section icon={'📖'} title={t.glossary} subtitle={t.glossarySub} color="#9B6DFF" onPress={function() {}} />
+          <Section icon={'💡'} title={t.guide} subtitle={t.guideSub} color="#00D984" onPress={function() {}} />
+
+          {/* ====== SECTION 9 : LEGAL & SUPPORT (l.665-669 prod) ====== */}
+          <View style={{ paddingHorizontal: wp(16), marginTop: wp(16), marginBottom: wp(4) }}>
+            <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.legal}</Text>
+          </View>
+          <Section icon={'🔒'} title={t.privacy} color="#9B6DFF" onPress={function() {}} />
+          <Section icon={'📄'} title={t.terms} color="#FF8C42" onPress={function() {}} />
+          <Section icon={'📧'} title={t.contact} color="#4DA6FF" onPress={function() {}} />
+          <Section icon={'⭐'} title={t.rate} color="#D4AF37" onPress={function() {}} />
+
         </ScrollView>
 
         <DeleteAccountModal
