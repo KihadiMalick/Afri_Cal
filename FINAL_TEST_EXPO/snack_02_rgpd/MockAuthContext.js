@@ -134,6 +134,18 @@ export function MockAuthProvider(props) {
     });
   };
 
+  // Set deletionPending SANS ouvrir la modale (pour tester la banniere seule)
+  var testSetBannerOnly = function(daysFromNow) {
+    var d = new Date();
+    d.setDate(d.getDate() + (daysFromNow || 15));
+    var nowISO = new Date().toISOString();
+    log('TEST: banniere seule J+' + daysFromNow);
+    setDeletionPending({
+      deletedAt: nowISO,
+      scheduledDeletionAt: d.toISOString()
+    });
+  };
+
   var testReset = function() {
     log('TEST: reset all states');
     setDeletionPending(null);
@@ -166,6 +178,7 @@ export function MockAuthProvider(props) {
     triggerAccountDeletedSuccess: triggerAccountDeletedSuccess,
     acknowledgeAccountDeleted: acknowledgeAccountDeleted,
     testTriggerRestoreModal: testTriggerRestoreModal,
+    testSetBannerOnly: testSetBannerOnly,
     testReset: testReset,
     handleDeleteAccountMock: handleDeleteAccountMock,
     // Profile / XP / stats (nouveaux pour ProfilePageMock 100% fidele)

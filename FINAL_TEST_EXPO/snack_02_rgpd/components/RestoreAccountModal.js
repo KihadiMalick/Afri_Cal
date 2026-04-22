@@ -58,7 +58,12 @@ function RestoreAccountModal(props) {
   var setShowDoubleConfirm = _showDoubleConfirm[1];
 
   var pulseAnim = useRef(new Animated.Value(1)).current;
+  var rotateAnim = useRef(new Animated.Value(0)).current;
   var mountedHapticRef = useRef(false);
+
+  var _microMsg = useState('');
+  var microMsg = _microMsg[0];
+  var setMicroMsg = _microMsg[1];
 
   var scheduledDateISO = deletionPending ? deletionPending.scheduledDeletionAt : null;
   var formattedDate = formatDateFR(scheduledDateISO);
@@ -67,7 +72,21 @@ function RestoreAccountModal(props) {
   var isUrgent = daysLeft < 3;
 
   var bodyText = t.restoreModalBody.replace('{date}', formattedDate);
-  var badgeLabel = (daysLeft > 1 ? t.restoreDaysLeft : t.restoreDayLeftSingular).replace('{n}', String(daysLeft));
+  // Item G : chip couleurs evolutives selon urgence
+  var daysLeftTemplate;
+  if (daysLeft > 10) {
+    daysLeftTemplate = daysLeft > 1 ? t.restoreDaysLeft : t.restoreDayLeftSingular;
+  } else if (daysLeft >= 3) {
+    daysLeftTemplate = t.restoreDaysLeftWarning || t.restoreDaysLeft;
+  } else {
+    daysLeftTemplate = t.restoreDaysLeftCritical || t.restoreDaysLeft;
+  }
+  var badgeLabel = daysLeftTemplate.replace('{n}', String(daysLeft));
+
+  var rotateInterpolate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
 
   useEffect(function() {
     if (visible && !mountedHapticRef.current) {
@@ -77,15 +96,31 @@ function RestoreAccountModal(props) {
     if (!visible) {
       mountedHapticRef.current = false;
       setShowDoubleConfirm(false);
+      setMicroMsg('');
     }
+  }, [visible]);
+
+  // Item F : rotation spring du logo au mount
+  useEffect(function() {
+    if (!visible) {
+      rotateAnim.setValue(0);
+      return;
+    }
+    rotateAnim.setValue(0);
+    Animated.spring(rotateAnim, {
+      toValue: 1,
+      useNativeDriver: false,
+      friction: 5,
+      tension: 40
+    }).start();
   }, [visible]);
 
   useEffect(function() {
     if (isUrgent && visible) {
       var loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 0.55, duration: 700, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true })
+          Animated.timing(pulseAnim, { toValue: 0.55, duration: 700, useNativeDriver: false }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: false })
         ])
       );
       loop.start();
@@ -97,7 +132,21 @@ function RestoreAccountModal(props) {
   function handleRestore() {
     if (isRestoring) return;
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch (e) {}
-    onRestore();
+    setMicroMsg(t.restoreCheckingAccount);
+    var timer1 = setTimeout(function() { setMicroMsg(t.restoreInProgress); }, 1000);
+    var timer2 = setTimeout(function() { setMicroMsg(t.restoreAlmostReady); }, 2000);
+    try {
+      var maybe = onRestore();
+      if (maybe && typeof maybe.then === 'function') {
+        maybe.then(function() {
+          clearTimeout(timer1); clearTimeout(timer2); setMicroMsg('');
+        }, function() {
+          clearTimeout(timer1); clearTimeout(timer2); setMicroMsg('');
+        });
+      }
+    } catch (err) {
+      clearTimeout(timer1); clearTimeout(timer2); setMicroMsg('');
+    }
   }
 
   function handleOpenDoubleConfirm() {
@@ -124,7 +173,7 @@ function RestoreAccountModal(props) {
       <View style={{ flex: 1, backgroundColor: COLORS.overlay, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
         <View style={{ backgroundColor: COLORS.bgCard, borderRadius: 20, padding: 24, width: '100%', maxWidth: 420, borderWidth: 1, borderColor: COLORS.borderAccent }}>
           <View style={{ alignItems: 'center', marginBottom: 16 }}>
-            <Animated.View style={{ opacity: isUrgent ? pulseAnim : 1, width: 64, height: 64, borderRadius: 32, backgroundColor: isUrgent ? 'rgba(255,107,107,0.15)' : 'rgba(0,217,132,0.12)', justifyContent: 'center', alignItems: 'center', marginBottom: 14, borderWidth: 2, borderColor: badgeColor + '55' }}>
+            <Animated.View style={{ opacity: isUrgent ? pulseAnim : 1, width: 64, height: 64, borderRadius: 32, backgroundColor: isUrgent ? 'rgba(255,107,107,0.15)' : 'rgba(0,217,132,0.12)', justifyContent: 'center', alignItems: 'center', marginBottom: 14, borderWidth: 2, borderColor: badgeColor + '55', transform: [{ rotate: rotateInterpolate }] }}>
               <Text style={{ fontSize: 32 }}>{isUrgent ? '⚠' : '♻️'}</Text>
             </Animated.View>
             <Text style={{ fontSize: 18, fontWeight: '800', color: COLORS.textPrimary, textAlign: 'center' }}>
@@ -149,6 +198,11 @@ function RestoreAccountModal(props) {
           {isRestoring ? (
             <View style={{ paddingVertical: 18, alignItems: 'center' }}>
               <ActivityIndicator size="large" color={COLORS.emerald} />
+              {microMsg && microMsg.length > 0 ? (
+                <Text style={{ color: COLORS.textSecondary, fontSize: 13, marginTop: 10, textAlign: 'center' }}>
+                  {microMsg}
+                </Text>
+              ) : null}
             </View>
           ) : (
             <View>
