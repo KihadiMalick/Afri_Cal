@@ -212,20 +212,23 @@ function ProfilePageMock() {
           <View style={{ paddingHorizontal: wp(16), marginBottom: wp(8) }}>
             <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.personalData}</Text>
           </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: wp(16), gap: wp(8), marginBottom: wp(12) }}>
-            {[
-              { label: t.age, val: profile.age + ' ' + t.years, color: '#D4AF37' },
-              { label: t.weight, val: profile.weight + ' ' + t.kg, color: '#00D984' },
-              { label: t.height, val: profile.height + ' ' + t.cm, color: '#00BFA6' },
-              { label: t.bmi, val: imcFormatted, color: imcColor }
-            ].map(function(d, i) {
-              return (
-                <View key={i} style={{ width: (W - wp(40)) / 2, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
-                  <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginBottom: wp(4) }}>{d.label}</Text>
-                  <Text style={{ fontSize: fp(16), fontWeight: '700', color: d.color }}>{d.val}</Text>
-                </View>
-              );
-            })}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: wp(16), justifyContent: 'space-between', gap: 12, marginBottom: wp(12) }}>
+            <View style={{ width: '48%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+              <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginBottom: wp(4) }}>{t.age}</Text>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#D4AF37' }}>{profile.age + ' ' + t.years}</Text>
+            </View>
+            <View style={{ width: '48%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+              <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginBottom: wp(4) }}>{t.weight}</Text>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#00D984' }}>{profile.weight + ' ' + t.kg}</Text>
+            </View>
+            <View style={{ width: '48%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+              <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginBottom: wp(4) }}>{t.height}</Text>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: '#00BFA6' }}>{profile.height + ' ' + t.cm}</Text>
+            </View>
+            <View style={{ width: '48%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: wp(12), padding: wp(12), borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' }}>
+              <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginBottom: wp(4) }}>{t.bmi}</Text>
+              <Text style={{ fontSize: fp(16), fontWeight: '700', color: imcColor }}>{imcFormatted}</Text>
+            </View>
           </View>
 
           {/* ====== SECTION 3 : IMC MetalCard visuelle (l.491-524 prod) ====== */}
