@@ -267,6 +267,39 @@ function ProfilePageMock() {
             <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984' }}>{t.editProfile}</Text>
           </Pressable>
 
+          {/* ====== SECTION 5 : OBJECTIF HYDRATATION MetalCard (l.528-551 prod) ====== */}
+          <MetalCard style={{ marginHorizontal: wp(16), marginBottom: wp(16) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: wp(8) }}>
+              <Text style={{ fontSize: fp(16), marginRight: wp(6) }}>{'💧'}</Text>
+              <Text style={{ fontSize: fp(15), fontWeight: '700', color: '#FFF', letterSpacing: 1.5 }}>{'OBJECTIF HYDRATATION'}</Text>
+            </View>
+            <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>{'Recommandé : 2.5L (H) / 2.0L (F)'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <ProfileScrollPicker
+                  values={(function() { var arr = []; for (var i = 5; i <= 50; i++) { arr.push(i / 10); } return arr; })()}
+                  selectedValue={hydrationGoal}
+                  onSelect={function(val) { setHydrationGoal(val); }}
+                  unit="L"
+                  color="#4DA6FF"
+                  height={140}
+                />
+              </View>
+              <View style={{ marginLeft: wp(16), alignItems: 'center' }}>
+                <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#00D984' }}>{hydrationGoal.toFixed(1)}</Text>
+                <Text style={{ fontSize: fp(14), color: '#8A8F98' }}>{'L'}</Text>
+                {hydrationGoal === 2.5 ? (
+                  <View style={{ marginTop: wp(6), backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: wp(6), paddingHorizontal: wp(8), paddingVertical: wp(3) }}>
+                    <Text style={{ fontSize: fp(9), fontWeight: '700', color: '#00D984' }}>{'Recommandé'}</Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+            <Text style={{ fontSize: fp(12), marginTop: wp(10), color: hydrationGoal === 2.5 ? '#8A8F98' : hydrationGoal < 2.5 ? '#FF8C42' : '#4DA6FF' }}>
+              {hydrationGoal === 2.5 ? 'Basé sur les recommandations EFSA' : hydrationGoal < 2.5 ? 'Inférieur aux recommandations standards' : 'Supérieur aux recommandations standards'}
+            </Text>
+          </MetalCard>
+
         </ScrollView>
 
         <DeleteAccountModal
