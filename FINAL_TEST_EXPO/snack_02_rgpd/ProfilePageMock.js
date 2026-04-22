@@ -51,8 +51,44 @@ var ProfileScrollPicker = function(pickerProps) {
   );
 };
 
-// === Section (copie l.329-339 prod) ===
-// Sera ajoute en Phase 3c
+// === Section (copie fidele l.329-339 prod) ===
+var Section = function(props) {
+  return (
+    <Pressable delayPressIn={120} onPress={props.onPress} style={function(s) { return { flexDirection: 'row', alignItems: 'center', paddingVertical: wp(14), paddingHorizontal: wp(16), backgroundColor: s.pressed ? 'rgba(255,255,255,0.04)' : 'transparent', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.04)' }; }}>
+      <View style={{ width: wp(36), height: wp(36), borderRadius: wp(10), backgroundColor: (props.color || '#00D984') + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12) }}>
+        <Text style={{ fontSize: fp(16) }}>{props.icon}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>{props.title}</Text>
+        {props.subtitle ? <Text style={{ fontSize: fp(11), color: 'rgba(255,255,255,0.35)', marginTop: wp(1) }}>{props.subtitle}</Text> : null}
+      </View>
+      {props.rightText ? <Text style={{ fontSize: fp(11), color: props.color || 'rgba(255,255,255,0.3)', fontWeight: '600' }}>{props.rightText}</Text> : null}
+      <Text style={{ fontSize: fp(14), color: 'rgba(255,255,255,0.15)', marginLeft: wp(8) }}>{'›'}</Text>
+    </Pressable>
+  );
+};
+
+// === renderConnectorCard (helper inline ligne prod 401-412) ===
+function renderConnectorCard(conn, i, t, isConnected, onToggle) {
+  var dataText = t && t.__lang === 'EN' ? conn.dataEn : conn.dataFr;
+  return (
+    <View key={conn.key} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: wp(12), paddingHorizontal: wp(14), backgroundColor: isConnected ? conn.color + '08' : 'transparent', borderBottomWidth: i < CONNECTORS.length - 1 ? 1 : 0, borderBottomColor: 'rgba(255,255,255,0.04)' }}>
+      <View style={{ width: wp(40), height: wp(40), borderRadius: wp(10), backgroundColor: conn.color + '15', justifyContent: 'center', alignItems: 'center', marginRight: wp(12), borderWidth: isConnected ? 1.5 : 0, borderColor: isConnected ? conn.color + '40' : 'transparent' }}>
+        <Text style={{ fontSize: fp(18) }}>{conn.emoji}</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: wp(6) }}>
+          <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#FFF' }}>{conn.name}</Text>
+          {isConnected ? <View style={{ width: wp(6), height: wp(6), borderRadius: wp(3), backgroundColor: '#00D984' }} /> : null}
+        </View>
+        <Text style={{ fontSize: fp(9), color: 'rgba(255,255,255,0.3)', marginTop: wp(2) }}>{dataText}</Text>
+      </View>
+      <Pressable delayPressIn={120} onPress={onToggle} style={function(s) { return { paddingHorizontal: wp(12), paddingVertical: wp(7), borderRadius: wp(8), backgroundColor: isConnected ? 'rgba(255,107,107,0.08)' : conn.color + '15', borderWidth: 1, borderColor: isConnected ? 'rgba(255,107,107,0.2)' : conn.color + '30', transform: [{ scale: s.pressed ? 0.92 : 1 }] }; }}>
+        <Text style={{ fontSize: fp(10), fontWeight: '700', color: isConnected ? '#FF6B6B' : conn.color }}>{isConnected ? (t.disconnect || 'Déconnecter') : (t.connect || 'Connecter')}</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 function ProfilePageMock() {
   var auth = useAuth();
