@@ -93,7 +93,15 @@ export var T = {
     restoreRejectCancel: 'Non, je réfléchis',
     restoreSuccessTitle: 'Bienvenue à nouveau !',
     restoreSuccessBody: 'Votre compte a été restauré avec succès.',
-    restoreGenericError: 'Erreur lors de la restauration. Réessayez.'
+    restoreGenericError: 'Erreur lors de la restauration. Réessayez.',
+    restoreDaysLeftWarning: '{n} jours restants',
+    restoreDaysLeftCritical: '{n} jours restants — urgent !',
+    restoreCheckingAccount: 'Vérification du compte...',
+    restoreInProgress: 'Restauration en cours...',
+    restoreAlmostReady: 'Presque prêt...',
+    bannerDeletionPending: '⏱ Compte programmé pour suppression dans {days} jours',
+    bannerDeletionPendingUrgent: '⚠ Compte sera supprimé dans {days} jour(s) — Restaurer maintenant',
+    bannerRestoreLink: 'Restaurer'
   },
   en: {
     // === Cles ProfilePage prod (clonage 100%) ===
@@ -185,6 +193,14 @@ export var T = {
     restoreRejectCancel: 'No, let me think',
     restoreSuccessTitle: 'Welcome back!',
     restoreSuccessBody: 'Your account has been successfully restored.',
-    restoreGenericError: 'Error restoring account. Try again.'
+    restoreGenericError: 'Error restoring account. Try again.',
+    restoreDaysLeftWarning: '{n} days left',
+    restoreDaysLeftCritical: '{n} days left — urgent!',
+    restoreCheckingAccount: 'Checking account...',
+    restoreInProgress: 'Restoring your account...',
+    restoreAlmostReady: 'Almost ready...',
+    bannerDeletionPending: '⏱ Account scheduled for deletion in {days} days',
+    bannerDeletionPendingUrgent: '⚠ Account will be deleted in {days} day(s) — Restore now',
+    bannerRestoreLink: 'Restore'
   }
 };
