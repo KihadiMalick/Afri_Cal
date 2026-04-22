@@ -126,14 +126,14 @@ function DeleteAccountModal(props) {
       setCountdown(2);
       try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); } catch (e) {}
       Animated.parallel([
-        Animated.spring(scaleAnim, { toValue: 1.05, useNativeDriver: true, friction: 4 }),
+        Animated.spring(scaleAnim, { toValue: 1.05, useNativeDriver: false, friction: 4 }),
         Animated.timing(glowAnim, { toValue: 1, duration: 300, useNativeDriver: false })
       ]).start();
     } else if (!match && keywordMatch) {
       setKeywordMatch(false);
       setCountdown(0);
       Animated.parallel([
-        Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 5 }),
+        Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: false, friction: 5 }),
         Animated.timing(glowAnim, { toValue: 0, duration: 200, useNativeDriver: false })
       ]).start();
     }
