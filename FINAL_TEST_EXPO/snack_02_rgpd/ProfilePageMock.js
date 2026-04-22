@@ -7,6 +7,7 @@ import { T } from './mockT';
 import { useFocusEffect, useRoute } from './MockNavigation';
 import MetalCard from './components/MetalCard';
 import DeleteAccountModal from './components/DeleteAccountModal';
+import EditProfilePageMock from './EditProfilePageMock';
 
 // === Helpers layout (copies wp/fp de profileConstants sans deps) ===
 var SCREEN_W = Dimensions.get('window').width;
@@ -107,6 +108,10 @@ function ProfilePageMock() {
   var _hydrationGoal = useState(2.5);
   var hydrationGoal = _hydrationGoal[0];
   var setHydrationGoal = _hydrationGoal[1];
+
+  var _showEditProfile = useState(false);
+  var showEditProfile = _showEditProfile[0];
+  var setShowEditProfile = _showEditProfile[1];
 
   var _showDelete = useState(false);
   var showDelete = _showDelete[0];
@@ -266,7 +271,7 @@ function ProfilePageMock() {
           </View>
 
           {/* ====== SECTION 4 : Bouton Modifier mon profil (l.526 prod) ====== */}
-          <Pressable delayPressIn={120} onPress={function() {}} style={{ marginHorizontal: wp(16), marginBottom: wp(20), paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}>
+          <Pressable delayPressIn={120} onPress={function() { setShowEditProfile(true); }} style={{ marginHorizontal: wp(16), marginBottom: wp(20), paddingVertical: wp(12), borderRadius: wp(12), alignItems: 'center', backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1, borderColor: 'rgba(0,217,132,0.15)' }}>
             <Text style={{ fontSize: fp(13), fontWeight: '600', color: '#00D984' }}>{t.editProfile}</Text>
           </Pressable>
 
@@ -374,6 +379,18 @@ function ProfilePageMock() {
           onConfirm={handleDeleteConfirm}
           isDeleting={isDeletingAccount}
           language={lang.language}
+        />
+
+        <EditProfilePageMock
+          visible={showEditProfile}
+          onClose={function() { setShowEditProfile(false); }}
+          profile={{
+            display_name: 'Malick',
+            age: 40,
+            weight: 86,
+            height: 185,
+            city: 'Bujumbura'
+          }}
         />
       </LinearGradient>
     </View>
