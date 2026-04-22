@@ -47,6 +47,14 @@ export function AuthProvider(props) {
   var _lixverseNotifCount = useState(0);
   var lixverseNotifCount = _lixverseNotifCount[0], setLixverseNotifCount = _lixverseNotifCount[1];
 
+  // === RGPD ACCOUNT DELETION STATE ===
+  var _deletionPending = useState(null);
+  var deletionPending = _deletionPending[0], setDeletionPending = _deletionPending[1];
+  var _accountDeletedSuccessVisible = useState(false);
+  var accountDeletedSuccessVisible = _accountDeletedSuccessVisible[0], setAccountDeletedSuccessVisible = _accountDeletedSuccessVisible[1];
+  var _accountDeletedScheduledDate = useState(null);
+  var accountDeletedScheduledDate = _accountDeletedScheduledDate[0], setAccountDeletedScheduledDate = _accountDeletedScheduledDate[1];
+
   var fetchAlixenNotifications = useCallback(async function() {
     if (!userId) { setAlixenNotifications([]); setAlixenNotifCount(0); return; }
     try {
@@ -157,7 +165,7 @@ export function AuthProvider(props) {
     try {
       var { data } = await supabase
         .from('users_profile')
-        .select('lix_balance, energy, subscription_tier, subscription_expires_at, onboarding_xscan_used, onboarding_gallery_used, onboarding_chat_used, onboarding_recipe_used, onboarding_medic_used, onboarding_cartscan_used')
+        .select('lix_balance, energy, subscription_tier, subscription_expires_at, onboarding_xscan_used, onboarding_gallery_used, onboarding_chat_used, onboarding_recipe_used, onboarding_medic_used, onboarding_cartscan_used, deleted_at, scheduled_deletion_at')
         .eq('user_id', userId)
         .single();
       if (data) {
@@ -173,6 +181,15 @@ export function AuthProvider(props) {
           medic: data.onboarding_medic_used || 0,
           cartscan: data.onboarding_cartscan_used || 0
         });
+        var nowMs = Date.now();
+        var deletedAtRaw = data.deleted_at || null;
+        var scheduledAtRaw = data.scheduled_deletion_at || null;
+        var scheduledMs = scheduledAtRaw ? new Date(scheduledAtRaw).getTime() : 0;
+        if (deletedAtRaw && scheduledAtRaw && scheduledMs > nowMs) {
+          setDeletionPending({ deletedAt: deletedAtRaw, scheduledDeletionAt: scheduledAtRaw });
+        } else {
+          setDeletionPending(null);
+        }
       }
     } catch (e) {
       console.warn('refreshLixFromServer error:', e);
@@ -249,9 +266,43 @@ export function AuthProvider(props) {
       setAlixenNotifCount(0);
       setLixverseNotifications([]);
       setLixverseNotifCount(0);
+      setDeletionPending(null);
+      setAccountDeletedSuccessVisible(false);
+      setAccountDeletedScheduledDate(null);
     } catch (err) {
       console.warn('signOut error:', err);
     }
+  };
+
+  var restoreAccount = async function() {
+    if (!userId) return { success: false, error: 'no_user' };
+    try {
+      var res = await supabase.rpc('restore_account', { p_user_id: userId });
+      if (res.error) {
+        console.warn('restore_account error:', res.error);
+        return { success: false, error: 'network' };
+      }
+      if (res.data && res.data.success === true) {
+        setDeletionPending(null);
+        await refreshLixFromServer();
+        return { success: true };
+      }
+      return { success: false, error: res.data && res.data.error ? res.data.error : 'unknown' };
+    } catch (err) {
+      console.warn('restoreAccount exception:', err);
+      return { success: false, error: 'exception' };
+    }
+  };
+
+  var triggerAccountDeletedSuccess = function(scheduledDateISO) {
+    setAccountDeletedScheduledDate(scheduledDateISO || null);
+    setAccountDeletedSuccessVisible(true);
+  };
+
+  var acknowledgeAccountDeleted = async function() {
+    setAccountDeletedSuccessVisible(false);
+    setAccountDeletedScheduledDate(null);
+    await signOut();
   };
 
   return (
@@ -281,6 +332,13 @@ export function AuthProvider(props) {
         fetchLixverseNotifications: fetchLixverseNotifications,
         markLixverseNotificationRead: markLixverseNotificationRead,
         markAllLixverseNotificationsRead: markAllLixverseNotificationsRead,
+        deletionPending: deletionPending,
+        restoreAccount: restoreAccount,
+        accountDeletedSuccessVisible: accountDeletedSuccessVisible,
+        accountDeletedScheduledDate: accountDeletedScheduledDate,
+        triggerAccountDeletedSuccess: triggerAccountDeletedSuccess,
+        acknowledgeAccountDeleted: acknowledgeAccountDeleted,
+        language: 'FR',
       }
     }, props.children)
   );
