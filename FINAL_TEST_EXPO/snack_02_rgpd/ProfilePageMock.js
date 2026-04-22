@@ -1,24 +1,51 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, Dimensions, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from './MockAuthContext';
 import { useLang } from './MockLanguageContext';
 import { T } from './mockT';
+import { useFocusEffect, useRoute } from './MockNavigation';
+import MetalCard from './components/MetalCard';
 import DeleteAccountModal from './components/DeleteAccountModal';
 
-function MockOptionRow(props) {
-  return (
-    <View style={{ backgroundColor: '#1A1D22', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#2A303B', flexDirection: 'row', alignItems: 'center', opacity: 0.4 }}>
-      <Text style={{ fontSize: 18, marginRight: 12 }}>{props.icon}</Text>
-      <Text style={{ color: '#B8BEC5', fontSize: 14, flex: 1 }}>{props.label}</Text>
-      <Text style={{ color: '#6B7280', fontSize: 18 }}>{'›'}</Text>
-    </View>
-  );
-}
+// === Helpers layout (copies wp/fp de profileConstants sans deps) ===
+var SCREEN_W = Dimensions.get('window').width;
+var W = SCREEN_W;
+var BASE = 400;
+var wp = function(n) { return (W / BASE) * n; };
+var fp = function(n) { return (W / BASE) * n; };
+
+// === CONNECTORS (copie CONNECTORS de profileConstants) ===
+var CONNECTORS = [
+  { key: 'apple_health', name: 'Apple Health', emoji: '🍎', dataFr: 'Pas · Cardio · Sommeil · Activités', dataEn: 'Steps · Heart · Sleep · Activities', color: '#FF3B5C' },
+  { key: 'samsung_health', name: 'Samsung Health', emoji: '💙', dataFr: 'Pas · Cardio · Sommeil · Activités', dataEn: 'Steps · Heart · Sleep · Activities', color: '#4DA6FF' },
+  { key: 'fitbit', name: 'Fitbit', emoji: '⌚', dataFr: 'Pas · Sommeil · Cardio', dataEn: 'Steps · Sleep · Heart', color: '#00BFA6' },
+  { key: 'strava', name: 'Strava', emoji: '🏃', dataFr: 'Course · Vélo · Distance · GPS', dataEn: 'Run · Bike · Distance · GPS', color: '#FF8C42' }
+];
+
+// === ProfileScrollPicker (copie l.74-99 prod) ===
+// Sera ajoute en Phase 3b
+
+// === Section (copie l.329-339 prod) ===
+// Sera ajoute en Phase 3c
 
 function ProfilePageMock() {
   var auth = useAuth();
   var lang = useLang();
   var t = lang.language === 'EN' ? T.en : T.fr;
+
+  // Donnees auth
+  var profile = auth.profile;
+  var lixBalance = auth.lixBalance;
+  var userXP = auth.userXP;
+  var subscriptionTier = auth.subscriptionTier;
+  var energy = auth.energy;
+  var ownedCharacters = auth.ownedCharacters;
+
+  // States locaux
+  var _hydrationGoal = useState(2.5);
+  var hydrationGoal = _hydrationGoal[0];
+  var setHydrationGoal = _hydrationGoal[1];
 
   var _showDelete = useState(false);
   var showDelete = _showDelete[0];
@@ -28,6 +55,35 @@ function ProfilePageMock() {
   var isDeletingAccount = _isDeletingAccount[0];
   var setIsDeletingAccount = _isDeletingAccount[1];
 
+  var _showLogoutConfirm = useState(false);
+  var showLogoutConfirm = _showLogoutConfirm[0];
+  var setShowLogoutConfirm = _showLogoutConfirm[1];
+
+  // Calculs derives (reproduction exacte prod)
+  var imc = profile.weight / ((profile.height / 100) * (profile.height / 100));
+  var imcFormatted = imc.toFixed(1);
+  var imcColor;
+  var imcLabel;
+  var imcBarValue;
+  if (imc < 18.5) { imcColor = '#4DA6FF'; imcLabel = 'Maigreur'; imcBarValue = imc; }
+  else if (imc < 25) { imcColor = '#00D984'; imcLabel = 'Normal'; imcBarValue = imc; }
+  else if (imc < 30) { imcColor = '#FF8C42'; imcLabel = 'Surpoids'; imcBarValue = imc; }
+  else { imcColor = '#FF4444'; imcLabel = 'Obésité'; imcBarValue = Math.min(imc, 40); }
+  var imcBarPosPercent = ((imcBarValue - 15) / (40 - 15)) * 100;
+  imcBarPosPercent = Math.max(0, Math.min(100, imcBarPosPercent));
+
+  // Tier info
+  var tierInfo;
+  if (subscriptionTier === 'platinum') tierInfo = { color: '#00D984', label: 'Platinum' };
+  else if (subscriptionTier === 'gold') tierInfo = { color: '#D4AF37', label: 'Gold' };
+  else if (subscriptionTier === 'silver') tierInfo = { color: '#C0C0C0', label: 'Silver' };
+  else tierInfo = { color: 'rgba(255,255,255,0.3)', label: t.free || 'Gratuit' };
+
+  // Avatar
+  var avatarColor = '#4DA6FF';
+  var avatarInitial = (profile.display_name || 'U').charAt(0).toUpperCase();
+
+  // Handler delete (mock RPC -> trigger success screen)
   function handleDeleteConfirm(reasons, reasonOther) {
     setIsDeletingAccount(true);
     setTimeout(function() {
@@ -39,97 +95,29 @@ function ProfilePageMock() {
     }, 1500);
   }
 
+  function handleLogout() {
+    setShowLogoutConfirm(false);
+    auth.signOut();
+  }
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#0A0E14' }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 220 }} showsVerticalScrollIndicator={false}>
-        <View style={{ alignItems: 'center', marginVertical: 20 }}>
-          <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: '#1A1D22', borderWidth: 3, borderColor: '#00D984', justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ fontSize: 48 }}>{'👤'}</Text>
+    <View style={{ flex: 1 }}>
+      <LinearGradient colors={['#1A1D22', '#252A30', '#1E2328']} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: wp(100) }} showsVerticalScrollIndicator={false}>
+          {/* Sections ajoutees progressivement en Phases 3d-3i */}
+          <View style={{ padding: wp(24), alignItems: 'center' }}>
+            <Text style={{ color: '#8892A0', fontSize: fp(14) }}>{'ProfilePageMock skeleton — sections en cours d\'ajout'}</Text>
           </View>
-          <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '700', marginTop: 12 }}>
-            Malick
-          </Text>
-          <Text style={{ color: '#00D984', fontSize: 14, fontFamily: 'monospace', marginTop: 4 }}>
-            LXM-QJLMVQ
-          </Text>
-        </View>
+        </ScrollView>
 
-        <View style={{ backgroundColor: '#1A1D22', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#2A303B' }}>
-          <Text style={{ color: '#B8BEC5', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 12 }}>
-            {t.profileStatsTitle}
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#00D984', fontSize: 24, fontWeight: '800' }}>805</Text>
-              <Text style={{ color: '#B8BEC5', fontSize: 11 }}>{t.profileStatXp}</Text>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#00D984', fontSize: 24, fontWeight: '800' }}>2500</Text>
-              <Text style={{ color: '#B8BEC5', fontSize: 11 }}>{t.profileStatLix}</Text>
-            </View>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: '#00D984', fontSize: 24, fontWeight: '800' }}>5</Text>
-              <Text style={{ color: '#B8BEC5', fontSize: 11 }}>{t.profileStatLevel}</Text>
-            </View>
-          </View>
-        </View>
-
-        <Text style={{ color: '#B8BEC5', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 8 }}>
-          {t.profileSettingsTitle}
-        </Text>
-        <MockOptionRow icon={'🔔'} label={t.profileNotifications} />
-        <MockOptionRow icon={'🌍'} label={t.profileLanguage + ' : ' + (lang.language === 'EN' ? 'English' : 'Français')} />
-        <MockOptionRow icon={'💎'} label={t.profileSubscription + ' : Gold'} />
-        <MockOptionRow icon={'🎨'} label={t.profilePreferences} />
-
-        <View style={{ height: 20 }} />
-
-        <Text style={{ color: '#B8BEC5', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginBottom: 8 }}>
-          {t.profileAccountTitle}
-        </Text>
-        <MockOptionRow icon={'🚪'} label={t.profileLogout} />
-
-        <View style={{ height: 20 }} />
-
-        <Pressable
-          onPress={function() { setShowDelete(true); }}
-          style={function(s) {
-            return {
-              backgroundColor: '#1A1D22',
-              borderRadius: 12,
-              padding: 16,
-              borderWidth: 1,
-              borderColor: '#FF6B6B',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: s.pressed ? 0.8 : 1
-            };
-          }}
-        >
-          <Text style={{ fontSize: 18, marginRight: 8 }}>{'🗑'}</Text>
-          <Text style={{ color: '#FF6B6B', fontSize: 15, fontWeight: '700' }}>
-            {t.profileDeleteAccount}
-          </Text>
-        </Pressable>
-
-        <View style={{ alignItems: 'center', marginTop: 24 }}>
-          <Text style={{ color: '#6B7280', fontSize: 11 }}>
-            {'Snack Test #02 — RGPD Flow'}
-          </Text>
-          <Text style={{ color: '#6B7280', fontSize: 10, marginTop: 4, fontStyle: 'italic' }}>
-            {'Seul le bouton "' + t.profileDeleteAccount + '" est fonctionnel'}
-          </Text>
-        </View>
-      </ScrollView>
-
-      <DeleteAccountModal
-        visible={showDelete}
-        onClose={function() { if (!isDeletingAccount) setShowDelete(false); }}
-        onConfirm={handleDeleteConfirm}
-        isDeleting={isDeletingAccount}
-        language={lang.language}
-      />
+        <DeleteAccountModal
+          visible={showDelete}
+          onClose={function() { if (!isDeletingAccount) setShowDelete(false); }}
+          onConfirm={handleDeleteConfirm}
+          isDeleting={isDeletingAccount}
+          language={lang.language}
+        />
+      </LinearGradient>
     </View>
   );
 }
