@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Modal, Pressable, TextInput, ActivityIndicator, ScrollView, Animated, KeyboardAvoidingView, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { T } from '../../pages/profile/profileConstants';
+import { supabase } from '../../config/supabase';
 
 var COLORS = {
   bgPrimary: '#0A0E14',
@@ -28,6 +29,7 @@ function getKeyword(language) {
 
 function ReasonCheckbox(props) {
   var label = props.label;
+  var icon = props.icon;
   var checked = props.checked;
   var onToggle = props.onToggle;
   var disabled = props.disabled;
@@ -54,6 +56,7 @@ function ReasonCheckbox(props) {
       <View style={{ width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: checked ? COLORS.emerald : COLORS.borderIdle, backgroundColor: checked ? COLORS.emerald : 'transparent', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
         {checked ? <Text style={{ color: '#000', fontSize: 14, fontWeight: '900' }}>{'✓'}</Text> : null}
       </View>
+      {icon ? <Text style={{ fontSize: 16, marginRight: 8 }}>{icon}</Text> : null}
       <Text style={{ flex: 1, fontSize: 14, color: COLORS.textPrimary, fontWeight: '600' }}>
         {label}
       </Text>
@@ -94,14 +97,49 @@ function DeleteAccountModal(props) {
   var scaleAnim = useRef(new Animated.Value(1)).current;
   var glowAnim = useRef(new Animated.Value(0)).current;
 
-  var reasonKeys = [
-    { id: 'no_longer_use', label: t.deleteReasonNoLongerUse },
-    { id: 'too_expensive', label: t.deleteReasonTooExpensive },
-    { id: 'too_complex', label: t.deleteReasonTooComplex },
-    { id: 'bugs', label: t.deleteReasonBugs },
-    { id: 'privacy', label: t.deleteReasonPrivacy },
-    { id: 'other', label: t.deleteReasonOther }
-  ];
+  var _dynamicReasons = useState(null);
+  var dynamicReasons = _dynamicReasons[0];
+  var setDynamicReasons = _dynamicReasons[1];
+
+  var _reasonsLoading = useState(false);
+  var reasonsLoading = _reasonsLoading[0];
+  var setReasonsLoading = _reasonsLoading[1];
+
+  // D-JS : fetch raisons actives depuis DB (RPC get_active_deletion_reasons)
+  // Fallback silencieux sur liste hardcodee FR/EN si reseau KO.
+  useEffect(function() {
+    if (!visible) return;
+    if (dynamicReasons !== null) return;
+    var langParam = language === 'EN' ? 'EN' : 'FR';
+    setReasonsLoading(true);
+    Promise.resolve(supabase.rpc('get_active_deletion_reasons', { p_lang: langParam }))
+      .then(function(res) {
+        setReasonsLoading(false);
+        if (res.error || !res.data || res.data.length === 0) {
+          console.warn('get_active_deletion_reasons fallback:', res.error);
+          setDynamicReasons(null);
+          return;
+        }
+        setDynamicReasons(res.data);
+      }, function(err) {
+        console.warn('get_active_deletion_reasons exception:', err);
+        setReasonsLoading(false);
+        setDynamicReasons(null);
+      });
+  }, [visible, language]);
+
+  var reasonKeys = dynamicReasons !== null
+    ? dynamicReasons.map(function(r) {
+        return { id: r.code, label: r.label, icon: r.icon };
+      })
+    : [
+        { id: 'no_longer_use', label: t.deleteReasonNoLongerUse, icon: '📉' },
+        { id: 'too_expensive', label: t.deleteReasonTooExpensive, icon: '💸' },
+        { id: 'too_complex', label: t.deleteReasonTooComplex, icon: '🤯' },
+        { id: 'bugs', label: t.deleteReasonBugs, icon: '🐛' },
+        { id: 'privacy_concerns', label: t.deleteReasonPrivacy, icon: '🔒' },
+        { id: 'other', label: t.deleteReasonOther, icon: '💬' }
+      ];
 
   function resetAll() {
     setSelectedReasons({});
@@ -215,11 +253,18 @@ function DeleteAccountModal(props) {
                 {t.deleteReasonSectionTitle}
               </Text>
 
+              {reasonsLoading ? (
+                <View style={{ paddingVertical: 12, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={COLORS.emerald} />
+                </View>
+              ) : null}
+
               {reasonKeys.map(function(r) {
                 return (
                   <ReasonCheckbox
                     key={r.id}
                     label={r.label}
+                    icon={r.icon}
                     checked={!!selectedReasons[r.id]}
                     disabled={isDeleting}
                     onToggle={function() { toggleReason(r.id); }}
