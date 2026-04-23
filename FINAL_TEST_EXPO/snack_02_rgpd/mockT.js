@@ -124,7 +124,11 @@ export var T = {
     editProfileSaveButton: 'Enregistrer',
     editProfileSaveSuccess: 'Profil mis a jour',
     editProfileSaveError: 'Erreur de sauvegarde',
-    editProfileNameEmpty: 'Le prenom est requis'
+    editProfileNameEmpty: 'Le prenom est requis',
+    editProfileTabPersonal: 'Infos perso',
+    editProfileTabGoals: 'Objectifs',
+    editProfileSectionGoal: 'OBJECTIF',
+    editProfileGoalCaption: 'Votre objectif principal determine vos recommandations'
   },
   en: {
     // === Cles ProfilePage prod (clonage 100%) ===
@@ -247,6 +251,10 @@ export var T = {
     editProfileSaveButton: 'Save',
     editProfileSaveSuccess: 'Profile updated',
     editProfileSaveError: 'Save error',
-    editProfileNameEmpty: 'First name is required'
+    editProfileNameEmpty: 'First name is required',
+    editProfileTabPersonal: 'Personal info',
+    editProfileTabGoals: 'Goals',
+    editProfileSectionGoal: 'GOAL',
+    editProfileGoalCaption: 'Your main goal determines your recommendations'
   }
 };
