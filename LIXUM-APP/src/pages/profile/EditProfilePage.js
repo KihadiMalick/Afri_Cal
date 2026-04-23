@@ -11,8 +11,10 @@ import {
   Platform
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScrollPicker from '../../components/shared/ScrollPicker';
+import GoalSelector from '../../components/shared/GoalSelector';
 import { useAuth } from '../../config/AuthContext';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 import { T } from './profileConstants';
@@ -115,6 +117,14 @@ function EditProfilePage(props) {
   var saveError = _saveError[0];
   var setSaveError = _saveError[1];
 
+  var _activeTab = useState('personal');
+  var activeTab = _activeTab[0];
+  var setActiveTab = _activeTab[1];
+
+  var _goal = useState('maintain');
+  var goal = _goal[0];
+  var setGoal = _goal[1];
+
   // Pre-remplissage au mount quand visible devient true
   useEffect(function() {
     if (visible && profile) {
@@ -123,8 +133,10 @@ function EditProfilePage(props) {
       setWeight(profile.weight ? Math.round(parseFloat(profile.weight)) : 70);
       setHeight(profile.height ? Math.round(parseFloat(profile.height)) : 170);
       setCity(profile.city || profile.location || '');
+      setGoal(profile.goal || 'maintain');
       setFocusedField(null);
       setSaveError(null);
+      setActiveTab('personal');
     }
   }, [visible, profile]);
 
@@ -146,7 +158,8 @@ function EditProfilePage(props) {
   var ageValid = age >= 10 && age <= 120;
   var weightValid = weight >= 20 && weight <= 500;
   var heightValid = height >= 50 && height <= 250;
-  var isFormValid = nameValid && ageValid && weightValid && heightValid;
+  var goalValid = goal === 'lose' || goal === 'maintain' || goal === 'gain';
+  var isFormValid = nameValid && ageValid && weightValid && heightValid && goalValid;
 
   async function handleSave() {
     if (isSaving || !isFormValid) return;
@@ -166,7 +179,9 @@ function EditProfilePage(props) {
         age: age,
         weight: weight,
         height: height,
-        city: city.trim()
+        city: city.trim(),
+        goal: goal
+        // custom_hydration_goal_ml : Etape 6
       };
       var res = await fetch(
         SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId,
@@ -229,46 +244,113 @@ function EditProfilePage(props) {
             borderTopColor: '#1a3a2f'
           }}
         >
+          {/* [A] Header premium (fixe hors scroll) */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 20, marginBottom: 14 }}>
+            <View style={{
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: 'rgba(77,166,255,0.12)',
+              borderWidth: 1.5,
+              borderColor: 'rgba(0,217,132,0.35)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 12
+            }}>
+              <Text style={{ color: '#4DA6FF', fontWeight: '900', fontSize: 16 }}>
+                {avatarInitial}
+              </Text>
+            </View>
+            <Text style={{ flex: 1, color: '#FFFFFF', fontSize: 19, fontWeight: '800' }}>
+              {t.editProfileTitle}
+            </Text>
+            <Pressable
+              onPress={handleCancel}
+              style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Svg width={22} height={22} viewBox="0 0 24 24">
+                <Path d="M6 6 L18 18 M18 6 L6 18" stroke="#8892A0" strokeWidth={2} strokeLinecap="round" />
+              </Svg>
+            </Pressable>
+          </View>
+
+          {/* [B] Disclaimer */}
+          <Text style={{ color: '#8892A0', fontSize: 12, marginBottom: 14, marginLeft: 68, paddingHorizontal: 20 }}>
+            {'🔒 ' + t.editProfileSubtitle}
+          </Text>
+
+          {/* [B bis] Tabs switcher */}
+          <View style={{
+            flexDirection: 'row',
+            backgroundColor: '#10151D',
+            borderRadius: 12,
+            padding: 4,
+            marginHorizontal: 20,
+            marginBottom: 16,
+            borderWidth: 1,
+            borderColor: '#1f2a36'
+          }}>
+            <Pressable
+              onPress={function() { setActiveTab('personal'); }}
+              style={{
+                flex: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: 10,
+                borderRadius: 8,
+                backgroundColor: activeTab === 'personal' ? '#00D984' : 'transparent'
+              }}
+            >
+              <Ionicons
+                name="person-outline"
+                size={16}
+                color={activeTab === 'personal' ? '#000' : '#8892A0'}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={{
+                color: activeTab === 'personal' ? '#000' : '#8892A0',
+                fontSize: 13,
+                fontWeight: activeTab === 'personal' ? '700' : '500'
+              }}>
+                {t.editProfileTabPersonal}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={function() { setActiveTab('goals'); }}
+              style={{
+                flex: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: 10,
+                borderRadius: 8,
+                backgroundColor: activeTab === 'goals' ? '#00D984' : 'transparent'
+              }}
+            >
+              <Ionicons
+                name="flag-outline"
+                size={16}
+                color={activeTab === 'goals' ? '#000' : '#8892A0'}
+                style={{ marginRight: 6 }}
+              />
+              <Text style={{
+                color: activeTab === 'goals' ? '#000' : '#8892A0',
+                fontSize: 13,
+                fontWeight: activeTab === 'goals' ? '700' : '500'
+              }}>
+                {t.editProfileTabGoals}
+              </Text>
+            </Pressable>
+          </View>
+
           <ScrollView
-            contentContainerStyle={{ padding: 20, paddingBottom: 30 }}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* [A] Header premium */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
-              <View style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: 'rgba(77,166,255,0.12)',
-                borderWidth: 1.5,
-                borderColor: 'rgba(0,217,132,0.35)',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 12
-              }}>
-                <Text style={{ color: '#4DA6FF', fontWeight: '900', fontSize: 16 }}>
-                  {avatarInitial}
-                </Text>
-              </View>
-              <Text style={{ flex: 1, color: '#FFFFFF', fontSize: 19, fontWeight: '800' }}>
-                {t.editProfileTitle}
-              </Text>
-              <Pressable
-                onPress={handleCancel}
-                style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Svg width={22} height={22} viewBox="0 0 24 24">
-                  <Path d="M6 6 L18 18 M18 6 L6 18" stroke="#8892A0" strokeWidth={2} strokeLinecap="round" />
-                </Svg>
-              </Pressable>
-            </View>
-
-            {/* [B] Disclaimer */}
-            <Text style={{ color: '#8892A0', fontSize: 12, marginBottom: 22, marginLeft: 48 }}>
-              {'🔒 ' + t.editProfileSubtitle}
-            </Text>
-
+            {activeTab === 'personal' ? (
+              <View>
             {/* [C] Section IDENTITE */}
             <Text style={{
               color: '#00D984',
@@ -501,67 +583,119 @@ function EditProfilePage(props) {
                 }}
               />
             </View>
-
-            {/* [G] Erreur save (si) */}
-            {saveError ? (
-              <View style={{
-                backgroundColor: 'rgba(255,107,107,0.08)',
-                borderWidth: 1,
-                borderColor: 'rgba(255,107,107,0.3)',
-                borderRadius: 10,
-                padding: 10,
-                marginBottom: 14
-              }}>
-                <Text style={{ color: '#FF6B6B', fontSize: 12, textAlign: 'center' }}>
-                  {saveError}
-                </Text>
               </View>
             ) : null}
 
-            {/* [G] Boutons */}
-            <View style={{ flexDirection: 'row', gap: 12 }}>
-              <Pressable
-                onPress={handleCancel}
-                disabled={isSaving}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: 12,
-                  borderWidth: 1.2,
-                  borderColor: '#3E4855',
-                  backgroundColor: '#10151D',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: isSaving ? 0.5 : 1
-                }}
-              >
-                <Text style={{ color: '#CCCCCC', fontSize: 15, fontWeight: '600' }}>
-                  {t.editProfileCancelButton}
+            {activeTab === 'goals' ? (
+              <View>
+                {/* Section OBJECTIF */}
+                <Text style={{
+                  color: '#00D984',
+                  fontSize: 11,
+                  fontWeight: '700',
+                  letterSpacing: 1.2,
+                  marginBottom: 10
+                }}>
+                  {t.editProfileSectionGoal}
                 </Text>
-              </Pressable>
-              <Pressable
-                onPress={handleSave}
-                disabled={!isFormValid || isSaving}
-                style={{
-                  flex: 1.2,
-                  height: 52,
-                  borderRadius: 12,
-                  backgroundColor: (isFormValid && !isSaving) ? '#00D984' : '#1f3a2f',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: (isFormValid && !isSaving) ? 1 : 0.55
-                }}
-              >
-                {isSaving ? (
-                  <ActivityIndicator size="small" color="#000000" />
-                ) : (
-                  <Text style={{ color: '#000000', fontSize: 15, fontWeight: '800' }}>
-                    {t.editProfileSaveButton}
+                <View style={{
+                  backgroundColor: '#10151D',
+                  borderWidth: 1,
+                  borderColor: '#1f2a36',
+                  borderRadius: 14,
+                  padding: 14,
+                  marginBottom: 16
+                }}>
+                  <GoalSelector
+                    value={goal}
+                    onChange={setGoal}
+                    language={language}
+                  />
+                  <Text style={{
+                    color: '#555E6C',
+                    fontSize: 11,
+                    marginTop: 12,
+                    textAlign: 'center',
+                    fontStyle: 'italic'
+                  }}>
+                    {t.editProfileGoalCaption}
                   </Text>
-                )}
-              </Pressable>
-            </View>
+                </View>
+
+                {/* Hydration : Etape 6 */}
+              </View>
+            ) : null}
           </ScrollView>
+
+          {/* Erreur save (fixe au-dessus des boutons) */}
+          {saveError ? (
+            <View style={{
+              backgroundColor: 'rgba(255,107,107,0.08)',
+              borderWidth: 1,
+              borderColor: 'rgba(255,107,107,0.3)',
+              borderRadius: 10,
+              padding: 10,
+              marginHorizontal: 20,
+              marginBottom: 10
+            }}>
+              <Text style={{ color: '#FF6B6B', fontSize: 12, textAlign: 'center' }}>
+                {saveError}
+              </Text>
+            </View>
+          ) : null}
+
+          {/* Boutons globaux (fixes hors scroll) */}
+          <View style={{
+            flexDirection: 'row',
+            gap: 12,
+            paddingHorizontal: 20,
+            paddingVertical: 14,
+            paddingBottom: Platform.OS === 'ios' ? 28 : 14,
+            borderTopWidth: 1,
+            borderTopColor: '#1f2a36',
+            backgroundColor: '#0A0E14'
+          }}>
+            <Pressable
+              onPress={handleCancel}
+              disabled={isSaving}
+              style={{
+                flex: 1,
+                height: 48,
+                borderRadius: 12,
+                borderWidth: 1.2,
+                borderColor: '#3E4855',
+                backgroundColor: '#10151D',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: isSaving ? 0.5 : 1
+              }}
+            >
+              <Text style={{ color: '#CCCCCC', fontSize: 15, fontWeight: '600' }}>
+                {t.editProfileCancelButton}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={handleSave}
+              disabled={!isFormValid || isSaving}
+              style={{
+                flex: 1.2,
+                height: 52,
+                borderRadius: 12,
+                backgroundColor: (isFormValid && !isSaving) ? '#00D984' : '#1f3a2f',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: (isFormValid && !isSaving) ? 1 : 0.55
+              }}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#000000" />
+              ) : (
+                <Text style={{ color: '#000000', fontSize: 15, fontWeight: '800' }}>
+                  {t.editProfileSaveButton}
+                </Text>
+              )}
+            </Pressable>
+          </View>
         </KeyboardAvoidingView>
       </View>
     </Modal>
