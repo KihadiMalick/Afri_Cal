@@ -12,10 +12,12 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import ScrollPicker from './shared/ScrollPicker';
-import { T } from './mockT';
+import ScrollPicker from '../../components/shared/ScrollPicker';
+import { useAuth } from '../../config/AuthContext';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
+import { T } from './profileConstants';
 
-// Helpers identiques a la prod (hors composant)
+// === Helpers (hors composant pour eviter reconstruction a chaque render) ===
 
 function buildAgeValues() {
   var arr = [];
@@ -69,11 +71,16 @@ function getImcPosition(imc) {
   return ((clamped - 15) / (40 - 15)) * 100;
 }
 
-function EditProfilePageMock(props) {
+// === Composant principal ===
+
+function EditProfilePage(props) {
   var visible = props.visible;
   var onClose = props.onClose;
   var profile = props.profile || null;
-  var language = props.language || 'FR';
+  var onSaveSuccess = props.onSaveSuccess;
+
+  var auth = useAuth();
+  var language = (auth && auth.language) || 'FR';
   var t = language === 'EN' ? T.en : T.fr;
 
   var _name = useState('');
@@ -104,6 +111,11 @@ function EditProfilePageMock(props) {
   var isSaving = _isSaving[0];
   var setIsSaving = _isSaving[1];
 
+  var _saveError = useState(null);
+  var saveError = _saveError[0];
+  var setSaveError = _saveError[1];
+
+  // Pre-remplissage au mount quand visible devient true
   useEffect(function() {
     if (visible && profile) {
       setName(profile.display_name || '');
@@ -112,9 +124,11 @@ function EditProfilePageMock(props) {
       setHeight(profile.height ? Math.round(parseFloat(profile.height)) : 170);
       setCity(profile.city || profile.location || '');
       setFocusedField(null);
+      setSaveError(null);
     }
   }, [visible, profile]);
 
+  // IMC live
   var imc = useMemo(function() {
     return computeImc(weight, height);
   }, [weight, height]);
@@ -127,32 +141,69 @@ function EditProfilePageMock(props) {
     return getImcPosition(imc);
   }, [imc]);
 
+  // Validations
   var nameValid = !!(name && name.trim().length > 0);
   var ageValid = age >= 10 && age <= 120;
   var weightValid = weight >= 20 && weight <= 500;
   var heightValid = height >= 50 && height <= 250;
   var isFormValid = nameValid && ageValid && weightValid && heightValid;
 
-  function handleSaveMock() {
+  async function handleSave() {
     if (isSaving || !isFormValid) return;
     setIsSaving(true);
-    setTimeout(function() {
-      console.log('MOCK SAVE:', {
+    setSaveError(null);
+    try {
+      var userId = auth && auth.userId;
+      if (!userId) {
+        setSaveError(t.editProfileSaveError);
+        setIsSaving(false);
+        return;
+      }
+      var session = await supabase.auth.getSession();
+      var accessToken = session && session.data && session.data.session ? session.data.session.access_token : SUPABASE_ANON_KEY;
+      var body = {
         display_name: name.trim(),
         age: age,
         weight: weight,
         height: height,
-        city: city.trim(),
-        imc: imc
-      });
+        city: city.trim()
+      };
+      var res = await fetch(
+        SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId,
+        {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + accessToken,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(body)
+        }
+      );
+      if (!res.ok) {
+        throw new Error('PATCH failed: ' + res.status);
+      }
+      var data = await res.json();
       setIsSaving(false);
-      if (onClose) onClose();
-    }, 800);
+      if (onSaveSuccess && data && data[0]) {
+        onSaveSuccess(data[0]);
+      }
+      if (onClose) {
+        onClose();
+      }
+    } catch (err) {
+      console.warn('EditProfilePage saveProfile error:', err);
+      setSaveError(t.editProfileSaveError);
+      setIsSaving(false);
+    }
   }
 
   function handleCancel() {
     if (isSaving) return;
-    if (onClose) onClose();
+    if (onClose) {
+      onClose();
+    }
   }
 
   var avatarInitial = ((name && name.charAt(0)) || 'U').toUpperCase();
@@ -183,7 +234,7 @@ function EditProfilePageMock(props) {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Header premium */}
+            {/* [A] Header premium */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
               <View style={{
                 width: 36,
@@ -213,12 +264,12 @@ function EditProfilePageMock(props) {
               </Pressable>
             </View>
 
-            {/* Disclaimer */}
+            {/* [B] Disclaimer */}
             <Text style={{ color: '#8892A0', fontSize: 12, marginBottom: 22, marginLeft: 48 }}>
               {'🔒 ' + t.editProfileSubtitle}
             </Text>
 
-            {/* Section IDENTITE */}
+            {/* [C] Section IDENTITE */}
             <Text style={{
               color: '#00D984',
               fontSize: 11,
@@ -268,7 +319,7 @@ function EditProfilePageMock(props) {
               ) : null}
             </View>
 
-            {/* Section CORPS avec 3 ScrollPickers + IMC live */}
+            {/* [D] Section CORPS avec 3 ScrollPickers */}
             <Text style={{
               color: '#00D984',
               fontSize: 11,
@@ -333,6 +384,7 @@ function EditProfilePageMock(props) {
                 </View>
               </View>
 
+              {/* [E] IMC live */}
               {imc !== null && imcCategory ? (
                 <View style={{
                   marginTop: 16,
@@ -377,6 +429,7 @@ function EditProfilePageMock(props) {
                     </View>
                   </View>
 
+                  {/* Barre 4 segments + curseur */}
                   <View style={{ height: 8, borderRadius: 4, overflow: 'hidden', flexDirection: 'row', marginBottom: 8 }}>
                     <View style={{ flex: 3.5, backgroundColor: '#4DA6FF', opacity: 0.35 }} />
                     <View style={{ flex: 6.5, backgroundColor: '#00D984', opacity: 0.35 }} />
@@ -407,7 +460,7 @@ function EditProfilePageMock(props) {
               ) : null}
             </View>
 
-            {/* Section LOCALISATION */}
+            {/* [F] Section LOCALISATION */}
             <Text style={{
               color: '#00D984',
               fontSize: 11,
@@ -449,7 +502,23 @@ function EditProfilePageMock(props) {
               />
             </View>
 
-            {/* Boutons */}
+            {/* [G] Erreur save (si) */}
+            {saveError ? (
+              <View style={{
+                backgroundColor: 'rgba(255,107,107,0.08)',
+                borderWidth: 1,
+                borderColor: 'rgba(255,107,107,0.3)',
+                borderRadius: 10,
+                padding: 10,
+                marginBottom: 14
+              }}>
+                <Text style={{ color: '#FF6B6B', fontSize: 12, textAlign: 'center' }}>
+                  {saveError}
+                </Text>
+              </View>
+            ) : null}
+
+            {/* [G] Boutons */}
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <Pressable
                 onPress={handleCancel}
@@ -471,7 +540,7 @@ function EditProfilePageMock(props) {
                 </Text>
               </Pressable>
               <Pressable
-                onPress={handleSaveMock}
+                onPress={handleSave}
                 disabled={!isFormValid || isSaving}
                 style={{
                   flex: 1.2,
@@ -499,4 +568,4 @@ function EditProfilePageMock(props) {
   );
 }
 
-export default EditProfilePageMock;
+export default EditProfilePage;
