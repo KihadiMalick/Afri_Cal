@@ -15,6 +15,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScrollPicker from '../../components/shared/ScrollPicker';
 import GoalSelector from '../../components/shared/GoalSelector';
+import TargetKgStepper from '../../components/shared/TargetKgStepper';
+import PaceSelector from '../../components/shared/PaceSelector';
+import PlanSummaryCard from '../../components/shared/PlanSummaryCard';
+import ActivityLevelSelector from '../../components/shared/ActivityLevelSelector';
+import { calculateBodyMetrics } from '../../constants/bodyMetrics';
 import { useAuth } from '../../config/AuthContext';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 import { T } from './profileConstants';
@@ -125,6 +130,18 @@ function EditProfilePage(props) {
   var goal = _goal[0];
   var setGoal = _goal[1];
 
+  var _targetKg = useState(5);
+  var targetKg = _targetKg[0];
+  var setTargetKg = _targetKg[1];
+
+  var _paceMode = useState(1);
+  var paceMode = _paceMode[0];
+  var setPaceMode = _paceMode[1];
+
+  var _activityLevel = useState('moderate');
+  var activityLevel = _activityLevel[0];
+  var setActivityLevel = _activityLevel[1];
+
   // Pre-remplissage au mount quand visible devient true
   useEffect(function() {
     if (visible && profile) {
@@ -134,6 +151,9 @@ function EditProfilePage(props) {
       setHeight(profile.height ? Math.round(parseFloat(profile.height)) : 170);
       setCity(profile.city || profile.location || '');
       setGoal(profile.goal || 'maintain');
+      setTargetKg(profile.target_weight_loss > 0 ? Math.round(parseFloat(profile.target_weight_loss)) : 5);
+      setPaceMode(typeof profile.pace_mode === 'number' ? profile.pace_mode : 1);
+      setActivityLevel(profile.activity_level || 'moderate');
       setFocusedField(null);
       setSaveError(null);
       setActiveTab('personal');
@@ -152,6 +172,32 @@ function EditProfilePage(props) {
   var imcPosition = useMemo(function() {
     return getImcPosition(imc);
   }, [imc]);
+
+  // Calculs body metrics (BMR, TDEE, daily target, macros) pour tab Objectifs
+  var calculations = useMemo(function() {
+    if (!weight || !height || !age) return null;
+    return calculateBodyMetrics({
+      weight: weight,
+      height: height,
+      age: age,
+      gender: (profile && profile.gender) || 'male',
+      activityLevel: activityLevel,
+      goal: goal,
+      targetKg: targetKg,
+      paceMode: paceMode
+    });
+  }, [weight, height, age, profile, activityLevel, goal, targetKg, paceMode]);
+
+  // target_months derive (contrainte DB 1..12 apres migration Sprint 5.2)
+  var derivedMonths = useMemo(function() {
+    if (!calculations || goal === 'maintain') return 3;
+    var modes = calculations.modes;
+    if (!modes) return 3;
+    var modeKeys = ['ambitious', 'reasonable', 'realistic'];
+    var key = modeKeys[paceMode] || 'reasonable';
+    if (!modes[key] || !modes[key].days) return 3;
+    return Math.max(1, Math.min(12, Math.ceil(modes[key].days / 30)));
+  }, [calculations, paceMode, goal]);
 
   // Validations
   var nameValid = !!(name && name.trim().length > 0);
@@ -180,7 +226,14 @@ function EditProfilePage(props) {
         weight: weight,
         height: height,
         city: city.trim(),
-        goal: goal
+        goal: goal,
+        activity_level: activityLevel,
+        target_weight_loss: goal === 'maintain' ? 0 : targetKg,
+        pace_mode: paceMode,
+        target_months: derivedMonths,
+        daily_calorie_target: calculations ? calculations.dailyTarget : null,
+        bmr: calculations ? Math.round(calculations.bmr) : null,
+        tdee: calculations ? Math.round(calculations.tdee) : null
         // custom_hydration_goal_ml : Etape 6
       };
       var res = await fetch(
@@ -620,6 +673,120 @@ function EditProfilePage(props) {
                   }}>
                     {t.editProfileGoalCaption}
                   </Text>
+                </View>
+
+                {/* Cas goal !== 'maintain' : TargetKg + Pace + Plan */}
+                {goal && goal !== 'maintain' ? (
+                  <View>
+                    {/* Section POIDS CIBLE */}
+                    <Text style={{
+                      color: '#00D984',
+                      fontSize: 11,
+                      fontWeight: '700',
+                      letterSpacing: 1.2,
+                      marginBottom: 10
+                    }}>
+                      {t.editProfileSectionTargetKg}
+                    </Text>
+                    <View style={{
+                      backgroundColor: '#10151D',
+                      borderWidth: 1,
+                      borderColor: '#1f2a36',
+                      borderRadius: 14,
+                      padding: 4,
+                      marginBottom: 16
+                    }}>
+                      <TargetKgStepper
+                        value={targetKg}
+                        onChange={setTargetKg}
+                        goal={goal}
+                        language={language}
+                      />
+                    </View>
+
+                    {/* Section RYTHME */}
+                    <Text style={{
+                      color: '#00D984',
+                      fontSize: 11,
+                      fontWeight: '700',
+                      letterSpacing: 1.2,
+                      marginBottom: 10
+                    }}>
+                      {t.editProfileSectionPace}
+                    </Text>
+                    <View style={{
+                      backgroundColor: '#10151D',
+                      borderWidth: 1,
+                      borderColor: '#1f2a36',
+                      borderRadius: 14,
+                      padding: 14,
+                      marginBottom: 16
+                    }}>
+                      <PaceSelector
+                        value={paceMode}
+                        onChange={setPaceMode}
+                        calculations={calculations}
+                        language={language}
+                      />
+                    </View>
+
+                    {/* Section VOTRE PLAN */}
+                    {calculations ? (
+                      <PlanSummaryCard
+                        calculations={calculations}
+                        language={language}
+                      />
+                    ) : null}
+                  </View>
+                ) : null}
+
+                {/* Cas goal === 'maintain' : carte Maintien equilibre */}
+                {goal === 'maintain' ? (
+                  <View style={{
+                    backgroundColor: '#10151D',
+                    borderWidth: 1,
+                    borderColor: '#00D984',
+                    borderRadius: 14,
+                    padding: 16,
+                    marginBottom: 16
+                  }}>
+                    <Text style={{
+                      color: '#00D984',
+                      fontSize: 14,
+                      fontWeight: '700',
+                      marginBottom: 8
+                    }}>
+                      {t.editProfileMaintainTitle}
+                    </Text>
+                    <Text style={{ color: '#ccc', fontSize: 12, lineHeight: 18 }}>
+                      {t.editProfileMaintainBody}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* Section NIVEAU D'ACTIVITE (toujours visible) */}
+                <Text style={{
+                  color: '#00D984',
+                  fontSize: 11,
+                  fontWeight: '700',
+                  letterSpacing: 1.2,
+                  marginBottom: 10
+                }}>
+                  {t.editProfileSectionActivity}
+                </Text>
+                <View style={{
+                  backgroundColor: '#10151D',
+                  borderWidth: 1,
+                  borderColor: '#1f2a36',
+                  borderRadius: 14,
+                  padding: 14,
+                  marginBottom: 16
+                }}>
+                  <ActivityLevelSelector
+                    value={activityLevel}
+                    onChange={setActivityLevel}
+                    language={language}
+                  />
                 </View>
 
                 {/* Hydration : Etape 6 */}
