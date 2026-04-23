@@ -156,7 +156,7 @@ export default function ProfilePage({ navigation }) {
     try {
       await supabase.from('users_profile').update({ custom_hydration_goal_ml: dbVal }).eq('user_id', userId);
       setHydroGoalL(isDefault ? null : valL);
-      showToast('Objectif hydratation mis a jour', '#4DA6FF');
+      showToast('Objectif hydratation mis à jour', '#4DA6FF');
     } catch (e) { showToast('Erreur sauvegarde', '#FF6B6B'); }
   };
 
@@ -487,7 +487,7 @@ export default function ProfilePage({ navigation }) {
             visible={showEditProfile}
             onClose={function() { setShowEditProfile(false); }}
             profile={profile}
-            onSaveSuccess={function(updatedProfile) { if (updatedProfile) { setProfile(updatedProfile); updateLixBalance(updatedProfile.lix_balance || 0); } showToast('Profil mis a jour', '#00D984'); }}
+            onSaveSuccess={function(updatedProfile) { if (updatedProfile) { setProfile(updatedProfile); updateLixBalance(updatedProfile.lix_balance || 0); } showToast('Profil mis à jour', '#00D984'); }}
           />
 
           <Modal visible={showMedicalWarning} transparent animationType="fade" onRequestClose={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }}>
