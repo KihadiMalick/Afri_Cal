@@ -4,6 +4,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../registerConstants';
 import GoalSelector from '../../../components/shared/GoalSelector';
+import TargetKgStepper from '../../../components/shared/TargetKgStepper';
+import PaceSelector from '../../../components/shared/PaceSelector';
+import PlanSummaryCard from '../../../components/shared/PlanSummaryCard';
 
 function Phase5Goals({ formData, setFormData, calculations, t, lang }) {
   var fd = formData;
@@ -24,82 +27,28 @@ function Phase5Goals({ formData, setFormData, calculations, t, lang }) {
 
       {fd.goal && fd.goal !== 'maintain' ? (
         <View>
-          <View style={{ alignItems: 'center', marginVertical: 16, paddingVertical: 20, borderRadius: 16,
-            backgroundColor: C.bgInput, borderWidth: 1, borderColor: 'rgba(62,72,85,0.2)' }}>
-            <Text style={{ color: C.textSecondary, fontSize: 10, fontWeight: '600', letterSpacing: 1.5, marginBottom: 14 }}>{t.kgLabel(fd.goal)}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 24 }}>
-              <TouchableOpacity onPress={function() { u('targetKg', Math.max(1, fd.targetKg - 1)); }}>
-                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1.2, borderColor: 'rgba(0,217,132,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="chevron-down" size={20} color={C.emerald} />
-                </View>
-              </TouchableOpacity>
-              <View style={{ alignItems: 'center' }}>
-                <Text style={{ color: C.emerald, fontSize: 48, fontWeight: '900', textShadowColor: 'rgba(0,217,132,0.3)', textShadowRadius: 10 }}>{fd.targetKg}</Text>
-                <Text style={{ color: C.textMuted, fontSize: 12, letterSpacing: 2 }}>KG</Text>
-              </View>
-              <TouchableOpacity onPress={function() { u('targetKg', Math.min(30, fd.targetKg + 1)); }}>
-                <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,217,132,0.06)', borderWidth: 1.2, borderColor: 'rgba(0,217,132,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="chevron-up" size={20} color={C.emerald} />
-                </View>
-              </TouchableOpacity>
-            </View>
+          <View style={{ marginVertical: 16, paddingVertical: 8, borderRadius: 16, backgroundColor: C.bgInput, borderWidth: 1, borderColor: 'rgba(62,72,85,0.2)' }}>
+            <TargetKgStepper
+              value={fd.targetKg}
+              onChange={function(val) { u('targetKg', val); }}
+              goal={fd.goal}
+              language={lang === 'en' ? 'EN' : 'FR'}
+            />
           </View>
 
           <Text style={{ color: '#8892A0', fontSize: 12, fontWeight: '600', marginBottom: 10, letterSpacing: 0.5 }}>{t.yourPace}</Text>
-          {t.paceLabels.map(function(label, i) {
-            var sel = fd.paceMode === i;
-            var mk = ['ambitious', 'reasonable', 'realistic'][i];
-            var md = calc.modes[mk];
-            return (
-              <TouchableOpacity key={i} onPress={function() { u('paceMode', i); }} activeOpacity={0.7} style={{ marginBottom: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 14,
-                  borderRadius: 12, borderWidth: 1.2, borderColor: sel ? paceColors[i] + '50' : C.metalBorder,
-                  backgroundColor: sel ? paceColors[i] + '08' : C.bgDeep, gap: 12 }}>
-                  <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: sel ? paceColors[i] + '15' : 'rgba(62,72,85,0.2)',
-                    borderWidth: 1, borderColor: sel ? paceColors[i] + '30' : 'rgba(62,72,85,0.3)', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name={paceIcons[i]} size={18} color={sel ? paceColors[i] : C.textMuted} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ color: sel ? paceColors[i] : C.textPrimary, fontSize: 14, fontWeight: '700' }}>{label}</Text>
-                    <Text style={{ color: C.textSecondary, fontSize: 10, marginTop: 2 }}>{md.dailyDelta} kcal/jour {'\u00B7'} {md.weeksLabel} {t.weeks}</Text>
-                  </View>
-                  {sel ? <Ionicons name="checkmark-circle" size={20} color={paceColors[i]} /> : null}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+          <PaceSelector
+            value={fd.paceMode}
+            onChange={function(idx) { u('paceMode', idx); }}
+            calculations={calc}
+            language={lang === 'en' ? 'EN' : 'FR'}
+          />
 
-          <View style={{ marginTop: 16, borderRadius: 14, overflow: 'hidden', borderWidth: 1.5,
-            borderTopColor: 'rgba(212,175,55,0.3)', borderBottomColor: 'rgba(212,175,55,0.1)',
-            borderLeftColor: 'rgba(212,175,55,0.15)', borderRightColor: 'rgba(212,175,55,0.15)',
-            backgroundColor: C.bgInput }}>
-            <LinearGradient colors={['rgba(212,175,55,0.08)', 'rgba(212,175,55,0.02)', 'transparent']}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60 }} />
-            <View style={{ padding: 16 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                <Ionicons name="trophy-outline" size={14} color={C.gold} />
-                <Text style={{ color: C.gold, fontSize: 10, fontWeight: '700', letterSpacing: 1.5 }}>{t.yourPlan}</Text>
-              </View>
-              <Text style={{ color: C.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 4 }}>{t.dailyGoal(calc.dailyTarget)}</Text>
-              <Text style={{ color: C.textMuted, fontSize: 11, marginBottom: 14 }}>{t.bmrTdee(calc.bmr, calc.tdee)}</Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                {[
-                  { label: t.protein, value: calc.macros.protein, color: C.turquoise },
-                  { label: t.carbs, value: calc.macros.carbs, color: C.emerald },
-                  { label: t.fat, value: calc.macros.fat, color: C.gold },
-                ].map(function(m, i) {
-                  return (
-                    <View key={i} style={{ alignItems: 'center', flex: 1 }}>
-                      <Text style={{ color: m.color, fontSize: 22, fontWeight: '800' }}>{m.value}</Text>
-                      <Text style={{ color: C.textMuted, fontSize: 9, marginTop: 1 }}>{t.gUnit} {m.label}</Text>
-                      <View style={{ width: '60%', height: 3, borderRadius: 1.5, marginTop: 6, backgroundColor: 'rgba(62,72,85,0.2)' }}>
-                        <View style={{ width: Math.min(100, (m.value / 300) * 100) + '%', height: '100%', borderRadius: 1.5, backgroundColor: m.color }} />
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
+          <View style={{ marginTop: 16 }}>
+            <PlanSummaryCard
+              calculations={calc}
+              language={lang === 'en' ? 'EN' : 'FR'}
+            />
           </View>
         </View>
       ) : fd.goal === 'maintain' ? (
