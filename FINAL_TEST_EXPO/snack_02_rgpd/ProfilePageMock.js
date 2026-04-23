@@ -363,7 +363,8 @@ function ProfilePageMock() {
             age: 40,
             weight: 86,
             height: 185,
-            city: 'Bujumbura'
+            city: 'Bujumbura',
+            goal: 'maintain'
           }}
         />
       </LinearGradient>
