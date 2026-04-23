@@ -688,7 +688,7 @@ export const AllModals = (props) => {
               Votre conversation sera compactée et rangée dans votre Secret Pocket.
             </Text>
 
-            {/* Info securite */}
+            {/* Info sécurité */}
             <View style={{
               flexDirection: 'row', alignItems: 'center',
               backgroundColor: 'rgba(212,175,55,0.08)',

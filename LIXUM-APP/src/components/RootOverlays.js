@@ -12,7 +12,7 @@ function RootOverlays(props) {
   var setIsRestoring = _isRestoring[1];
 
   // Synchronise la modale avec l'etat RGPD : si pas de deletionPending,
-  // ou si ecran success est visible, on force la fermeture de la modale.
+  // ou si écran success est visible, on force la fermeture de la modale.
   // L'ouverture est declenchee uniquement par le tap de la banniere
   // (geree dans App.js via setShowRestoreModal lifted).
   useEffect(function() {

@@ -167,7 +167,7 @@ export const SecretPocketContent = ({ isUnlocked, setIsUnlocked, setCurrentSubPa
         </Pressable>
       </View>
 
-      {/* Indicateur securite */}
+      {/* Indicateur sécurité */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', gap: wp(6),
         backgroundColor: 'rgba(212,175,55,0.1)', borderRadius: wp(8),

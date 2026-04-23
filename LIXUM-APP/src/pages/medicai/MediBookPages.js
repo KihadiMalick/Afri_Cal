@@ -1585,10 +1585,10 @@ export const MediBookContent = (props) => {
 
     var TAB_ITEMS = [
       { key: 'nutrition', emoji: '🥗', label: 'NUTRITION', color: '#00D984', pct: nutritionPercent, top: 0, leftPct: 50, anchor: 'center', big: true },
-      { key: 'vitalite', emoji: '💚', label: 'VITALITE', color: '#9B8ACF', pct: vitalitePercent, top: wp(40), leftPct: 8, anchor: 'left', big: false },
+      { key: 'vitalite', emoji: '💚', label: 'VITALITÉ', color: '#9B8ACF', pct: vitalitePercent, top: wp(40), leftPct: 8, anchor: 'left', big: false },
       { key: 'humeur', emoji: '😊', label: 'HUMEUR', color: '#FFD93D', pct: humeurPercent, top: wp(40), leftPct: 92, anchor: 'right', big: false },
-      { key: 'activite', emoji: '🏃', label: 'ACTIVITE', color: '#4DA6FF', pct: activitePercent, top: wp(88), leftPct: 22, anchor: 'left', big: false },
-      { key: 'sante', emoji: '🏥', label: 'SANTE', color: '#FF6B8A', pct: santePercent, top: wp(88), leftPct: 78, anchor: 'right', big: false }
+      { key: 'activite', emoji: '🏃', label: 'ACTIVITÉ', color: '#4DA6FF', pct: activitePercent, top: wp(88), leftPct: 22, anchor: 'left', big: false },
+      { key: 'sante', emoji: '🏥', label: 'SANTÉ', color: '#FF6B8A', pct: santePercent, top: wp(88), leftPct: 78, anchor: 'right', big: false }
     ];
     var TIME_RANGES = [
       { key: '7d', label: '7J', days: 7 },

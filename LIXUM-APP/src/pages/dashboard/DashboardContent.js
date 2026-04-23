@@ -570,8 +570,8 @@ const DashboardContent = ({
       <Pressable onPress={function() { setShowVitalityInfo(false); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
         <Pressable onPress={function() {}} style={{ width: '100%', maxWidth: 380, backgroundColor: '#1A1D22', borderRadius: wp(16), borderWidth: 1, borderColor: '#4A4F55', padding: wp(16), maxHeight: H * 0.82 }}>
           <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-            <Text style={{ color: '#D4AF37', fontSize: fp(15), fontWeight: '800', textAlign: 'center', letterSpacing: 1 }}>Votre score de Vitalite</Text>
-            <Text style={{ color: '#8892A0', fontSize: fp(11), textAlign: 'center', marginTop: wp(6), marginBottom: wp(14), lineHeight: fp(16) }}>Votre Vitalite reflete votre equilibre sante du jour sur 100 points, repartis en 4 piliers :</Text>
+            <Text style={{ color: '#D4AF37', fontSize: fp(15), fontWeight: '800', textAlign: 'center', letterSpacing: 1 }}>Votre score de Vitalité</Text>
+            <Text style={{ color: '#8892A0', fontSize: fp(11), textAlign: 'center', marginTop: wp(6), marginBottom: wp(14), lineHeight: fp(16) }}>Votre Vitalité reflète votre équilibre santé du jour sur 100 points, répartis en 4 piliers :</Text>
 
             {(function() {
               var vd = vitalityDetails || {};

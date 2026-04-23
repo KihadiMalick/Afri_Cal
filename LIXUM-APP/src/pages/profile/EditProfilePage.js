@@ -188,7 +188,7 @@ function EditProfilePage(props) {
     });
   }, [weight, height, age, profile, activityLevel, goal, targetKg, paceMode]);
 
-  // target_months derive (contrainte DB 1..12 apres migration Sprint 5.2)
+  // target_months dérivé (contrainte DB 1..12 après migration Sprint 5.2)
   var derivedMonths = useMemo(function() {
     if (!calculations || goal === 'maintain') return 3;
     var modes = calculations.modes;
