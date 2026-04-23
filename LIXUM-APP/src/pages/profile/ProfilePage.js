@@ -19,6 +19,7 @@ import { useAuth } from '../../config/AuthContext';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { supabase } from '../../config/supabase';
 import MetalCard from '../../components/shared/MetalCard';
+import ScrollPicker from '../../components/shared/ScrollPicker';
 import DeleteAccountModal from '../../components/profile/DeleteAccountModal';
 
 var markdownStyles = {
@@ -69,33 +70,6 @@ var legalStyles = {
   legalScrollContent: { paddingHorizontal: wp(20), paddingVertical: wp(20), paddingBottom: wp(40) },
   legalFooter: { marginTop: wp(30), paddingTop: wp(16), borderTopWidth: 1, borderTopColor: '#2A303B', alignItems: 'center' },
   legalFooterText: { color: '#8892A0', fontSize: fp(11), textAlign: 'center', fontStyle: 'italic' }
-};
-
-var ProfileScrollPicker = function(pickerProps) {
-  var values = pickerProps.values, selectedValue = pickerProps.selectedValue, onSelect = pickerProps.onSelect, unit = pickerProps.unit;
-  var color = pickerProps.color || '#00D984', pickerHeight = pickerProps.height || 160, ITEM_H = 40;
-  var scrollRef = useRef(null);
-  var initialIdx = Math.max(0, values.indexOf(selectedValue));
-  useEffect(function() { var timer = setTimeout(function() { if (scrollRef.current) scrollRef.current.scrollTo({ y: initialIdx * ITEM_H, animated: false }); }, 150); return function() { clearTimeout(timer); }; }, []);
-  var snapToNearest = useCallback(function(event) { var y = event.nativeEvent.contentOffset.y; var idx = Math.round(y / ITEM_H); var clamped = Math.max(0, Math.min(idx, values.length - 1)); if (values[clamped] !== selectedValue) onSelect(values[clamped]); }, [values, selectedValue, onSelect]);
-  return (
-    <View style={{ height: pickerHeight, borderRadius: wp(12), overflow: 'hidden', borderWidth: 1, borderColor: color + '18', backgroundColor: '#0A0E14' }}>
-      <View style={{ position: 'absolute', top: pickerHeight / 2 - ITEM_H / 2, left: wp(4), right: wp(4), height: ITEM_H, borderRadius: wp(8), backgroundColor: color + '0D', zIndex: 0 }}>
-        <View style={{ position: 'absolute', left: 0, top: wp(4), bottom: wp(4), width: wp(3), borderRadius: wp(2), backgroundColor: color }} />
-      </View>
-      <LinearGradient colors={['#0A0E14', 'rgba(10,14,20,0.5)', 'rgba(10,14,20,0)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: pickerHeight * 0.35, zIndex: 3 }} pointerEvents="none" />
-      <LinearGradient colors={['rgba(10,14,20,0)', 'rgba(10,14,20,0.5)', '#0A0E14']} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: pickerHeight * 0.35, zIndex: 3 }} pointerEvents="none" />
-      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} snapToInterval={ITEM_H} decelerationRate={0.92} bounces={false} overScrollMode="never" nestedScrollEnabled={true} onMomentumScrollEnd={snapToNearest}
-        onScrollEndDrag={function(e) { var v = e.nativeEvent.velocity; if (!v || Math.abs(v.y) < 0.1) snapToNearest(e); }}
-        contentContainerStyle={{ paddingTop: pickerHeight / 2 - ITEM_H / 2, paddingBottom: pickerHeight / 2 - ITEM_H / 2 }}>
-        {values.map(function(val, i) { var isSel = val === selectedValue; return (
-          <View key={val + '-' + i} style={{ height: ITEM_H, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: isSel ? color : 'rgba(255,255,255,0.15)', fontSize: isSel ? fp(18) : fp(12), fontWeight: isSel ? '800' : '400' }}>{isSel ? val + ' ' + unit : String(val)}</Text>
-          </View>
-        ); })}
-      </ScrollView>
-    </View>
-  );
 };
 
 export default function ProfilePage({ navigation }) {
@@ -544,7 +518,7 @@ export default function ProfilePage({ navigation }) {
             <Text style={{ fontSize: fp(12), color: '#8A8F98', marginBottom: wp(12) }}>Recommandé : 2.5L (H) / 2.0L (F)</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={{ flex: 1 }}>
-                <ProfileScrollPicker values={hydroValues} selectedValue={currentHydroL} onSelect={function(val) { trySetHydroGoal(val); }} unit="L" color="#4DA6FF" height={140} />
+                <ScrollPicker variant="compact" values={hydroValues} selectedValue={currentHydroL} onSelect={trySetHydroGoal} unit="L" color="#4DA6FF" height={140} />
               </View>
               <View style={{ marginLeft: wp(16), alignItems: 'center' }}>
                 <Text style={{ fontSize: fp(28), fontWeight: '800', color: '#00D984' }}>{currentHydroL.toFixed(1)}</Text>

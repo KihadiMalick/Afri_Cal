@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-nati
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '../registerConstants';
+import GoalSelector from '../../../components/shared/GoalSelector';
 
 function Phase5Goals({ formData, setFormData, calculations, t, lang }) {
   var fd = formData;
@@ -13,24 +14,12 @@ function Phase5Goals({ formData, setFormData, calculations, t, lang }) {
 
   return (
     <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 20 }}>
-        {t.goals.map(function(g) {
-          var sel = fd.goal === g.key;
-          return (
-            <TouchableOpacity key={g.key} onPress={function() { u('goal', g.key); }} style={{ flex: 1 }} activeOpacity={0.7}>
-              <View style={{ paddingVertical: 20, paddingHorizontal: 8, borderRadius: 14, alignItems: 'center',
-                borderWidth: sel ? 1.5 : 1, borderColor: sel ? g.color + '60' : C.metalBorder, backgroundColor: C.bgInput, overflow: 'hidden' }}>
-                {sel ? <LinearGradient colors={[g.color + '15', g.color + '05', 'transparent']} style={StyleSheet.absoluteFill} /> : null}
-                <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: sel ? g.color + '15' : 'rgba(62,72,85,0.15)',
-                  borderWidth: 1, borderColor: sel ? g.color + '30' : 'rgba(62,72,85,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
-                  <Ionicons name={g.icon} size={22} color={sel ? g.color : C.textMuted} />
-                </View>
-                <Text style={{ color: sel ? g.color : C.textSecondary, fontSize: 10, fontWeight: '700', textAlign: 'center' }}>{g.label}</Text>
-                {sel ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: g.color, marginTop: 6 }} /> : null}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={{ marginBottom: 20 }}>
+        <GoalSelector
+          value={fd.goal}
+          onChange={function(key) { u('goal', key); }}
+          language={lang === 'en' ? 'EN' : 'FR'}
+        />
       </View>
 
       {fd.goal && fd.goal !== 'maintain' ? (

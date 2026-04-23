@@ -91,53 +91,8 @@ function PremiumInput(props) {
   );
 }
 
-var ScrollPicker = function(pp) {
-  var values=pp.values, selectedValue=pp.selectedValue, onSelect=pp.onSelect, unit=pp.unit;
-  var color=pp.color||'#00D984', pickerH=pp.height||260, ITEM_H=50;
-  var scrollRef = useRef(null);
-  var padTop = pickerH/2-ITEM_H/2, padBot = pickerH/2-ITEM_H/2;
-  var initialIdx = Math.max(0, values.indexOf(selectedValue));
-
-  useEffect(function(){ var t=setTimeout(function(){
-    if(scrollRef.current) scrollRef.current.scrollTo({ y:initialIdx*ITEM_H, animated:false });
-  },100); return function(){clearTimeout(t)}; },[initialIdx]);
-
-  var snap = useCallback(function(e){
-    var y=e.nativeEvent.contentOffset.y, idx=Math.round(y/ITEM_H);
-    var cl=Math.max(0,Math.min(idx,values.length-1));
-    if(values[cl]!==selectedValue) onSelect(values[cl]);
-  },[values,selectedValue,onSelect]);
-
-  return (
-    <View style={{ height:pickerH, overflow:'hidden', borderRadius:14, borderWidth:1, borderColor:color+'18', backgroundColor:'#0A0E14' }}>
-      <View style={{ position:'absolute', top:pickerH/2-ITEM_H/2, left:6, right:6, height:ITEM_H, borderRadius:10, backgroundColor:color+'0D' }}>
-        <View style={{ position:'absolute', left:0, top:8, bottom:8, width:3, borderRadius:2, backgroundColor:color }} />
-      </View>
-      <LinearGradient colors={['#0A0E14','rgba(10,14,20,0.7)','rgba(10,14,20,0)']}
-        style={{ position:'absolute', top:0, left:0, right:0, height:pickerH*0.35, zIndex:3, borderTopLeftRadius:14, borderTopRightRadius:14 }} pointerEvents="none" />
-      <LinearGradient colors={['rgba(10,14,20,0)','rgba(10,14,20,0.7)','#0A0E14']}
-        style={{ position:'absolute', bottom:0, left:0, right:0, height:pickerH*0.35, zIndex:3, borderBottomLeftRadius:14, borderBottomRightRadius:14 }} pointerEvents="none" />
-      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} snapToInterval={ITEM_H}
-        decelerationRate={0.92} bounces={false} overScrollMode="never"
-        onMomentumScrollEnd={snap} onScrollEndDrag={function(e){ if(!e.nativeEvent.velocity||Math.abs(e.nativeEvent.velocity.y)<0.1) snap(e); }}
-        contentContainerStyle={{ paddingTop:padTop, paddingBottom:padBot }}>
-        {values.map(function(val,i){
-          var isSel = val===selectedValue;
-          return <View key={val+'-'+i} style={{ height:ITEM_H, alignItems:'center', justifyContent:'center' }}>
-            {isSel ? (
-              <View style={{ alignItems:'center' }}>
-                <Text style={{ color:color, fontSize:22, fontWeight:'800', textAlign:'center' }}>{val}</Text>
-                <Text style={{ color:color, fontSize:9, fontWeight:'600', opacity:0.7, letterSpacing:1, marginTop:-2 }}>{unit}</Text>
-              </View>
-            ) : (
-              <Text style={{ color:'#555E6C', fontSize:15, fontWeight:'400', opacity:0.3, textAlign:'center' }}>{val}</Text>
-            )}
-          </View>;
-        })}
-      </ScrollView>
-    </View>
-  );
-};
+import SharedScrollPicker from '../../components/shared/ScrollPicker';
+var ScrollPicker = SharedScrollPicker;
 
 function NavigationButtons(props) {
   var step = props.step;
