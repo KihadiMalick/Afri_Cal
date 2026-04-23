@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   KeyboardAvoidingView,
+  ActivityIndicator,
   Platform
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -40,6 +41,10 @@ function EditProfilePageMock(props) {
   var focusedField = _focusedField[0];
   var setFocusedField = _focusedField[1];
 
+  var _isSaving = useState(false);
+  var isSaving = _isSaving[0];
+  var setIsSaving = _isSaving[1];
+
   // Pre-remplissage au mount (clone useEffect prod l.166-174)
   useEffect(function() {
     if (visible && profile) {
@@ -56,7 +61,7 @@ function EditProfilePageMock(props) {
   var weightNum = parseFloat(editWeight);
   var heightNum = parseFloat(editHeight);
 
-  var ageValid = !isNaN(ageNum) && ageNum >= 1 && ageNum <= 120;
+  var ageValid = !isNaN(ageNum) && ageNum >= 10 && ageNum <= 120;
   var weightValid = !isNaN(weightNum) && weightNum >= 20 && weightNum <= 500;
   var heightValid = !isNaN(heightNum) && heightNum >= 50 && heightNum <= 250;
   var nameEmpty = !editName || editName.trim().length === 0;
@@ -64,16 +69,21 @@ function EditProfilePageMock(props) {
   var isFormValid = !nameEmpty && ageValid && weightValid && heightValid;
 
   function handleSaveMock() {
-    console.log('MOCK SAVE:', {
-      display_name: editName.trim(),
-      age: ageNum,
-      weight: weightNum,
-      height: heightNum,
-      city: editLocation.trim()
-    });
-    if (onClose) {
-      onClose();
-    }
+    if (isSaving) return;
+    setIsSaving(true);
+    setTimeout(function() {
+      console.log('MOCK SAVE:', {
+        display_name: editName.trim(),
+        age: ageNum,
+        weight: weightNum,
+        height: heightNum,
+        city: editLocation.trim()
+      });
+      setIsSaving(false);
+      if (onClose) {
+        onClose();
+      }
+    }, 800);
   }
 
   function handleClose() {
@@ -173,7 +183,7 @@ function EditProfilePageMock(props) {
               />
               {editAge.length > 0 && !ageValid ? (
                 <Text style={{ color: '#FF6B6B', fontSize: 11, marginTop: 4 }}>
-                  Doit etre entre 1 et 120
+                  Doit etre entre 10 et 120
                 </Text>
               ) : null}
             </View>
@@ -287,19 +297,23 @@ function EditProfilePageMock(props) {
 
               <Pressable
                 onPress={handleSaveMock}
-                disabled={!isFormValid}
+                disabled={!isFormValid || isSaving}
                 style={{
                   flex: 1,
                   padding: 14,
                   borderRadius: 12,
-                  backgroundColor: isFormValid ? '#00D984' : '#1f3a2f',
+                  backgroundColor: (isFormValid && !isSaving) ? '#00D984' : '#1f3a2f',
                   alignItems: 'center',
-                  opacity: isFormValid ? 1 : 0.5
+                  opacity: (isFormValid && !isSaving) ? 1 : 0.5
                 }}
               >
-                <Text style={{ color: isFormValid ? '#000' : '#777', fontWeight: '700' }}>
-                  Enregistrer
-                </Text>
+                {isSaving ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
+                  <Text style={{ color: isFormValid ? '#000' : '#777', fontWeight: '700' }}>
+                    Enregistrer
+                  </Text>
+                )}
               </Pressable>
             </View>
           </ScrollView>

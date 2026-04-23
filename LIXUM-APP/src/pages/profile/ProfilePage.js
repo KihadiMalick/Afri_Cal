@@ -114,6 +114,7 @@ export default function ProfilePage({ navigation }) {
   var _connectedApps = useState({}), connectedApps = _connectedApps[0], setConnectedApps = _connectedApps[1];
   var _toast = useState(null), toast = _toast[0], setToast = _toast[1];
   var _isDeletingAccount = useState(false), isDeletingAccount = _isDeletingAccount[0], setIsDeletingAccount = _isDeletingAccount[1];
+  var _isSaving = useState(false), isSaving = _isSaving[0], setIsSaving = _isSaving[1];
   var t = T.fr;
   var showToast = function(message, color) { setToast({ message: message, color: color || '#00D984' }); setTimeout(function() { setToast(null); }, 2500); };
 
@@ -123,9 +124,12 @@ export default function ProfilePage({ navigation }) {
   var ageNum = parseInt(editAge);
   var weightNum = parseFloat(editWeight);
   var heightNum = parseFloat(editHeight);
-  var ageInvalid = editAge !== '' && (isNaN(ageNum) || ageNum < 1 || ageNum > 120);
-  var weightInvalid = editWeight !== '' && (isNaN(weightNum) || weightNum < 20 || weightNum > 500);
-  var heightInvalid = editHeight !== '' && (isNaN(heightNum) || heightNum < 50 || heightNum > 250);
+  var ageValid = !isNaN(ageNum) && ageNum >= 10 && ageNum <= 120;
+  var weightValid = !isNaN(weightNum) && weightNum >= 20 && weightNum <= 500;
+  var heightValid = !isNaN(heightNum) && heightNum >= 50 && heightNum <= 250;
+  var ageInvalid = editAge !== '' && !ageValid;
+  var weightInvalid = editWeight !== '' && !weightValid;
+  var heightInvalid = editHeight !== '' && !heightValid;
   var nameEmpty = editName.trim() === '';
   var isFormValid = !ageInvalid && !weightInvalid && !heightInvalid && !nameEmpty && editAge !== '' && editWeight !== '' && editHeight !== '';
   var hasChanges = !!profile && (
@@ -179,6 +183,8 @@ export default function ProfilePage({ navigation }) {
   };
 
   var saveProfile = async function() {
+    if (isSaving) return;
+    setIsSaving(true);
     var authHdrs = await getAuthHeaders();
     var h = Object.assign({}, authHdrs, { 'Prefer': 'return=representation' });
     var currentGender = profile ? profile.gender || 'male' : 'male';
@@ -188,10 +194,23 @@ export default function ProfilePage({ navigation }) {
     var newTDEE = calculateTDEE(newBMR, currentActivityLevel);
     var currentGoal = profile ? profile.goal || 'maintain' : 'maintain';
     var newTarget = calculateDailyTarget(newTDEE, currentGoal, profile ? profile.target_weight_loss : 0, profile ? profile.target_months : 3);
-    var body = { display_name: editName.trim(), age: parseInt(editAge) || null, weight: parseFloat(editWeight) || null, height: parseFloat(editHeight) || null, gender: currentGender, activity_level: currentActivityLevel, dietary_regime: profile ? (profile.dietary_regime || 'classic') : 'classic', goal: currentGoal, bmr: newBMR, tdee: newTDEE, daily_calorie_target: newTarget, language: 'FR' };
+    // Body PATCH : seulement les champs vraiment editables dans cette modale
+    // (display_name, age, weight, height) + recalculs derives (bmr, tdee, target).
+    // gender, activity_level, goal, dietary_regime, language : non-editables ici,
+    // donc retires du PATCH pour eviter pollution d'audit DB et ecrasements.
+    var body = {
+      display_name: editName.trim(),
+      age: parseInt(editAge) || null,
+      weight: parseFloat(editWeight) || null,
+      height: parseFloat(editHeight) || null,
+      bmr: newBMR,
+      tdee: newTDEE,
+      daily_calorie_target: newTarget
+    };
     fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
       .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); updateLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast('Profil mis \u00e0 jour \u2713', '#00D984'); })
-      .catch(function() { showToast('Erreur de sauvegarde', '#FF6B6B'); });
+      .catch(function() { showToast('Erreur de sauvegarde', '#FF6B6B'); })
+      .then(function() { setIsSaving(false); }, function() { setIsSaving(false); });
   };
 
   var saveLocation = function(city) { setEditLocation(city); setShowLocationPicker(false); showToast('\uD83D\uDCCD ' + city, '#FF8C42'); };
@@ -568,7 +587,7 @@ export default function ProfilePage({ navigation }) {
                     <View style={{ marginBottom: wp(16) }}>
                       <Text style={{ fontSize: fp(10), color: focusedField === 'age' ? '#00D984' : (ageInvalid ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>Age</Text>
                       <TextInput value={editAge} onChangeText={setEditAge} onFocus={function() { setFocusedField('age'); }} onBlur={function() { setFocusedField(null); }} keyboardType="numeric" maxLength={3} placeholder="--" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: ageInvalid ? '#FF3B5C' : (focusedField === 'age' ? '#00D984' : '#3A3F46') }} />
-                      {ageInvalid ? <Text style={{ fontSize: fp(11), color: '#FF3B5C', marginTop: wp(4) }}>Doit etre entre 1 et 120</Text> : null}
+                      {ageInvalid ? <Text style={{ fontSize: fp(11), color: '#FF3B5C', marginTop: wp(4) }}>Doit etre entre 10 et 120</Text> : null}
                     </View>
 
                     <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: 1, marginBottom: wp(12), marginTop: wp(8), textTransform: 'uppercase' }}>Corps</Text>
@@ -597,8 +616,12 @@ export default function ProfilePage({ navigation }) {
                     <Pressable onPress={function() { setShowEditProfile(false); }} style={{ flex: 1, height: wp(48), borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), justifyContent: 'center', alignItems: 'center' }}>
                       <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Annuler</Text>
                     </Pressable>
-                    <Pressable disabled={!canSave} onPress={function() { if (canSave) saveProfile(); }} style={{ flex: 1.2, height: wp(52), backgroundColor: '#00D984', borderRadius: wp(12), justifyContent: 'center', alignItems: 'center', opacity: canSave ? 1 : 0.5 }}>
-                      <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#000' }}>Enregistrer</Text>
+                    <Pressable disabled={!canSave || isSaving} onPress={function() { if (canSave && !isSaving) saveProfile(); }} style={{ flex: 1.2, height: wp(52), backgroundColor: '#00D984', borderRadius: wp(12), justifyContent: 'center', alignItems: 'center', opacity: (canSave && !isSaving) ? 1 : 0.5 }}>
+                      {isSaving ? (
+                        <ActivityIndicator size="small" color="#000" />
+                      ) : (
+                        <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#000' }}>Enregistrer</Text>
+                      )}
                     </Pressable>
                   </View>
                 </Pressable>
