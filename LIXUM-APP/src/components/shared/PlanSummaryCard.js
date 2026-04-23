@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// PlanSummaryCard — carte resume "VOTRE PLAN" avec gradient or,
+// PlanSummaryCard — carte résumé "VOTRE PLAN" avec gradient or,
 // kcal/jour, BMR+TDEE, 3 macros bars (grammes, normalises /300).
 // Props : calculations ({bmr, tdee, dailyTarget, macros{protein,carbs,fat}}),
 //         language ('FR'|'EN').

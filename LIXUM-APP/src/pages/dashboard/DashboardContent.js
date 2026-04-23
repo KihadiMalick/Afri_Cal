@@ -160,7 +160,7 @@ const DashboardContent = ({
         <RNAnimated.View style={{ alignItems: 'center', marginTop: wp(12), opacity: tooltipStep === 0 || tooltipStep === 1 || tooltipStep === 3 ? (tooltipStep === 3 ? pulseOpacity : 1) : 0.05 }}>
           <EcgPulse score={vitalityScore} />
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
-            <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37', letterSpacing: 1.5 }}>VITALITE</Text>
+            <Text style={{ fontSize: fp(8), fontWeight: '700', color: '#D4AF37', letterSpacing: 1.5 }}>VITALITÉ</Text>
             <Pressable onPress={function() { setShowVitalityInfo(true); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               style={{ width: wp(16), height: wp(16), borderRadius: wp(8), backgroundColor: 'rgba(212,175,55,0.12)', borderWidth: 1, borderColor: 'rgba(212,175,55,0.25)', justifyContent: 'center', alignItems: 'center', marginLeft: wp(5) }}>
               <Text style={{ color: '#D4AF37', fontSize: fp(8), fontWeight: '700' }}>i</Text>
@@ -333,7 +333,7 @@ const DashboardContent = ({
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={{ color: '#EAEEF3', fontSize: fp(12), fontWeight: '600', flex: 1 }}>
-                {lastMeal ? lastMeal.food_name : 'Aucun repas enregistre'}
+                {lastMeal ? lastMeal.food_name : 'Aucun repas enregistré'}
               </Text>
               {lastMeal ? React.createElement(View, { style: { backgroundColor: lastMeal.source === 'manual' ? 'rgba(138,143,152,0.15)' : 'rgba(0,217,132,0.12)', borderRadius: wp(4), paddingHorizontal: wp(5), paddingVertical: wp(1), marginLeft: wp(6) } },
                 React.createElement(Text, { style: { fontSize: fp(10), fontWeight: '700', color: lastMeal.source === 'manual' ? '#8A8F98' : '#00D984' } }, lastMeal.source === 'manual' ? 'Manuel' : 'IA')
@@ -457,7 +457,7 @@ const DashboardContent = ({
           if (s3done) {
             s3 = React.createElement(View, { style: { flexDirection: 'row', alignItems: 'center' } },
               React.createElement(Text, { style: { color: '#00D984', fontSize: fp(10), marginRight: wp(6) } }, '\u2713'),
-              React.createElement(Text, { style: { color: '#00D984', fontSize: fp(11), fontWeight: '600' } }, 'Objectif activite atteint ! ' + (burnedExtra || 0) + ' kcal brulees')
+              React.createElement(Text, { style: { color: '#00D984', fontSize: fp(11), fontWeight: '600' } }, 'Objectif activité atteint ! ' + (burnedExtra || 0) + ' kcal brûlées')
             );
           } else {
             var remainingMin = Math.max(0, 30 - actMin);
@@ -570,8 +570,8 @@ const DashboardContent = ({
       <Pressable onPress={function() { setShowVitalityInfo(false); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
         <Pressable onPress={function() {}} style={{ width: '100%', maxWidth: 380, backgroundColor: '#1A1D22', borderRadius: wp(16), borderWidth: 1, borderColor: '#4A4F55', padding: wp(16), maxHeight: H * 0.82 }}>
           <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-            <Text style={{ color: '#D4AF37', fontSize: fp(15), fontWeight: '800', textAlign: 'center', letterSpacing: 1 }}>Votre score de Vitalite</Text>
-            <Text style={{ color: '#8892A0', fontSize: fp(11), textAlign: 'center', marginTop: wp(6), marginBottom: wp(14), lineHeight: fp(16) }}>Votre Vitalite reflete votre equilibre sante du jour sur 100 points, repartis en 4 piliers :</Text>
+            <Text style={{ color: '#D4AF37', fontSize: fp(15), fontWeight: '800', textAlign: 'center', letterSpacing: 1 }}>Votre score de Vitalité</Text>
+            <Text style={{ color: '#8892A0', fontSize: fp(11), textAlign: 'center', marginTop: wp(6), marginBottom: wp(14), lineHeight: fp(16) }}>Votre Vitalité reflète votre équilibre santé du jour sur 100 points, répartis en 4 piliers :</Text>
 
             {(function() {
               var vd = vitalityDetails || {};
@@ -657,7 +657,7 @@ const DashboardContent = ({
                     ),
                     React.createElement(Text, { style: { color: '#8892A0', fontSize: fp(8), marginTop: 2 } }, (hydroGoal / 1000).toFixed(1) + 'L objectif')
                   ),
-                  React.createElement(Text, { style: { color: '#6B7280', fontSize: fp(10), marginTop: wp(4), lineHeight: fp(15) } }, 'Buvez regulierement. Objectif : 2.5L (homme) / 2L (femme).')
+                  React.createElement(Text, { style: { color: '#6B7280', fontSize: fp(10), marginTop: wp(4), lineHeight: fp(15) } }, 'Buvez régulièrement. Objectif : 2.5L (homme) / 2L (femme).')
                 ),
 
                 (function() {
@@ -700,8 +700,8 @@ const DashboardContent = ({
                     );
                   }
                   return React.createElement(View, null,
-                    makeGauge('\uD83C\uDFC3 Activite (' + actScore + '/25)', actScore, actNorm, '30 minutes d\'activite physique par jour pour le maximum.', 'act'),
-                    makeGauge('\u2728 Regularite (' + regPts + '/25)', regPts, regNorm, 'Loguer vos repas, remplir votre humeur et utiliser l\'app regulierement.', 'reg')
+                    makeGauge('\uD83C\uDFC3 Activit\u00e9 (' + actScore + '/25)', actScore, actNorm, '30 minutes d\'activit\u00e9 physique par jour pour le maximum.', 'act'),
+                    makeGauge('\u2728 R\u00e9gularit\u00e9 (' + regPts + '/25)', regPts, regNorm, 'Loguer vos repas, remplir votre humeur et utiliser l\'app r\u00e9guli\u00e8rement.', 'reg')
                   );
                 })()
               );

@@ -211,7 +211,7 @@ export function AuthProvider(props) {
   }, [userId, refreshLixFromServer, fetchAlixenNotifications, fetchLixverseNotifications]);
 
   useEffect(function() {
-    // 1. Verifier la session existante au demarrage
+    // 1. Vérifier la session existante au démarrage
     supabase.auth.getSession().then(function(result) {
       var session = result.data.session;
       if (session && session.user) {
