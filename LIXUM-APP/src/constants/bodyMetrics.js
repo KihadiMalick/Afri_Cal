@@ -1,6 +1,6 @@
-// bodyMetrics.js — fonction partagee calculateBodyMetrics pour RegisterPage
+// bodyMetrics.js — fonction partagée calculateBodyMetrics pour RegisterPage
 // et EditProfilePage. Extraction de registerConstants.js l.89-119 pour
-// reutilisation cross-modules. Accepte activityLevel en string OU index int.
+// réutilisation cross-modules. Accepte activityLevel en string OU index int.
 
 // Map string -> multiplier (utilisation prod EditProfilePage)
 export var ACTIVITY_MULTIPLIERS = {
@@ -14,7 +14,7 @@ export var ACTIVITY_MULTIPLIERS = {
 // Array index 0..4 (utilisation Register legacy)
 export var ACTIVITY_MULTIPLIERS_ARRAY = [1.2, 1.375, 1.55, 1.725, 1.9];
 
-// Resolve activityLevel en multiplier numerique (supporte string ou int)
+// Resolve activityLevel en multiplier numérique (supporte string ou int)
 function resolveActivityMult(activityLevel) {
   if (typeof activityLevel === 'number') {
     var idx = Math.max(0, Math.min(4, activityLevel));

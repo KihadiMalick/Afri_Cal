@@ -106,7 +106,7 @@ function DeleteAccountModal(props) {
   var setReasonsLoading = _reasonsLoading[1];
 
   // D-JS : fetch raisons actives depuis DB (RPC get_active_deletion_reasons)
-  // Fallback silencieux sur liste hardcodee FR/EN si reseau KO.
+  // Fallback silencieux sur liste hardcodée FR/EN si réseau KO.
   useEffect(function() {
     if (!visible) return;
     if (dynamicReasons !== null) return;

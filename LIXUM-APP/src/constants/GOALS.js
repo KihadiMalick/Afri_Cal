@@ -1,8 +1,8 @@
-// GOALS — source unique de verite pour les objectifs utilisateur.
+// GOALS — source unique de vérité pour les objectifs utilisateur.
 // Remplace les 2 definitions divergentes :
 //   - registerConstants.texts.fr.goals + texts.en.goals (Ionicons)
 //   - profileConstants.GOALS (emojis)
-// Utilise Ionicons (coherence Premium) + labels FR/EN + color par goal.
+// Utilise Ionicons (cohérence Premium) + labels FR/EN + color par goal.
 
 var GOALS = [
   {

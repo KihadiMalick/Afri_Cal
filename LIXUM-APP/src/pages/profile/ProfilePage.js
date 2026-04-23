@@ -479,7 +479,7 @@ export default function ProfilePage({ navigation }) {
               </View>
             </View>
             <Text style={{ fontSize: fp(12), marginTop: wp(10), color: currentHydroL === defaultHydroGoalL ? '#8A8F98' : currentHydroL < defaultHydroGoalL ? '#FF8C42' : '#4DA6FF' }}>
-              {currentHydroL === defaultHydroGoalL ? 'Bas\u00e9 sur les recommandations EFSA' : currentHydroL < defaultHydroGoalL ? 'Inferieur aux recommandations standards' : 'Superieur aux recommandations standards'}
+              {currentHydroL === defaultHydroGoalL ? 'Bas\u00e9 sur les recommandations EFSA' : currentHydroL < defaultHydroGoalL ? 'Inf\u00e9rieur aux recommandations standards' : 'Sup\u00e9rieur aux recommandations standards'}
             </Text>
           </MetalCard>
 
@@ -498,11 +498,11 @@ export default function ProfilePage({ navigation }) {
                   <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,68,68,0.15)', justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ fontSize: fp(24), color: '#FF4444' }}>⚕</Text>
                   </View>
-                  <Text style={{ color: '#FFF', fontSize: fp(18), fontWeight: '800', textAlign: 'center', marginTop: 16 }}>Avertissement medical</Text>
+                  <Text style={{ color: '#FFF', fontSize: fp(18), fontWeight: '800', textAlign: 'center', marginTop: 16 }}>Avertissement médical</Text>
                   <Text style={{ color: '#C0C4CC', fontSize: fp(14), lineHeight: fp(22), textAlign: 'center', marginTop: 12 }}>
                     {pendingHydroGoal !== null && pendingHydroGoal < 1.5
-                      ? 'Un objectif inferieur a 1.5L est generalement prescrit pour des conditions medicales specifiques (insuffisance cardiaque, insuffisance renale). Consultez votre medecin avant de modifier cet objectif.'
-                      : 'Un apport superieur a 3.5L par jour peut entrainer une hyponatremie (baisse dangereuse du sodium sanguin). Consultez votre medecin.'}
+                      ? 'Un objectif inférieur à 1.5L est généralement prescrit pour des conditions médicales spécifiques (insuffisance cardiaque, insuffisance rénale). Consultez votre médecin avant de modifier cet objectif.'
+                      : 'Un apport supérieur à 3.5L par jour peut entraîner une hyponatrémie (baisse dangereuse du sodium sanguin). Consultez votre médecin.'}
                   </Text>
                   <Text style={{ color: '#666', fontSize: fp(10), fontStyle: 'italic', marginTop: 8 }}>Sources : EFSA 2010, NIH StatPearls 2025</Text>
                   <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>

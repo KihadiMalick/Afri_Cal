@@ -404,7 +404,7 @@ function EditProfilePage(props) {
           >
             {activeTab === 'personal' ? (
               <View>
-            {/* [C] Section IDENTITE */}
+            {/* [C] Section IDENTITÉ */}
             <Text style={{
               color: '#00D984',
               fontSize: 11,
@@ -740,7 +740,7 @@ function EditProfilePage(props) {
                   </View>
                 ) : null}
 
-                {/* Cas goal === 'maintain' : carte Maintien equilibre */}
+                {/* Cas goal === 'maintain' : carte Maintien équilibré */}
                 {goal === 'maintain' ? (
                   <View style={{
                     backgroundColor: '#10151D',
@@ -764,7 +764,7 @@ function EditProfilePage(props) {
                   </View>
                 ) : null}
 
-                {/* Section NIVEAU D'ACTIVITE (toujours visible) */}
+                {/* Section NIVEAU D'ACTIVITÉ (toujours visible) */}
                 <Text style={{
                   color: '#00D984',
                   fontSize: 11,
