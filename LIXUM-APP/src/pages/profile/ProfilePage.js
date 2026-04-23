@@ -21,6 +21,7 @@ import { supabase } from '../../config/supabase';
 import MetalCard from '../../components/shared/MetalCard';
 import ScrollPicker from '../../components/shared/ScrollPicker';
 import DeleteAccountModal from '../../components/profile/DeleteAccountModal';
+import EditProfilePage from './EditProfilePage';
 
 var markdownStyles = {
   body: { color: '#FFF', fontSize: fp(14), lineHeight: fp(22) },
@@ -106,57 +107,16 @@ export default function ProfilePage({ navigation }) {
   var _showLogoutConfirm = useState(false), showLogoutConfirm = _showLogoutConfirm[0], setShowLogoutConfirm = _showLogoutConfirm[1];
   var _showDeleteConfirm = useState(false), showDeleteConfirm = _showDeleteConfirm[0], setShowDeleteConfirm = _showDeleteConfirm[1];
   var _showContactPicker = useState(false), showContactPicker = _showContactPicker[0], setShowContactPicker = _showContactPicker[1];
-  var _editName = useState(''), editName = _editName[0], setEditName = _editName[1];
-  var _editAge = useState(''), editAge = _editAge[0], setEditAge = _editAge[1];
-  var _editWeight = useState(''), editWeight = _editWeight[0], setEditWeight = _editWeight[1];
-  var _editHeight = useState(''), editHeight = _editHeight[0], setEditHeight = _editHeight[1];
-  var _editLocation = useState(''), editLocation = _editLocation[0], setEditLocation = _editLocation[1];
   var _connectedApps = useState({}), connectedApps = _connectedApps[0], setConnectedApps = _connectedApps[1];
   var _toast = useState(null), toast = _toast[0], setToast = _toast[1];
   var _isDeletingAccount = useState(false), isDeletingAccount = _isDeletingAccount[0], setIsDeletingAccount = _isDeletingAccount[1];
-  var _isSaving = useState(false), isSaving = _isSaving[0], setIsSaving = _isSaving[1];
   var t = T.fr;
   var showToast = function(message, color) { setToast({ message: message, color: color || '#00D984' }); setTimeout(function() { setToast(null); }, 2500); };
 
-  var weightInputRef = useRef(null);
-  var _focusedField = useState(null), focusedField = _focusedField[0], setFocusedField = _focusedField[1];
-
-  var ageNum = parseInt(editAge);
-  var weightNum = parseFloat(editWeight);
-  var heightNum = parseFloat(editHeight);
-  var ageValid = !isNaN(ageNum) && ageNum >= 10 && ageNum <= 120;
-  var weightValid = !isNaN(weightNum) && weightNum >= 20 && weightNum <= 500;
-  var heightValid = !isNaN(heightNum) && heightNum >= 50 && heightNum <= 250;
-  var ageInvalid = editAge !== '' && !ageValid;
-  var weightInvalid = editWeight !== '' && !weightValid;
-  var heightInvalid = editHeight !== '' && !heightValid;
-  var nameEmpty = editName.trim() === '';
-  var isFormValid = !ageInvalid && !weightInvalid && !heightInvalid && !nameEmpty && editAge !== '' && editWeight !== '' && editHeight !== '';
-  var hasChanges = !!profile && (
-    editName.trim() !== (profile.display_name || '') ||
-    editAge !== String(profile.age || '') ||
-    editWeight !== String(profile.weight || '') ||
-    editHeight !== String(profile.height || '') ||
-    editLocation !== (profile.city || profile.location || '')
-  );
-  var canSave = isFormValid && hasChanges;
-
-  useEffect(function() {
-    if (showEditProfile && profile) {
-      setEditName(profile.display_name || '');
-      setEditAge(profile.age ? String(profile.age) : '');
-      setEditWeight(profile.weight ? String(profile.weight) : '');
-      setEditHeight(profile.height ? String(profile.height) : '');
-      setEditLocation(profile.city || profile.location || '');
-    }
-  }, [showEditProfile, profile]);
-
+  // Deep-link : ouvrir la modale d'edition si route.params.scrollTo === 'weight'.
   useEffect(function() {
     if (route.params && route.params.scrollTo === 'weight') {
       setShowEditProfile(true);
-      setTimeout(function() {
-        if (weightInputRef.current) weightInputRef.current.focus();
-      }, 600);
     }
   }, [route.params]);
 
@@ -175,45 +135,14 @@ export default function ProfilePage({ navigation }) {
     ]).then(function(responses) { return Promise.all(responses.map(function(r) { return r.json(); })); })
     .then(function(results) {
       var pD = results[0]; var cD = results[1];
-      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); setEditName(pD[0].display_name || ''); setEditAge(String(pD[0].age || '')); setEditWeight(String(pD[0].weight || '')); setEditHeight(String(pD[0].height || '')); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
+      if (pD && pD[0]) { setProfile(pD[0]); updateLixBalance(pD[0].lix_balance || 0); setUserEnergy(pD[0].energy || 20); var cGoal = pD[0].custom_hydration_goal_ml; setHydroGoalL(cGoal ? (cGoal / 1000) : null); }
       if (Array.isArray(cD)) { setOwnedCharacters(cD.length); var activeC = cD.find(function(c) { return c.is_active; }); if (activeC) setActiveCharSlug(activeC.character_slug); }
       fetch(SUPABASE_URL + '/rest/v1/rpc/get_user_xp', { method: 'POST', headers: Object.assign({}, hdrs, { 'Content-Type': 'application/json' }), body: JSON.stringify({ p_user_id: userId }) })
         .then(function(r) { return r.json(); }).then(function(d) { if (d) setUserXP(d); }).catch(function(err) { console.warn('[LIXUM] XP fetch error:', err); });
     }).catch(function(e) { console.error('Profile:', e); });
   };
 
-  var saveProfile = async function() {
-    if (isSaving) return;
-    setIsSaving(true);
-    var authHdrs = await getAuthHeaders();
-    var h = Object.assign({}, authHdrs, { 'Prefer': 'return=representation' });
-    var currentGender = profile ? profile.gender || 'male' : 'male';
-    var currentActivityLevel = profile ? profile.activity_level : 'moderate';
-    if (typeof currentActivityLevel === 'number') currentActivityLevel = activityIndexToKey(currentActivityLevel);
-    var newBMR = calculateBMR(editWeight, editHeight, editAge, currentGender);
-    var newTDEE = calculateTDEE(newBMR, currentActivityLevel);
-    var currentGoal = profile ? profile.goal || 'maintain' : 'maintain';
-    var newTarget = calculateDailyTarget(newTDEE, currentGoal, profile ? profile.target_weight_loss : 0, profile ? profile.target_months : 3);
-    // Body PATCH : seulement les champs vraiment editables dans cette modale
-    // (display_name, age, weight, height) + recalculs derives (bmr, tdee, target).
-    // gender, activity_level, goal, dietary_regime, language : non-editables ici,
-    // donc retires du PATCH pour eviter pollution d'audit DB et ecrasements.
-    var body = {
-      display_name: editName.trim(),
-      age: parseInt(editAge) || null,
-      weight: parseFloat(editWeight) || null,
-      height: parseFloat(editHeight) || null,
-      bmr: newBMR,
-      tdee: newTDEE,
-      daily_calorie_target: newTarget
-    };
-    fetch(SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId, { method: 'PATCH', headers: h, body: JSON.stringify(body) })
-      .then(function(r) { return r.json(); }).then(function(data) { if (data && data[0]) { setProfile(data[0]); updateLixBalance(data[0].lix_balance || 0); } setShowEditProfile(false); showToast('Profil mis \u00e0 jour \u2713', '#00D984'); })
-      .catch(function() { showToast('Erreur de sauvegarde', '#FF6B6B'); })
-      .then(function() { setIsSaving(false); }, function() { setIsSaving(false); });
-  };
 
-  var saveLocation = function(city) { setEditLocation(city); setShowLocationPicker(false); showToast('\uD83D\uDCCD ' + city, '#FF8C42'); };
   var toggleConnector = function(connId) { setConnectedApps(function(prev) { var n = Object.assign({}, prev); if (n[connId]) { delete n[connId]; showToast('D\u00e9connect\u00e9', '#FF6B6B'); } else { n[connId] = { connectedAt: new Date().toISOString(), lastSync: new Date().toISOString() }; showToast('Connect\u00e9 \u2713', '#00D984'); } return n; }); };
   var defaultHydroGoalL = (profile && (profile.gender === 'female' || profile.gender === 'femme')) ? 2.0 : 2.5;
   var currentHydroL = hydroGoalL !== null ? hydroGoalL : defaultHydroGoalL;
@@ -554,80 +483,12 @@ export default function ProfilePage({ navigation }) {
             </Text>
           </MetalCard>
 
-          <Modal visible={showEditProfile} transparent={true} animationType="slide" onRequestClose={function() { setShowEditProfile(false); }}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-              <Pressable onPress={function() { setShowEditProfile(false); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' }}>
-                <Pressable onPress={function() {}} style={{ backgroundColor: '#1A2029', borderTopLeftRadius: wp(24), borderTopRightRadius: wp(24), maxHeight: '90%', paddingTop: wp(12), paddingHorizontal: wp(20), paddingBottom: wp(20) }}>
-                  <View style={{ width: wp(40), height: wp(4), borderRadius: wp(2), backgroundColor: '#3A3F46', alignSelf: 'center', marginBottom: wp(16) }} />
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: wp(20) }}>
-                    <View style={{ flex: 1, paddingRight: wp(12) }}>
-                      <Text style={{ fontSize: fp(20), fontWeight: '700', color: '#FFF' }}>Modifier mon profil</Text>
-                      <Text style={{ fontSize: fp(11), color: '#6B7280', marginTop: wp(4) }}>Vos donnees sont privees et chiffrees</Text>
-                    </View>
-                    <Pressable onPress={function() { setShowEditProfile(false); }} style={{ width: wp(32), height: wp(32), borderRadius: wp(16), backgroundColor: 'rgba(255,255,255,0.06)', justifyContent: 'center', alignItems: 'center' }}>
-                      <Svg width={wp(12)} height={wp(12)} viewBox="0 0 24 24" fill="none">
-                        <Path d="M6 6L18 18M18 6L6 18" stroke="#FFF" strokeWidth={1.5} strokeLinecap="round" />
-                      </Svg>
-                    </Pressable>
-                  </View>
-
-                  <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} style={{ maxHeight: wp(460) }}>
-                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: 1, marginBottom: wp(12), textTransform: 'uppercase' }}>Identite</Text>
-
-                    <View style={{ marginBottom: wp(16) }}>
-                      <Text style={{ fontSize: fp(10), color: focusedField === 'name' ? '#00D984' : (nameEmpty ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>
-                        Comment vous appeler
-                      </Text>
-                      <TextInput value={editName} onChangeText={setEditName} onFocus={function() { setFocusedField('name'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder={'Malick, Maman, \u2600\ufe0f...'} placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: nameEmpty ? '#FF3B5C' : (focusedField === 'name' ? '#00D984' : '#3A3F46') }} />
-                      <Text style={{ fontSize: 11, color: '#6B7280', marginTop: 4, marginBottom: 12 }}>
-                        Visible uniquement par vous
-                      </Text>
-                    </View>
-
-                    <View style={{ marginBottom: wp(16) }}>
-                      <Text style={{ fontSize: fp(10), color: focusedField === 'age' ? '#00D984' : (ageInvalid ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>Age</Text>
-                      <TextInput value={editAge} onChangeText={setEditAge} onFocus={function() { setFocusedField('age'); }} onBlur={function() { setFocusedField(null); }} keyboardType="numeric" maxLength={3} placeholder="--" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: ageInvalid ? '#FF3B5C' : (focusedField === 'age' ? '#00D984' : '#3A3F46') }} />
-                      {ageInvalid ? <Text style={{ fontSize: fp(11), color: '#FF3B5C', marginTop: wp(4) }}>Doit etre entre 10 et 120</Text> : null}
-                    </View>
-
-                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: 1, marginBottom: wp(12), marginTop: wp(8), textTransform: 'uppercase' }}>Corps</Text>
-
-                    <View style={{ marginBottom: wp(16) }}>
-                      <Text style={{ fontSize: fp(10), color: focusedField === 'weight' ? '#00D984' : (weightInvalid ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>Poids (kg)</Text>
-                      <TextInput ref={weightInputRef} value={editWeight} onChangeText={setEditWeight} onFocus={function() { setFocusedField('weight'); }} onBlur={function() { setFocusedField(null); }} keyboardType="decimal-pad" maxLength={5} placeholder="--" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: weightInvalid ? '#FF3B5C' : (focusedField === 'weight' ? '#00D984' : '#3A3F46') }} />
-                      {weightInvalid ? <Text style={{ fontSize: fp(11), color: '#FF3B5C', marginTop: wp(4) }}>Doit etre entre 20 et 500 kg</Text> : null}
-                    </View>
-
-                    <View style={{ marginBottom: wp(16) }}>
-                      <Text style={{ fontSize: fp(10), color: focusedField === 'height' ? '#00D984' : (heightInvalid ? '#FF3B5C' : '#6B7280'), marginBottom: wp(4), letterSpacing: 0.5 }}>Taille (cm)</Text>
-                      <TextInput value={editHeight} onChangeText={setEditHeight} onFocus={function() { setFocusedField('height'); }} onBlur={function() { setFocusedField(null); }} keyboardType="numeric" maxLength={3} placeholder="--" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: heightInvalid ? '#FF3B5C' : (focusedField === 'height' ? '#00D984' : '#3A3F46') }} />
-                      {heightInvalid ? <Text style={{ fontSize: fp(11), color: '#FF3B5C', marginTop: wp(4) }}>Doit etre entre 50 et 250 cm</Text> : null}
-                    </View>
-
-                    <Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.35)', letterSpacing: 1, marginBottom: wp(12), marginTop: wp(8), textTransform: 'uppercase' }}>Localisation</Text>
-
-                    <View style={{ marginBottom: wp(16) }}>
-                      <Text style={{ fontSize: fp(10), color: focusedField === 'location' ? '#00D984' : '#6B7280', marginBottom: wp(4), letterSpacing: 0.5 }}>Ville</Text>
-                      <TextInput value={editLocation} onChangeText={setEditLocation} onFocus={function() { setFocusedField('location'); }} onBlur={function() { setFocusedField(null); }} autoCapitalize="words" placeholder="Votre ville" placeholderTextColor="#3A3F46" style={{ fontSize: fp(16), color: '#FFF', paddingVertical: wp(8), borderBottomWidth: 1, borderBottomColor: focusedField === 'location' ? '#00D984' : '#3A3F46' }} />
-                    </View>
-                  </ScrollView>
-
-                  <View style={{ flexDirection: 'row', gap: wp(12), marginTop: wp(12), paddingTop: wp(12), borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' }}>
-                    <Pressable onPress={function() { setShowEditProfile(false); }} style={{ flex: 1, height: wp(48), borderWidth: 1, borderColor: '#3A3F46', borderRadius: wp(12), justifyContent: 'center', alignItems: 'center' }}>
-                      <Text style={{ fontSize: fp(14), fontWeight: '600', color: '#FFF' }}>Annuler</Text>
-                    </Pressable>
-                    <Pressable disabled={!canSave || isSaving} onPress={function() { if (canSave && !isSaving) saveProfile(); }} style={{ flex: 1.2, height: wp(52), backgroundColor: '#00D984', borderRadius: wp(12), justifyContent: 'center', alignItems: 'center', opacity: (canSave && !isSaving) ? 1 : 0.5 }}>
-                      {isSaving ? (
-                        <ActivityIndicator size="small" color="#000" />
-                      ) : (
-                        <Text style={{ fontSize: fp(14), fontWeight: '700', color: '#000' }}>Enregistrer</Text>
-                      )}
-                    </Pressable>
-                  </View>
-                </Pressable>
-              </Pressable>
-            </KeyboardAvoidingView>
-          </Modal>
+          <EditProfilePage
+            visible={showEditProfile}
+            onClose={function() { setShowEditProfile(false); }}
+            profile={profile}
+            onSaveSuccess={function(updatedProfile) { if (updatedProfile) { setProfile(updatedProfile); updateLixBalance(updatedProfile.lix_balance || 0); } showToast('Profil mis a jour', '#00D984'); }}
+          />
 
           <Modal visible={showMedicalWarning} transparent animationType="fade" onRequestClose={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }}>
             <Pressable onPress={function() { setShowMedicalWarning(false); setPendingHydroGoal(null); }} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: wp(20) }}>
@@ -658,7 +519,7 @@ export default function ProfilePage({ navigation }) {
           </Modal>
 
           <View style={{ paddingHorizontal: wp(16), marginBottom: wp(4) }}><Text style={{ fontSize: fp(10), fontWeight: '700', color: 'rgba(255,255,255,0.25)', letterSpacing: 2 }}>{t.settings}</Text></View>
-          <Section icon={'\uD83D\uDCCD'} title={t.location} subtitle={t.locationSub} color="#FF8C42" rightText={editLocation || t.notDefined} onPress={function() { setShowLocationPicker(true); }} />
+          <Section icon={'\uD83D\uDCCD'} title={t.location} subtitle={t.locationSub} color="#FF8C42" rightText={(profile && (profile.city || profile.location)) || t.notDefined} onPress={function() { setShowLocationPicker(true); }} />
           <Section icon={'\u2B50'} title={t.subscription} subtitle={t.subscriptionSub} color="#D4AF37" rightText={subTier} onPress={function() { setShowSubscription(true); }} />
           <Section icon={'\uD83D\uDD14'} title={t.notifications} subtitle={t.notifSub} color="#4DA6FF" rightText={t.comingSoon} onPress={function() { showToast(t.comingSoon, '#4DA6FF'); }} />
 
