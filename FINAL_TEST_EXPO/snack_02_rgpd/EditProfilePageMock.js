@@ -15,6 +15,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ScrollPicker from './shared/ScrollPicker';
 import GoalSelector from './shared/GoalSelector';
+import TargetKgStepper from './shared/TargetKgStepper';
+import PaceSelector from './shared/PaceSelector';
+import PlanSummaryCard from './shared/PlanSummaryCard';
+import ActivityLevelSelector from './shared/ActivityLevelSelector';
+import { calculateBodyMetrics } from './shared/bodyMetrics';
 import { T } from './mockT';
 
 // Helpers identiques a la prod (hors composant)
@@ -114,6 +119,18 @@ function EditProfilePageMock(props) {
   var goal = _goal[0];
   var setGoal = _goal[1];
 
+  var _targetKg = useState(5);
+  var targetKg = _targetKg[0];
+  var setTargetKg = _targetKg[1];
+
+  var _paceMode = useState(1);
+  var paceMode = _paceMode[0];
+  var setPaceMode = _paceMode[1];
+
+  var _activityLevel = useState('moderate');
+  var activityLevel = _activityLevel[0];
+  var setActivityLevel = _activityLevel[1];
+
   useEffect(function() {
     if (visible && profile) {
       setName(profile.display_name || '');
@@ -122,10 +139,27 @@ function EditProfilePageMock(props) {
       setHeight(profile.height ? Math.round(parseFloat(profile.height)) : 170);
       setCity(profile.city || profile.location || '');
       setGoal(profile.goal || 'maintain');
+      setTargetKg(profile.target_weight_loss > 0 ? Math.round(parseFloat(profile.target_weight_loss)) : 5);
+      setPaceMode(typeof profile.pace_mode === 'number' ? profile.pace_mode : 1);
+      setActivityLevel(profile.activity_level || 'moderate');
       setFocusedField(null);
       setActiveTab('personal');
     }
   }, [visible, profile]);
+
+  var calculations = useMemo(function() {
+    if (!weight || !height || !age) return null;
+    return calculateBodyMetrics({
+      weight: weight,
+      height: height,
+      age: age,
+      gender: (profile && profile.gender) || 'male',
+      activityLevel: activityLevel,
+      goal: goal,
+      targetKg: targetKg,
+      paceMode: paceMode
+    });
+  }, [weight, height, age, profile, activityLevel, goal, targetKg, paceMode]);
 
   var imc = useMemo(function() {
     return computeImc(weight, height);
@@ -157,6 +191,12 @@ function EditProfilePageMock(props) {
         height: height,
         city: city.trim(),
         goal: goal,
+        activity_level: activityLevel,
+        target_weight_loss: goal === 'maintain' ? 0 : targetKg,
+        pace_mode: paceMode,
+        daily_calorie_target: calculations ? calculations.dailyTarget : null,
+        bmr: calculations ? Math.round(calculations.bmr) : null,
+        tdee: calculations ? Math.round(calculations.tdee) : null,
         imc: imc
       });
       setIsSaving(false);
@@ -565,6 +605,117 @@ function EditProfilePageMock(props) {
                   }}>
                     {t.editProfileGoalCaption}
                   </Text>
+                </View>
+
+                {/* Cas goal !== 'maintain' */}
+                {goal && goal !== 'maintain' ? (
+                  <View>
+                    <Text style={{
+                      color: '#00D984',
+                      fontSize: 11,
+                      fontWeight: '700',
+                      letterSpacing: 1.2,
+                      marginBottom: 10
+                    }}>
+                      {t.editProfileSectionTargetKg}
+                    </Text>
+                    <View style={{
+                      backgroundColor: '#10151D',
+                      borderWidth: 1,
+                      borderColor: '#1f2a36',
+                      borderRadius: 14,
+                      padding: 4,
+                      marginBottom: 16
+                    }}>
+                      <TargetKgStepper
+                        value={targetKg}
+                        onChange={setTargetKg}
+                        goal={goal}
+                        language={language}
+                      />
+                    </View>
+
+                    <Text style={{
+                      color: '#00D984',
+                      fontSize: 11,
+                      fontWeight: '700',
+                      letterSpacing: 1.2,
+                      marginBottom: 10
+                    }}>
+                      {t.editProfileSectionPace}
+                    </Text>
+                    <View style={{
+                      backgroundColor: '#10151D',
+                      borderWidth: 1,
+                      borderColor: '#1f2a36',
+                      borderRadius: 14,
+                      padding: 14,
+                      marginBottom: 16
+                    }}>
+                      <PaceSelector
+                        value={paceMode}
+                        onChange={setPaceMode}
+                        calculations={calculations}
+                        language={language}
+                      />
+                    </View>
+
+                    {calculations ? (
+                      <PlanSummaryCard
+                        calculations={calculations}
+                        language={language}
+                      />
+                    ) : null}
+                  </View>
+                ) : null}
+
+                {/* Cas goal === 'maintain' */}
+                {goal === 'maintain' ? (
+                  <View style={{
+                    backgroundColor: '#10151D',
+                    borderWidth: 1,
+                    borderColor: '#00D984',
+                    borderRadius: 14,
+                    padding: 16,
+                    marginBottom: 16
+                  }}>
+                    <Text style={{
+                      color: '#00D984',
+                      fontSize: 14,
+                      fontWeight: '700',
+                      marginBottom: 8
+                    }}>
+                      {t.editProfileMaintainTitle}
+                    </Text>
+                    <Text style={{ color: '#ccc', fontSize: 12, lineHeight: 18 }}>
+                      {t.editProfileMaintainBody}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* Section ACTIVITE (toujours visible) */}
+                <Text style={{
+                  color: '#00D984',
+                  fontSize: 11,
+                  fontWeight: '700',
+                  letterSpacing: 1.2,
+                  marginBottom: 10
+                }}>
+                  {t.editProfileSectionActivity}
+                </Text>
+                <View style={{
+                  backgroundColor: '#10151D',
+                  borderWidth: 1,
+                  borderColor: '#1f2a36',
+                  borderRadius: 14,
+                  padding: 14,
+                  marginBottom: 16
+                }}>
+                  <ActivityLevelSelector
+                    value={activityLevel}
+                    onChange={setActivityLevel}
+                    language={language}
+                  />
                 </View>
 
                 {/* Hydration : Etape 6 */}

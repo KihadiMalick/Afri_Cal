@@ -364,7 +364,12 @@ function ProfilePageMock() {
             weight: 86,
             height: 185,
             city: 'Bujumbura',
-            goal: 'maintain'
+            gender: 'male',
+            goal: 'maintain',
+            activity_level: 'moderate',
+            target_weight_loss: 0,
+            pace_mode: 1,
+            target_months: 3
           }}
         />
       </LinearGradient>
