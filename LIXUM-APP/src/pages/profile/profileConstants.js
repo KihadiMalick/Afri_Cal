@@ -204,6 +204,12 @@ var T = {
     editProfileTabGoals: 'Objectifs',
     editProfileSectionGoal: 'OBJECTIF',
     editProfileGoalCaption: 'Votre objectif principal determine vos recommandations',
+    editProfileSectionTargetKg: 'POIDS CIBLE',
+    editProfileSectionPace: 'RYTHME',
+    editProfileSectionPlan: 'VOTRE PLAN',
+    editProfileSectionActivity: 'NIVEAU D\'ACTIVITÉ',
+    editProfileMaintainTitle: 'Maintien équilibré',
+    editProfileMaintainBody: 'Vous maintiendrez votre poids actuel avec un apport calorique équilibré.',
   },
   en: {
     personalData: 'PERSONAL DATA', age: 'Age', weight: 'Weight', height: 'Height', bmi: 'BMI',
@@ -292,6 +298,12 @@ var T = {
     editProfileTabGoals: 'Goals',
     editProfileSectionGoal: 'GOAL',
     editProfileGoalCaption: 'Your main goal determines your recommendations',
+    editProfileSectionTargetKg: 'TARGET WEIGHT',
+    editProfileSectionPace: 'PACE',
+    editProfileSectionPlan: 'YOUR PLAN',
+    editProfileSectionActivity: 'ACTIVITY LEVEL',
+    editProfileMaintainTitle: 'Balanced maintenance',
+    editProfileMaintainBody: 'You will maintain your current weight with a balanced calorie intake.',
   },
 };
 
