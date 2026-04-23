@@ -200,6 +200,10 @@ var T = {
     editProfileSaveSuccess: 'Profil mis a jour',
     editProfileSaveError: 'Erreur de sauvegarde',
     editProfileNameEmpty: 'Le prenom est requis',
+    editProfileTabPersonal: 'Infos perso',
+    editProfileTabGoals: 'Objectifs',
+    editProfileSectionGoal: 'OBJECTIF',
+    editProfileGoalCaption: 'Votre objectif principal determine vos recommandations',
   },
   en: {
     personalData: 'PERSONAL DATA', age: 'Age', weight: 'Weight', height: 'Height', bmi: 'BMI',
@@ -284,6 +288,10 @@ var T = {
     editProfileSaveSuccess: 'Profile updated',
     editProfileSaveError: 'Save error',
     editProfileNameEmpty: 'First name is required',
+    editProfileTabPersonal: 'Personal info',
+    editProfileTabGoals: 'Goals',
+    editProfileSectionGoal: 'GOAL',
+    editProfileGoalCaption: 'Your main goal determines your recommendations',
   },
 };
 
