@@ -187,7 +187,7 @@ function EditProfilePageMock(props) {
             backgroundColor: '#0A0E14',
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
-            maxHeight: '92%',
+            height: '88%',
             borderTopWidth: 1,
             borderTopColor: '#1a3a2f'
           }}
