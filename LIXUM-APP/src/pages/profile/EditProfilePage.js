@@ -19,6 +19,7 @@ import TargetKgStepper from '../../components/shared/TargetKgStepper';
 import PaceSelector from '../../components/shared/PaceSelector';
 import PlanSummaryCard from '../../components/shared/PlanSummaryCard';
 import ActivityLevelSelector from '../../components/shared/ActivityLevelSelector';
+import DietarySelector from '../../components/shared/DietarySelector';
 import { calculateBodyMetrics } from '../../constants/bodyMetrics';
 import { useAuth } from '../../config/AuthContext';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
@@ -142,6 +143,10 @@ function EditProfilePage(props) {
   var activityLevel = _activityLevel[0];
   var setActivityLevel = _activityLevel[1];
 
+  var _dietaryRegime = useState('classic');
+  var dietaryRegime = _dietaryRegime[0];
+  var setDietaryRegime = _dietaryRegime[1];
+
   // Hydration : valeur en L pour UI ("2.5 L"), conversion L->ml uniquement au PATCH
   var defaultHydroL = (profile && profile.gender === 'female') ? 2.0 : 2.5;
 
@@ -181,6 +186,7 @@ function EditProfilePage(props) {
       setTargetKg(profile.target_weight_loss > 0 ? Math.round(parseFloat(profile.target_weight_loss)) : 5);
       setPaceMode(typeof profile.pace_mode === 'number' ? profile.pace_mode : 1);
       setActivityLevel(profile.activity_level || 'moderate');
+      setDietaryRegime(profile.dietary_regime || 'classic');
       var genderDefaultL = profile.gender === 'female' ? 2.0 : 2.5;
       var loadedHydroL = profile.custom_hydration_goal_ml
         ? (profile.custom_hydration_goal_ml / 1000)
@@ -288,7 +294,8 @@ function EditProfilePage(props) {
         daily_calorie_target: calculations ? calculations.dailyTarget : null,
         bmr: calculations ? Math.round(calculations.bmr) : null,
         tdee: calculations ? Math.round(calculations.tdee) : null,
-        custom_hydration_goal_ml: hydroMl
+        custom_hydration_goal_ml: hydroMl,
+        dietary_regime: dietaryRegime
       };
       var res = await fetch(
         SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId,
@@ -893,6 +900,31 @@ function EditProfilePage(props) {
                   <Text style={{ color: '#8892A0', fontSize: 11, marginTop: 10, fontStyle: 'italic', lineHeight: 16 }}>
                     {t.editProfileCaptionHydration}
                   </Text>
+                </View>
+
+                {/* Section RÉGIME ALIMENTAIRE */}
+                <Text style={{
+                  color: '#00D984',
+                  fontSize: 11,
+                  fontWeight: '700',
+                  letterSpacing: 1.2,
+                  marginBottom: 10
+                }}>
+                  {t.editProfileSectionDietaryRegime}
+                </Text>
+                <View style={{
+                  backgroundColor: '#10151D',
+                  borderWidth: 1,
+                  borderColor: '#1f2a36',
+                  borderRadius: 14,
+                  padding: 14,
+                  marginBottom: 16
+                }}>
+                  <DietarySelector
+                    value={dietaryRegime}
+                    onChange={setDietaryRegime}
+                    language={language}
+                  />
                 </View>
               </View>
             ) : null}

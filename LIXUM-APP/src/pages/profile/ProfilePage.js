@@ -11,7 +11,7 @@ import {
   activityLevelToIndex, activityIndexToKey,
   calculateBMR, calculateTDEE, calculateDailyTarget,
   XP_MILESTONES, XP_SOURCES, getNextMilestone, getXPForLevel,
-  ACTIVITY_LEVELS, DIETS, GOALS,
+  ACTIVITY_LEVELS, GOALS,
   T,
   getCharEmoji,
 } from './profileConstants';
