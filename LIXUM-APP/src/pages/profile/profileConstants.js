@@ -210,6 +210,10 @@ var T = {
     editProfileSectionActivity: 'NIVEAU D\'ACTIVITÉ',
     editProfileMaintainTitle: 'Maintien équilibré',
     editProfileMaintainBody: 'Vous maintiendrez votre poids actuel avec un apport calorique équilibré.',
+    editProfileSectionHydration: 'HYDRATATION',
+    editProfileLabelHydrationGoal: 'Objectif quotidien',
+    editProfileCaptionHydration: 'Recommandation : 2.0 L (femme) / 2.5 L (homme). Ajustez selon activité et climat.',
+    editProfileHydrationRecommended: 'Recommandé',
   },
   en: {
     personalData: 'PERSONAL DATA', age: 'Age', weight: 'Weight', height: 'Height', bmi: 'BMI',
@@ -304,6 +308,10 @@ var T = {
     editProfileSectionActivity: 'ACTIVITY LEVEL',
     editProfileMaintainTitle: 'Balanced maintenance',
     editProfileMaintainBody: 'You will maintain your current weight with a balanced calorie intake.',
+    editProfileSectionHydration: 'HYDRATION',
+    editProfileLabelHydrationGoal: 'Daily goal',
+    editProfileCaptionHydration: 'Recommendation: 2.0 L (woman) / 2.5 L (man). Adjust based on activity and climate.',
+    editProfileHydrationRecommended: 'Recommended',
   },
 };
 
