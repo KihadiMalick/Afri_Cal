@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   ActivityIndicator,
-  Platform
+  Platform,
+  Animated
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import ScrollPicker from '../../components/shared/ScrollPicker';
 import GoalSelector from '../../components/shared/GoalSelector';
 import TargetKgStepper from '../../components/shared/TargetKgStepper';
@@ -24,6 +26,28 @@ import { calculateBodyMetrics } from '../../constants/bodyMetrics';
 import { useAuth } from '../../config/AuthContext';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 import { T } from './profileConstants';
+
+// === Helpers haptic (silencieux sur plateformes sans haptic) ===
+
+function hapticLight() {
+  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (e) {}
+}
+
+function hapticMedium() {
+  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch (e) {}
+}
+
+function hapticSuccess() {
+  try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (e) {}
+}
+
+function hapticError() {
+  try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); } catch (e) {}
+}
+
+function hapticWarning() {
+  try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch (e) {}
+}
 
 // === Helpers (hors composant pour eviter reconstruction a chaque render) ===
 
@@ -170,6 +194,30 @@ function EditProfilePage(props) {
   var bypassHydrationWarning = _bypassHydrationWarning[0];
   var setBypassHydrationWarning = _bypassHydrationWarning[1];
 
+  var _showDiscardModal = useState(false);
+  var showDiscardModal = _showDiscardModal[0];
+  var setShowDiscardModal = _showDiscardModal[1];
+
+  // Animated.Value pour fade du tab switcher (useNativeDriver: false per LIXUM)
+  var tabOpacity = useRef(new Animated.Value(1)).current;
+
+  function switchTab(newTab) {
+    if (newTab === activeTab) return;
+    hapticLight();
+    Animated.timing(tabOpacity, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: false
+    }).start(function() {
+      setActiveTab(newTab);
+      Animated.timing(tabOpacity, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: false
+      }).start();
+    });
+  }
+
   // Valeurs du picker : 0.5L a 5.0L step 0.1L
   var hydroValues = [];
   for (var hv = 5; hv <= 50; hv++) { hydroValues.push(hv / 10); }
@@ -254,16 +302,19 @@ function EditProfilePage(props) {
     var shouldBypass = forceBypass === true || bypassHydrationWarning;
     if (!shouldBypass) {
       if (hydroGoalL < 1.5) {
+        hapticWarning();
         setHydrationModalType('low');
         setShowHydrationMedicalModal(true);
         return;
       }
       if (hydroGoalL > 3.5) {
+        hapticWarning();
         setHydrationModalType('high');
         setShowHydrationMedicalModal(true);
         return;
       }
     }
+    hapticMedium();
     setIsSaving(true);
     setSaveError(null);
     try {
@@ -315,6 +366,7 @@ function EditProfilePage(props) {
       }
       var data = await res.json();
       setIsSaving(false);
+      hapticSuccess();
       // Reset hydration baseline + bypass flag apres save reussi
       setOriginalHydroL(hydroGoalL);
       setBypassHydrationWarning(false);
@@ -326,13 +378,52 @@ function EditProfilePage(props) {
       }
     } catch (err) {
       console.warn('EditProfilePage saveProfile error:', err);
+      hapticError();
       setSaveError(t.editProfileSaveError);
       setIsSaving(false);
     }
   }
 
+  // Detecte si l'utilisateur a modifie un champ par rapport aux valeurs DB d'origine
+  function hasModifications() {
+    if (!profile) return false;
+    var origName = profile.display_name || '';
+    var origAge = profile.age ? parseInt(profile.age, 10) : 30;
+    var origWeight = profile.weight ? Math.round(parseFloat(profile.weight)) : 70;
+    var origHeight = profile.height ? Math.round(parseFloat(profile.height)) : 170;
+    var origCity = profile.city || profile.location || '';
+    var origGoal = profile.goal || 'maintain';
+    var origTargetKg = profile.target_weight_loss > 0 ? Math.round(parseFloat(profile.target_weight_loss)) : 5;
+    var origPaceMode = typeof profile.pace_mode === 'number' ? profile.pace_mode : 1;
+    var origActivityLevel = profile.activity_level || 'moderate';
+    var origDietaryRegime = profile.dietary_regime || 'classic';
+    if (name.trim() !== origName) return true;
+    if (age !== origAge) return true;
+    if (weight !== origWeight) return true;
+    if (height !== origHeight) return true;
+    if (city.trim() !== origCity) return true;
+    if (goal !== origGoal) return true;
+    if (targetKg !== origTargetKg) return true;
+    if (paceMode !== origPaceMode) return true;
+    if (activityLevel !== origActivityLevel) return true;
+    if (hydroGoalL !== originalHydroL) return true;
+    if (dietaryRegime !== origDietaryRegime) return true;
+    return false;
+  }
+
   function handleCancel() {
     if (isSaving) return;
+    // Garde: si modal medical hydratation ouverte, ne pas fermer parente
+    if (showHydrationMedicalModal) {
+      hapticWarning();
+      return;
+    }
+    if (hasModifications()) {
+      hapticWarning();
+      setShowDiscardModal(true);
+      return;
+    }
+    hapticLight();
     if (onClose) {
       onClose();
     }
@@ -408,7 +499,7 @@ function EditProfilePage(props) {
             borderColor: '#1f2a36'
           }}>
             <Pressable
-              onPress={function() { setActiveTab('personal'); }}
+              onPress={function() { switchTab('personal'); }}
               style={{
                 flex: 1,
                 flexDirection: 'row',
@@ -434,7 +525,7 @@ function EditProfilePage(props) {
               </Text>
             </Pressable>
             <Pressable
-              onPress={function() { setActiveTab('goals'); }}
+              onPress={function() { switchTab('goals'); }}
               style={{
                 flex: 1,
                 flexDirection: 'row',
@@ -466,6 +557,7 @@ function EditProfilePage(props) {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+            <Animated.View style={{ opacity: tabOpacity }}>
             {activeTab === 'personal' ? (
               <View>
             {/* [C] Section IDENTITÉ */}
@@ -725,7 +817,7 @@ function EditProfilePage(props) {
                 }}>
                   <GoalSelector
                     value={goal}
-                    onChange={setGoal}
+                    onChange={function(val) { hapticLight(); setGoal(val); }}
                     language={language}
                   />
                   <Text style={{
@@ -762,7 +854,7 @@ function EditProfilePage(props) {
                     }}>
                       <TargetKgStepper
                         value={targetKg}
-                        onChange={setTargetKg}
+                        onChange={function(val) { hapticLight(); setTargetKg(val); }}
                         goal={goal}
                         language={language}
                       />
@@ -788,7 +880,7 @@ function EditProfilePage(props) {
                     }}>
                       <PaceSelector
                         value={paceMode}
-                        onChange={setPaceMode}
+                        onChange={function(val) { hapticLight(); setPaceMode(val); }}
                         calculations={calculations}
                         language={language}
                       />
@@ -848,7 +940,7 @@ function EditProfilePage(props) {
                 }}>
                   <ActivityLevelSelector
                     value={activityLevel}
-                    onChange={setActivityLevel}
+                    onChange={function(val) { hapticLight(); setActivityLevel(val); }}
                     language={language}
                   />
                 </View>
@@ -877,7 +969,7 @@ function EditProfilePage(props) {
                         variant="compact"
                         values={hydroValues}
                         selectedValue={hydroGoalL}
-                        onSelect={function(val) { setHydroGoalL(val); }}
+                        onSelect={function(val) { hapticLight(); setHydroGoalL(val); }}
                         unit="L"
                         color="#4DA6FF"
                         height={140}
@@ -922,12 +1014,13 @@ function EditProfilePage(props) {
                 }}>
                   <DietarySelector
                     value={dietaryRegime}
-                    onChange={setDietaryRegime}
+                    onChange={function(val) { hapticLight(); setDietaryRegime(val); }}
                     language={language}
                   />
                 </View>
               </View>
             ) : null}
+            </Animated.View>
           </ScrollView>
 
           {/* Erreur save (fixe au-dessus des boutons) */}
@@ -1036,6 +1129,7 @@ function EditProfilePage(props) {
                 <Pressable
                   delayPressIn={120}
                   onPress={function() {
+                    hapticLight();
                     setHydroGoalL(originalHydroL);
                     setShowHydrationMedicalModal(false);
                   }}
@@ -1046,6 +1140,7 @@ function EditProfilePage(props) {
                 <Pressable
                   delayPressIn={120}
                   onPress={function() {
+                    hapticMedium();
                     setBypassHydrationWarning(true);
                     setShowHydrationMedicalModal(false);
                     handleSave(true);
@@ -1053,6 +1148,61 @@ function EditProfilePage(props) {
                   style={{ flex: 1, backgroundColor: '#00D984', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginLeft: 12 }}
                 >
                   <Text style={{ color: '#000', fontSize: 14, fontWeight: '700' }}>Je confirme</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal discard : confirmation avant fermeture si modifs non sauvegardees */}
+      <Modal
+        visible={showDiscardModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={function() { setShowDiscardModal(false); }}
+      >
+        <Pressable
+          onPress={function() { setShowDiscardModal(false); }}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}
+        >
+          <Pressable onPress={function() {}} style={{ width: '100%', maxWidth: 320, borderRadius: 20, padding: 24, overflow: 'hidden' }}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 20 }} />
+            <View style={{ alignItems: 'center' }}>
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,140,66,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name="warning" size={26} color="#FF8C42" />
+              </View>
+              <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '800', textAlign: 'center', marginTop: 16 }}>
+                {t.editProfileDiscardTitle}
+              </Text>
+              <Text style={{ color: '#C0C4CC', fontSize: 14, lineHeight: 22, textAlign: 'center', marginTop: 12 }}>
+                {t.editProfileDiscardBody}
+              </Text>
+              <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
+                <Pressable
+                  delayPressIn={120}
+                  onPress={function() {
+                    hapticLight();
+                    setShowDiscardModal(false);
+                  }}
+                  style={{ flex: 1, borderWidth: 1, borderColor: '#4A4F55', borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#8A8F98', fontSize: 14, fontWeight: '600' }}>
+                    {t.editProfileDiscardCancel}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  delayPressIn={120}
+                  onPress={function() {
+                    hapticMedium();
+                    setShowDiscardModal(false);
+                    if (onClose) onClose();
+                  }}
+                  style={{ flex: 1, backgroundColor: '#FF8C42', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginLeft: 12 }}
+                >
+                  <Text style={{ color: '#FFF', fontSize: 14, fontWeight: '700' }}>
+                    {t.editProfileDiscardConfirm}
+                  </Text>
                 </Pressable>
               </View>
             </View>
