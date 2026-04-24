@@ -207,6 +207,10 @@ var T = {
     editProfileCaptionHydration: 'Recommandation : 2.0 L (femme) / 2.5 L (homme). Ajustez selon activité et climat.',
     editProfileHydrationRecommended: 'Recommandé',
     editProfileSectionDietaryRegime: 'RÉGIME ALIMENTAIRE',
+    editProfileDiscardTitle: 'Modifications non sauvegardées',
+    editProfileDiscardBody: 'Vous avez des modifications non enregistrées. Voulez-vous vraiment fermer sans sauvegarder ?',
+    editProfileDiscardCancel: 'Continuer',
+    editProfileDiscardConfirm: 'Abandonner',
   },
   en: {
     personalData: 'PERSONAL DATA', age: 'Age', weight: 'Weight', height: 'Height', bmi: 'BMI',
@@ -306,6 +310,10 @@ var T = {
     editProfileCaptionHydration: 'Recommendation: 2.0 L (woman) / 2.5 L (man). Adjust based on activity and climate.',
     editProfileHydrationRecommended: 'Recommended',
     editProfileSectionDietaryRegime: 'DIETARY REGIME',
+    editProfileDiscardTitle: 'Unsaved changes',
+    editProfileDiscardBody: 'You have unsaved changes. Are you sure you want to close without saving?',
+    editProfileDiscardCancel: 'Continue',
+    editProfileDiscardConfirm: 'Discard',
   },
 };
 
