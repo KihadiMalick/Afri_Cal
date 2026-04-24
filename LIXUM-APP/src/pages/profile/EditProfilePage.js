@@ -142,6 +142,33 @@ function EditProfilePage(props) {
   var activityLevel = _activityLevel[0];
   var setActivityLevel = _activityLevel[1];
 
+  // Hydration : valeur en L pour UI ("2.5 L"), conversion L->ml uniquement au PATCH
+  var defaultHydroL = (profile && profile.gender === 'female') ? 2.0 : 2.5;
+
+  var _hydroGoalL = useState(defaultHydroL);
+  var hydroGoalL = _hydroGoalL[0];
+  var setHydroGoalL = _hydroGoalL[1];
+
+  var _originalHydroL = useState(defaultHydroL);
+  var originalHydroL = _originalHydroL[0];
+  var setOriginalHydroL = _originalHydroL[1];
+
+  var _showHydrationMedicalModal = useState(false);
+  var showHydrationMedicalModal = _showHydrationMedicalModal[0];
+  var setShowHydrationMedicalModal = _showHydrationMedicalModal[1];
+
+  var _hydrationModalType = useState('low');
+  var hydrationModalType = _hydrationModalType[0];
+  var setHydrationModalType = _hydrationModalType[1];
+
+  var _bypassHydrationWarning = useState(false);
+  var bypassHydrationWarning = _bypassHydrationWarning[0];
+  var setBypassHydrationWarning = _bypassHydrationWarning[1];
+
+  // Valeurs du picker : 0.5L a 5.0L step 0.1L
+  var hydroValues = [];
+  for (var hv = 5; hv <= 50; hv++) { hydroValues.push(hv / 10); }
+
   // Pre-remplissage au mount quand visible devient true
   useEffect(function() {
     if (visible && profile) {
@@ -154,6 +181,14 @@ function EditProfilePage(props) {
       setTargetKg(profile.target_weight_loss > 0 ? Math.round(parseFloat(profile.target_weight_loss)) : 5);
       setPaceMode(typeof profile.pace_mode === 'number' ? profile.pace_mode : 1);
       setActivityLevel(profile.activity_level || 'moderate');
+      var genderDefaultL = profile.gender === 'female' ? 2.0 : 2.5;
+      var loadedHydroL = profile.custom_hydration_goal_ml
+        ? (profile.custom_hydration_goal_ml / 1000)
+        : genderDefaultL;
+      setHydroGoalL(loadedHydroL);
+      setOriginalHydroL(loadedHydroL);
+      setBypassHydrationWarning(false);
+      setShowHydrationMedicalModal(false);
       setFocusedField(null);
       setSaveError(null);
       setActiveTab('personal');
@@ -207,8 +242,22 @@ function EditProfilePage(props) {
   var goalValid = goal === 'lose' || goal === 'maintain' || goal === 'gain';
   var isFormValid = nameValid && ageValid && weightValid && heightValid && goalValid;
 
-  async function handleSave() {
+  async function handleSave(forceBypass) {
     if (isSaving || !isFormValid) return;
+    // Gate médical hydration : modal si hors [1.5, 3.5] L (sauf bypass explicite)
+    var shouldBypass = forceBypass === true || bypassHydrationWarning;
+    if (!shouldBypass) {
+      if (hydroGoalL < 1.5) {
+        setHydrationModalType('low');
+        setShowHydrationMedicalModal(true);
+        return;
+      }
+      if (hydroGoalL > 3.5) {
+        setHydrationModalType('high');
+        setShowHydrationMedicalModal(true);
+        return;
+      }
+    }
     setIsSaving(true);
     setSaveError(null);
     try {
@@ -220,6 +269,11 @@ function EditProfilePage(props) {
       }
       var session = await supabase.auth.getSession();
       var accessToken = session && session.data && session.data.session ? session.data.session.access_token : SUPABASE_ANON_KEY;
+      // Hydration : null si valeur par défaut gender-aware, sinon conversion L->ml
+      var hydroMl = null;
+      if (hydroGoalL !== defaultHydroL) {
+        hydroMl = Math.round(hydroGoalL * 1000);
+      }
       var body = {
         display_name: name.trim(),
         age: age,
@@ -233,8 +287,8 @@ function EditProfilePage(props) {
         target_months: derivedMonths,
         daily_calorie_target: calculations ? calculations.dailyTarget : null,
         bmr: calculations ? Math.round(calculations.bmr) : null,
-        tdee: calculations ? Math.round(calculations.tdee) : null
-        // custom_hydration_goal_ml : Etape 6
+        tdee: calculations ? Math.round(calculations.tdee) : null,
+        custom_hydration_goal_ml: hydroMl
       };
       var res = await fetch(
         SUPABASE_URL + '/rest/v1/users_profile?user_id=eq.' + userId,
@@ -254,6 +308,9 @@ function EditProfilePage(props) {
       }
       var data = await res.json();
       setIsSaving(false);
+      // Reset hydration baseline + bypass flag apres save reussi
+      setOriginalHydroL(hydroGoalL);
+      setBypassHydrationWarning(false);
       if (onSaveSuccess && data && data[0]) {
         onSaveSuccess(data[0]);
       }
@@ -789,7 +846,54 @@ function EditProfilePage(props) {
                   />
                 </View>
 
-                {/* Hydration : Etape 6 */}
+                {/* Section HYDRATATION */}
+                <Text style={{
+                  color: '#00D984',
+                  fontSize: 11,
+                  fontWeight: '700',
+                  letterSpacing: 1.2,
+                  marginBottom: 10
+                }}>
+                  {t.editProfileSectionHydration}
+                </Text>
+                <View style={{
+                  backgroundColor: '#10151D',
+                  borderWidth: 1,
+                  borderColor: '#1f2a36',
+                  borderRadius: 14,
+                  padding: 14,
+                  marginBottom: 16
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flex: 1 }}>
+                      <ScrollPicker
+                        variant="compact"
+                        values={hydroValues}
+                        selectedValue={hydroGoalL}
+                        onSelect={function(val) { setHydroGoalL(val); }}
+                        unit="L"
+                        color="#4DA6FF"
+                        height={140}
+                      />
+                    </View>
+                    <View style={{ marginLeft: 16, alignItems: 'center' }}>
+                      <Text style={{ fontSize: 28, fontWeight: '800', color: '#4DA6FF' }}>
+                        {hydroGoalL.toFixed(1)}
+                      </Text>
+                      <Text style={{ fontSize: 14, color: '#8A8F98' }}>L</Text>
+                      {hydroGoalL === defaultHydroL ? (
+                        <View style={{ marginTop: 6, backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                          <Text style={{ fontSize: 9, fontWeight: '700', color: '#00D984' }}>
+                            {t.editProfileHydrationRecommended}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                  <Text style={{ color: '#8892A0', fontSize: 11, marginTop: 10, fontStyle: 'italic', lineHeight: 16 }}>
+                    {t.editProfileCaptionHydration}
+                  </Text>
+                </View>
               </View>
             ) : null}
           </ScrollView>
@@ -865,6 +969,64 @@ function EditProfilePage(props) {
           </View>
         </KeyboardAvoidingView>
       </View>
+
+      {/* Modal avertissement médical hydratation (valeur hors [1.5, 3.5] L au save) */}
+      <Modal
+        visible={showHydrationMedicalModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={function() {
+          setHydroGoalL(originalHydroL);
+          setShowHydrationMedicalModal(false);
+        }}
+      >
+        <Pressable
+          onPress={function() {
+            setHydroGoalL(originalHydroL);
+            setShowHydrationMedicalModal(false);
+          }}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}
+        >
+          <Pressable onPress={function() {}} style={{ width: '100%', maxWidth: 320, borderRadius: 20, padding: 24, overflow: 'hidden' }}>
+            <LinearGradient colors={['#3A3F46', '#252A30', '#333A42', '#1A1D22']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 20 }} />
+            <View style={{ alignItems: 'center' }}>
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255,68,68,0.15)', justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: 24, color: '#FF4444' }}>⚕</Text>
+              </View>
+              <Text style={{ color: '#FFF', fontSize: 18, fontWeight: '800', textAlign: 'center', marginTop: 16 }}>Avertissement médical</Text>
+              <Text style={{ color: '#C0C4CC', fontSize: 14, lineHeight: 22, textAlign: 'center', marginTop: 12 }}>
+                {hydrationModalType === 'low'
+                  ? 'Un objectif inférieur à 1.5L est généralement prescrit pour des conditions médicales spécifiques (insuffisance cardiaque, insuffisance rénale). Consultez votre médecin avant de modifier cet objectif.'
+                  : 'Un apport supérieur à 3.5L par jour peut entraîner une hyponatrémie (baisse dangereuse du sodium sanguin). Consultez votre médecin.'}
+              </Text>
+              <Text style={{ color: '#666', fontSize: 10, fontStyle: 'italic', marginTop: 8 }}>Sources : EFSA 2010, NIH StatPearls 2025</Text>
+              <View style={{ flexDirection: 'row', marginTop: 20, gap: 12 }}>
+                <Pressable
+                  delayPressIn={120}
+                  onPress={function() {
+                    setHydroGoalL(originalHydroL);
+                    setShowHydrationMedicalModal(false);
+                  }}
+                  style={{ flex: 1, borderWidth: 1, borderColor: '#4A4F55', borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}
+                >
+                  <Text style={{ color: '#8A8F98', fontSize: 14, fontWeight: '600' }}>Annuler</Text>
+                </Pressable>
+                <Pressable
+                  delayPressIn={120}
+                  onPress={function() {
+                    setBypassHydrationWarning(true);
+                    setShowHydrationMedicalModal(false);
+                    handleSave(true);
+                  }}
+                  style={{ flex: 1, backgroundColor: '#00D984', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginLeft: 12 }}
+                >
+                  <Text style={{ color: '#000', fontSize: 14, fontWeight: '700' }}>Je confirme</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }
