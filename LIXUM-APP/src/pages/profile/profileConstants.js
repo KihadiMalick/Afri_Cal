@@ -104,14 +104,6 @@ var ACTIVITY_LEVELS = [
   { label: 'Extr\u00eamement actif', desc: 'Athl\u00e8te / travail physique', emoji: '\uD83D\uDD25' },
 ];
 
-var DIETS = [
-  { key: 'classic', label: 'Classique', emoji: '\uD83C\uDF57', color: '#00D984' },
-  { key: 'vegetarian', label: 'V\u00e9g\u00e9tarien', emoji: '\uD83E\uDD6C', color: '#00BFA6' },
-  { key: 'vegan', label: 'V\u00e9gan', emoji: '\uD83C\uDF31', color: '#00D984' },
-  { key: 'keto', label: 'K\u00e9to', emoji: '\uD83E\uDD51', color: '#D4AF37' },
-  { key: 'halal', label: 'Halal', emoji: '\uD83C\uDF19', color: '#00BFA6' },
-];
-
 // GOALS centralise dans src/constants/GOALS.js (Ionicons + labels FR/EN).
 // Re-export pour preserver les imports existants (ex: ProfilePage l.14).
 import GOALS from '../../constants/GOALS';
@@ -214,6 +206,7 @@ var T = {
     editProfileLabelHydrationGoal: 'Objectif quotidien',
     editProfileCaptionHydration: 'Recommandation : 2.0 L (femme) / 2.5 L (homme). Ajustez selon activité et climat.',
     editProfileHydrationRecommended: 'Recommandé',
+    editProfileSectionDietaryRegime: 'RÉGIME ALIMENTAIRE',
   },
   en: {
     personalData: 'PERSONAL DATA', age: 'Age', weight: 'Weight', height: 'Height', bmi: 'BMI',
@@ -312,6 +305,7 @@ var T = {
     editProfileLabelHydrationGoal: 'Daily goal',
     editProfileCaptionHydration: 'Recommendation: 2.0 L (woman) / 2.5 L (man). Adjust based on activity and climate.',
     editProfileHydrationRecommended: 'Recommended',
+    editProfileSectionDietaryRegime: 'DIETARY REGIME',
   },
 };
 
@@ -328,7 +322,7 @@ export {
   activityLevelToIndex, activityIndexToKey,
   calculateBMR, calculateTDEE, calculateDailyTarget,
   XP_MILESTONES, XP_SOURCES, getNextMilestone, getXPForLevel,
-  ACTIVITY_LEVELS, DIETS, GOALS,
+  ACTIVITY_LEVELS, GOALS,
   T,
   getCharEmoji,
 };
