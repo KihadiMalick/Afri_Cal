@@ -1,0 +1,132 @@
+# RAPPORT DIAGNOSTIC PHASE 0 — LIXVERSE CARACTÈRES V5
+
+**Date** : 25 avril 2026
+**Type** : LECTURE SEULE — préparation refonte V5
+**Branche** : `sprint/lixverse-characters-phase-0-diagnostic`
+**Scope** : `LIXUM-APP/src/pages/lixverse/CharactersTab.js` + dépendances
+
+---
+
+## Section A — État du repo
+
+### Branche actuelle
+`sprint/lixverse-characters-phase-0-diagnostic` (créée depuis `main` à jour)
+
+### Working tree
+**Clean** au démarrage. Le diagnostic ne créera qu'un seul fichier (ce rapport, à la racine du repo, demandé par Malick pour visualisation).
+
+### 10 derniers commits
+```
+8e451d3 Merge pull request #730 from KihadiMalick/docs/characters-documentation-v5-db-aligned
+0d6e098 docs(characters): V5 phase 5 — système recharge + switch + RPC + historique
+9bfd295 docs(characters): V5 phase 4 — 3 Elite + 2 Mythique + 1 Ultimate
+219cfa1 docs(characters): V5 phase 3 — 5 personnages Rare
+df17d9f docs(characters): V5 phase 2 — 5 personnages Standard
+8651693 docs(characters): V5 phase 1 — header + vue d'ensemble + fragments
+0662d8d Merge pull request #728 from KihadiMalick/docs/diagnostic-snack-vs-build
+9a2a778 docs: diagnostic features Snack vs Build (roadmap 7 jours + backlog 1er mai)
+fa5c023 Merge pull request #727 from KihadiMalick/sprint/polish-editprofile-final
+6d16a8b feat(profile): polish final EditProfilePage — haptic, animation, discard
+```
+
+### Tags récents
+```
+v1.8-rgpd-complete
+v1.7-rgpd-reasons-catalog
+v1.7-rgpd-soft-delete
+v1.2-backend-v4-complete
+v1.2-session1-v4-validated
+```
+
+⚠️ Pas de tag `v1.9-profile-edit-complete` ni `v1.9.2-polish-final` posés (suggérés par PR #727 mais non taggés).
+
+---
+
+## Section B — Inventaire `CharactersTab.js`
+
+### Path exact
+`LIXUM-APP/src/pages/lixverse/CharactersTab.js`
+
+### Nombre total de lignes
+**1235 lignes**
+
+### Imports principaux (top 30)
+```javascript
+import React from 'react';
+import { View, Text, ScrollView, Pressable, Animated,
+  Image, Modal, ActivityIndicator, Easing, Dimensions } from 'react-native';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import {
+  ALL_CHARACTERS, TIER_CONFIG, CHAR_NAMES, FRAGS_NIV1,
+  CHARACTER_IMAGES, SUPABASE_URL,
+  HEADERS, POST_HEADERS, getCharImage, RECHARGE_COST_BY_TIER
+} from './lixverseConstants';
+import { LixGem } from './lixverseComponents';
+import { useAuth } from '../../config/AuthContext';
+import { wp, fp } from '../../constants/layout';
+```
+
+⚠️ **Imports critiques pour V5** : `ALL_CHARACTERS`, `CHAR_NAMES`, `FRAGS_NIV1`, `CHARACTER_IMAGES` viennent de `lixverseConstants` — **probable code legacy V1-V4 hardcodé** (à confirmer Section C/D).
+
+### useState et useEffect
+**AUCUN dans CharactersTab.js** — c'est un composant **enfant pur** (controlled component).
+
+Tous les states sont gérés au niveau parent `LixVersePage.js` :
+| State | Ligne LixVersePage | Type |
+|---|---|---|
+| `selectedCharacter` | 130 | object/null |
+| `userCollection` | 133 | array |
+| `activeCharSlug` | 134 | string/null |
+| `selectedChar` | 136 | object/null |
+| `cardViewIndex` | 138 | number |
+| `charFlipped` | 139 | boolean |
+| `charPowers` | 140 | array |
+| `cardViewIndexRef` | 147 (useRef) | ref |
+
+### Signature du composant
+```javascript
+export default function CharactersTab({
+  userCollection,
+  ownedCharacters,
+  activeCharSlug,
+  selectedChar,
+  setSelectedChar,
+  charFlipped,
+  setCharFlipped,
+  cardViewIndex,
+  setCardViewIndex,
+  cardViewIndexRef,
+  charPowers,
+  // ... + handlers (onSwitchActiveCharacter, onRechargeChar, onUseCharPower,
+  //                  onGoToSpin, showLixAlert, closeLixAlert)
+}) { ... }
+```
+
+### Fonctions internes définies (5)
+| Ligne | Nom | Description |
+|---|---|---|
+| 58 | `activeChar` (var) | `userCollection.find(c => c.slug === activeCharSlug && c.owned !== false)` |
+| 59 | `getLevelBadge` | Helper render badge niveau |
+| 66 | `closeCharModal` | Ferme modal + reset flip + reset cardViewIndex |
+
+⚠️ **Tout le rendu et les handlers complexes (`onNavigateCard`, `onSwitchActive`, `onRechargeChar`, `onUseCharPower`, `onGoToSpin`)** sont **passés en props** depuis LixVersePage. **CharactersTab.js est purement une vue.**
+
+### Structure return JSX (résumé 5-10 lignes)
+
+Lignes 73-1234 = un seul gros JSX :
+- **Lignes 73-138** : Header tab Caractères (titre + counter "X/16 collectés" + boutons "Caisses" / "Voir Pouvoirs")
+- **Lignes 138-209** : Grille 3 colonnes des 16 personnages (`userCollection.map(...)`) avec carte image + niveau badge
+- **Lignes 210-1234** : **Modal détail** (`<Modal visible={selectedChar !== null}>`) avec :
+  - Boutons navigation gauche/droite (l.219-249)
+  - Vue avant : carte personnage agrandie + overlays dynamiques (l.260-422)
+  - Vue arrière (flip) : pouvoirs Niv1/Niv2/MAX (l.430+)
+  - Boutons action contextuels (Activer / Utiliser / Recharger / Fragments manquants)
+
+### Verdict B
+`CharactersTab.js` est une **vue contrôlée** 100% drivée par les props. Toute la logique métier (RPC, state) vit dans `LixVersePage.js`. Pour Phase 1 (alignement DB V5), il faudra **toucher les deux fichiers** :
+- `LixVersePage.js` pour les RPC et le format des states
+- `CharactersTab.js` pour l'affichage (display names, fragments lus depuis collection au lieu de constants)
+- `lixverseConstants.js` pour purger le code mort hardcodé
+
+---
