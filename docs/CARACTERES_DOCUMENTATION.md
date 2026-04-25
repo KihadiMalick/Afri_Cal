@@ -176,3 +176,75 @@ Les frags Ultimate ne sont disponibles que lors d'événements rares :
 
 ---
 
+# RARE — 5 PERSONNAGES
+
+## 6. Jade Phoenix 🔥
+**Slug DB** : `jade_phoenix`
+**Spécialité** : Récupération intelligente et protection des streaks
+**Tier** : Rare | Frags : 8 → 18 → 25 | Recharge : 5é | Efficiency : 0.45
+**Description** : Le phénix de jade, maître de la récupération et de la résilience.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Détection Récupération | Analyse ton activité récente + humeur et recommande un jour de repos si nécessaire | modal_inline |
+| 2 | Nutrition Récupération | Suggère des aliments anti-inflammatoires et riches en protéines après un effort intense | modal_inline |
+| MAX | Renaissance ⭐ | Récupère 1 streak perdu par semaine. Rattrape 1 jour manqué comme si tu ne l'avais jamais raté | redirect |
+
+---
+
+## 7. Momo 🐿️
+**Slug DB** : `silver_wolf`
+**Spécialité** : Streaks bienveillants
+**Tier** : Rare | Frags : 8 → 18 → 25 | Recharge : 5é | Efficiency : 0.45
+**Description** : Le loup d'argent, traqueur de constance et gardien des habitudes (display écureuil = accumulation de réserves).
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Traqueur de Streaks | Affiche tes streaks actifs : scans, activité, humeur, hydratation | modal_inline |
+| 2 | Bonus Streak | +5 Lix automatiques quand un streak atteint 7 jours sur n'importe quelle catégorie | toggle |
+| MAX | Meute ⭐ | Lie 2 streaks ensemble : si l'un tombe, l'autre le protège pendant 24h. Bouclier de meute | redirect |
+
+---
+
+## 8. Boukki 🦴
+**Slug DB** : `boukki`
+**Spécialité** : Planification repas et optimisation calorique
+**Tier** : Rare | Frags : 8 → 18 → 25 | Recharge : 5é | Efficiency : 0.45
+**Description** : La hyène rusée du folklore africain, stratège de l'alimentation optimale.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Calories Restantes | Combien de kcal il te reste pour aujourd'hui avec répartition P/G/L optimale suggérée | modal_inline |
+| 2 | Complément Repas | Après un scan, suggère quoi ajouter au repas pour atteindre ton objectif macro du jour | modal_inline |
+| MAX | Festin Optimisé ⭐ | Planificateur complet de journée : 3 repas optimisés selon tes objectifs, calculés depuis la DB | redirect |
+
+---
+
+## 9. Iron Rhino 🦏
+**Slug DB** : `iron_rhino`
+**Spécialité** : Objectifs fitness personnalisés et défis hebdomadaires
+**Tier** : Rare | Frags : 8 → 18 → 25 | Recharge : 5é | Efficiency : 0.45
+**Description** : Le rhinocéros de fer, puissance brute et objectifs ambitieux.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Objectif Personnalisé | Objectif hebdo qui va au-delà des 150 min OMS, adapté à ton profil et ton historique | modal_inline |
+| 2 | Bilan Enrichi | Post-activité enrichi : vitesse moy, zones d'intensité, comparaison semaine précédente | modal_inline |
+| MAX | Charge du Rhino ⭐ | Défi fitness hebdo personnalisé avec récompense Lix. Ex: "3 courses de 5km = +50 Lix" | modal_inline |
+
+---
+
+## 10. Coral Dolphin 🐬
+**Slug DB** : `coral_dolphin`
+**Spécialité** : Hydratation intelligente et rappels adaptés
+**Tier** : Rare | Frags : 8 → 18 → 25 | Recharge : 5é | Efficiency : 0.45
+**Description** : Le dauphin de corail, gardien de l'équilibre hydrique.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Rappel Hydratation | Rappels intelligents basés sur ton activité du jour + climat. "Bois 250ml maintenant" | modal_inline |
+| 2 | Tracker Hydratation | Jauge animée + historique semaine avec coefficients BHI (Beverage Hydration Index) | modal_inline |
+| MAX | Vague Bleue ⭐ | Coefficients hydratation personnalisés par boisson + objectif adapté poids/activité/climat | redirect |
+
+---
+
