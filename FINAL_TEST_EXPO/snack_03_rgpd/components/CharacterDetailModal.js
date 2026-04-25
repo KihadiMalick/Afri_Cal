@@ -331,12 +331,7 @@ export default function CharacterDetailModal(props) {
               height: wp(385),
               borderRadius: wp(8),
               overflow: 'hidden',
-              backgroundColor: '#000',
-              shadowColor: '#D4AF37',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.25,
-              shadowRadius: 24,
-              elevation: 14
+              backgroundColor: '#000'
             }}>
               {canShowImage ? (
                 <Image
@@ -541,17 +536,12 @@ export default function CharacterDetailModal(props) {
             })
           }]
         }}>
-          <LinearGradient
-            colors={['#0F1215', '#1A1D22', '#252A30']}
-            locations={[0, 0.5, 1]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={{
-              flex: 1,
-              paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 12,
-              paddingBottom: 34
-            }}
-          >
+          <View style={{
+            flex: 1,
+            backgroundColor: '#0F1215',
+            paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 12,
+            paddingBottom: 34
+          }}>
             {/* === ZONE DRAG (grabber + zone tappable élargie) === */}
             <PanGestureHandler
               onGestureEvent={onGestureEvent}
@@ -579,7 +569,7 @@ export default function CharacterDetailModal(props) {
             <Pressable onPress={close} style={{ paddingVertical: 12, alignItems: 'center', marginBottom: 4 }}>
               <Text style={{ color: '#9A9EA3', fontSize: fp(14) }}>{t('close')}</Text>
             </Pressable>
-          </LinearGradient>
+          </View>
         </Animated.View>
       </View>
     </Modal>
