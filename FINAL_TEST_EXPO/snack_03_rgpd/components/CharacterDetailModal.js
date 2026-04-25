@@ -111,35 +111,41 @@ export default function CharacterDetailModal(props) {
   var backOpacity = flipAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
   function renderStatsGrid() {
+    if (!owned) return null;
+
+    function renderStatCard(label, value) {
+      return (
+        <View style={{
+          flex: 1,
+          marginHorizontal: 4,
+          paddingVertical: 12,
+          paddingHorizontal: 8,
+          backgroundColor: 'rgba(255,255,255,0.04)',
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.06)',
+          alignItems: 'center'
+        }}>
+          <Text style={{ color: '#6B6F75', fontSize: fp(9), fontWeight: '600', letterSpacing: 1.5, marginBottom: 4 }}>
+            {label}
+          </Text>
+          <Text style={{ color: '#FFFFFF', fontSize: fp(18), fontWeight: 'bold' }}>
+            {value}
+          </Text>
+        </View>
+      );
+    }
+
+    var fragsCurrent = ch.fragments || 0;
+    var fragsMax = getFragsMax();
+    var bonusValue = ch.efficiency_bonus ? '×' + (1 + ch.efficiency_bonus).toFixed(1) : '×1.0';
+
     return (
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 18, paddingVertical: 14, paddingHorizontal: 12, marginHorizontal: 16, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12 }}>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#9A9EA3', fontSize: 10, letterSpacing: 1 }}>{t('level')}</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginTop: 2 }}>
-            {ch.level === 3 ? t('max') : ch.level}
-          </Text>
-        </View>
-        <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#9A9EA3', fontSize: 10, letterSpacing: 1 }}>FRAGS</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginTop: 2 }}>
-            {ch.fragments || 0}
-          </Text>
-        </View>
-        <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#9A9EA3', fontSize: 10, letterSpacing: 1 }}>USES</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginTop: 2 }}>
-            {ch.uses_remaining || 0}/{ch.max_uses_per_cycle || 3}
-          </Text>
-        </View>
-        <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#9A9EA3', fontSize: 10, letterSpacing: 1 }}>{t('bonus')}</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginTop: 2 }}>
-            ×{ch.efficiency_bonus || 1}
-          </Text>
-        </View>
+      <View style={{ flexDirection: 'row', marginTop: 18, marginHorizontal: 12 }}>
+        {renderStatCard('NIV', ch.level || 1)}
+        {renderStatCard('FRAGS', fragsCurrent + '/' + fragsMax)}
+        {renderStatCard('USES', (ch.uses_remaining || 0) + '/' + (ch.max_uses_per_cycle || 3))}
+        {renderStatCard('BONUS', bonusValue)}
       </View>
     );
   }
