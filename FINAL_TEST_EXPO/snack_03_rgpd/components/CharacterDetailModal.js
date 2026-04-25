@@ -526,13 +526,20 @@ export default function CharacterDetailModal(props) {
   return (
     <Modal visible={true} transparent={true} animationType="fade" onRequestClose={close}>
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}>
-        <View style={{
+        <Animated.View style={{
           height: SCREEN_HEIGHT * 0.92,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
           borderTopWidth: 2,
           borderTopColor: isActive ? '#00D984' : config.primary,
-          overflow: 'hidden'
+          overflow: 'hidden',
+          transform: [{
+            translateY: dragY.interpolate({
+              inputRange: [-100, 0, SCREEN_HEIGHT],
+              outputRange: [0, 0, SCREEN_HEIGHT],
+              extrapolate: 'clamp'
+            })
+          }]
         }}>
           <LinearGradient
             colors={[gradientStart, '#0F1215']}
@@ -544,10 +551,22 @@ export default function CharacterDetailModal(props) {
               paddingBottom: 34
             }}
           >
-            {/* Drag handle visuel en haut */}
-            <View style={{ alignItems: 'center', marginBottom: 8 }}>
-              <View style={{ width: 40, height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
-            </View>
+            {/* === ZONE DRAG (grabber + zone tappable élargie) === */}
+            <PanGestureHandler
+              onGestureEvent={onGestureEvent}
+              onHandlerStateChange={onHandlerStateChange}
+              activeOffsetY={[-10, 10]}
+              failOffsetX={[-20, 20]}
+            >
+              <Animated.View style={{ paddingTop: 8, paddingBottom: 12, alignItems: 'center' }}>
+                <View style={{
+                  width: 40,
+                  height: 4,
+                  backgroundColor: isDragging ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)',
+                  borderRadius: 2
+                }} />
+              </Animated.View>
+            </PanGestureHandler>
 
             {/* Container relatif pour les 2 vues empilées en absolute */}
             <View style={{ flex: 1, position: 'relative' }}>
@@ -560,7 +579,7 @@ export default function CharacterDetailModal(props) {
               <Text style={{ color: '#9A9EA3', fontSize: fp(14) }}>{t('close')}</Text>
             </Pressable>
           </LinearGradient>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
