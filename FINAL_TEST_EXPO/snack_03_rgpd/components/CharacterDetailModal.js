@@ -365,26 +365,38 @@ export default function CharacterDetailModal(props) {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
 
           {/* === SECTION DESCRIPTION === */}
-          <View style={{ alignItems: 'center', marginTop: 12 }}>
-            <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 1 }}>
-              DESCRIPTION
-            </Text>
-            <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4 }}>
-              {ch.name}
-            </Text>
-          </View>
+          {renderDecoratedHeader('DESCRIPTION')}
+          <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4, textAlign: 'center' }}>
+            {ch.name}
+          </Text>
 
           {lore ? (
-            <View style={{ marginTop: 16, marginHorizontal: 16 }}>
-              <Text style={{ color: '#E5E7EB', fontSize: fp(13), lineHeight: fp(20), fontStyle: 'italic', textAlign: 'center' }}>
+            <View style={{ marginTop: 18, marginHorizontal: 16 }}>
+              {/* Tagline plus discrète — introduction */}
+              <Text style={{
+                color: '#9A9EA3',
+                fontSize: fp(12),
+                lineHeight: fp(18),
+                fontStyle: 'italic',
+                textAlign: 'center'
+              }}>
                 {lore.tagline}
               </Text>
-              <Text style={{ color: '#FFFFFF', fontSize: fp(13), lineHeight: fp(20), marginTop: 12, textAlign: 'center', fontWeight: '500' }}>
+
+              {/* Pouvoir ancestral plus impactant — cœur du message */}
+              <Text style={{
+                color: '#FFFFFF',
+                fontSize: fp(14),
+                lineHeight: fp(22),
+                marginTop: 14,
+                textAlign: 'center',
+                fontWeight: '500'
+              }}>
                 {lore.power}
               </Text>
 
               {/* Localisation */}
-              <View style={{ marginTop: 16, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+              <View style={{ marginTop: 18, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={{ fontSize: fp(14), marginRight: 8 }}>📍</Text>
                   <Text style={{ color: '#E5E7EB', fontSize: fp(12), flex: 1 }}>
@@ -407,14 +419,10 @@ export default function CharacterDetailModal(props) {
           <View style={{ marginVertical: 20, marginHorizontal: 32, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
 
           {/* === SECTION POUVOIRS === */}
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 1 }}>
-              POUVOIRS
-            </Text>
-            <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4 }}>
-              {ch.name}
-            </Text>
-          </View>
+          {renderDecoratedHeader('POUVOIRS')}
+          <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4, textAlign: 'center' }}>
+            {ch.name}
+          </Text>
 
           <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
             {powers.length === 0 ? (
