@@ -14,7 +14,7 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium, hapticSuccess, hapticError, hapticWarning } from '../../utils/haptics';
 import ScrollPicker from '../../components/shared/ScrollPicker';
 import GoalSelector from '../../components/shared/GoalSelector';
 import TargetKgStepper from '../../components/shared/TargetKgStepper';
@@ -26,28 +26,6 @@ import { calculateBodyMetrics } from '../../constants/bodyMetrics';
 import { useAuth } from '../../config/AuthContext';
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../../config/supabase';
 import { T } from './profileConstants';
-
-// === Helpers haptic (silencieux sur plateformes sans haptic) ===
-
-function hapticLight() {
-  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (e) {}
-}
-
-function hapticMedium() {
-  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch (e) {}
-}
-
-function hapticSuccess() {
-  try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (e) {}
-}
-
-function hapticError() {
-  try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); } catch (e) {}
-}
-
-function hapticWarning() {
-  try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch (e) {}
-}
 
 // === Helpers (hors composant pour eviter reconstruction a chaque render) ===
 
