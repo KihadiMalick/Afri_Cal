@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, ScrollView, Pressable, Modal, Animated, Dimensions, ActivityIndicator, Easing, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { PanGestureHandler, State as GestureState } from 'react-native-gesture-handler';
 import { TIER_CONFIG, CHARACTER_EMOJIS, CHARACTER_LORE, getCharacterImageUrl, SUPABASE_URL, POST_HEADERS } from '../lixverseConstants';
 import { useAuth } from '../MockAuthContext';
 import { hapticLight, hapticMedium } from '../utils/haptics';
@@ -24,6 +25,16 @@ export default function CharacterDetailModal(props) {
   var setImageFailed = _imageFailed[1];
 
   var flipAnim = React.useRef(new Animated.Value(0)).current;
+
+  // === DRAG-TO-DISMISS Phase 2.7 ===
+  var dragY = React.useRef(new Animated.Value(0)).current;
+  var _isDragging = React.useState(false);
+  var isDragging = _isDragging[0];
+  var setIsDragging = _isDragging[1];
+
+  // Constantes drag (B2 + B4 décisions Malick)
+  var DRAG_DISMISS_THRESHOLD = SCREEN_HEIGHT * 0.40 * 0.92; // 40% du modal qui fait 92% écran
+  var DRAG_VELOCITY_THRESHOLD = 500; // px/s — swipe rapide ferme
 
   var ch = props.character;
 
@@ -97,6 +108,65 @@ export default function CharacterDetailModal(props) {
         <View style={{ flex: 1, height: 1, backgroundColor: '#D4AF37', maxWidth: 40, marginLeft: 12 }} />
       </View>
     );
+  }
+
+  // === HANDLERS DRAG-TO-DISMISS (Phase 2.7) ===
+  var onGestureEvent = Animated.event(
+    [{ nativeEvent: { translationY: dragY } }],
+    { useNativeDriver: false }
+  );
+
+  function onHandlerStateChange(event) {
+    var nativeEvent = event.nativeEvent;
+
+    if (nativeEvent.state === GestureState.BEGAN) {
+      setIsDragging(true);
+      return;
+    }
+
+    if (nativeEvent.state === GestureState.END || nativeEvent.state === GestureState.CANCELLED) {
+      setIsDragging(false);
+
+      var translationY = nativeEvent.translationY;
+      var velocityY = nativeEvent.velocityY;
+      var shouldDismiss = false;
+
+      // B2 : seuil distance
+      if (translationY > DRAG_DISMISS_THRESHOLD) {
+        shouldDismiss = true;
+      }
+
+      // B4 : seuil velocity (swipe rapide vers le bas)
+      // Protection : 50px minimum pour éviter fermeture sur tap rapide
+      if (velocityY > DRAG_VELOCITY_THRESHOLD && translationY > 50) {
+        shouldDismiss = true;
+      }
+
+      // Empêcher fermeture si drag vers le haut (sécurité)
+      if (translationY < 0) {
+        shouldDismiss = false;
+      }
+
+      if (shouldDismiss) {
+        Animated.timing(dragY, {
+          toValue: SCREEN_HEIGHT,
+          duration: 250,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: false
+        }).start(function() {
+          dragY.setValue(0);
+          close();
+        });
+      } else {
+        // C2 : retour position 200ms timing easing cubic
+        Animated.timing(dragY, {
+          toValue: 0,
+          duration: 200,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false
+        }).start();
+      }
+    }
   }
 
   if (!ch) return null;
