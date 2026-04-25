@@ -252,3 +252,105 @@ grep -rnE "frags_niv1|frags_niv2|frags_max" src/   →   vide
 - Modifier les 8 fallback `FRAGS_NIV1[ch.tier] || 3` dans `CharactersTab.js` → `ch.fragments_required`
 
 ---
+
+## Section E — Code mort système Spin (À SUPPRIMER PHASE 7)
+
+### Fichiers Spin à supprimer
+**AUCUN fichier dédié `*Spin*` détecté** dans `src/`. Le système Spin a déjà été partiellement supprimé.
+
+### RPC Spin restants
+**Aucun RPC `execute_spin` / `spin_wheel` / `lix_spin` appelé** dans le code actuel. ✅
+
+### Références dans des fichiers à conserver
+
+**`src/pages/lixverse/LixVersePage.js:1002`** — handler renommé qui pointe vers tab Défi :
+```javascript
+onConsumePower={consumePower} onGoToSpin={() => setActiveTab('defi')}
+```
+
+**`src/pages/lixverse/CharactersTab.js`** — 6 occurrences à nettoyer :
+| Ligne | Usage | Action Phase 1 |
+|---|---|---|
+| 47 | `onGoToSpin` dans signature props | Renommer en `onGoToDefi` |
+| 362 | `onPress={() => onGoToSpin()}` (Voir les Défis dans alert fragments manquants) | Renommer |
+| 385 | `onPress={() => { closeCharModal(); onGoToSpin(); }}` (CTA principal "Obtenir") | Renommer |
+| 388 | **Texte UI : `'Obtenir via Spin ou Défis'`** | ✋ **REMPLACER** par `'Obtenir via Défis'` |
+| 511, 542, 602 | `onPress={() => { closeCharModal(); onGoToSpin(); }}` (alerts "Carte requise") | Renommer |
+
+### Faux positifs (à NE PAS toucher)
+**Activity** — module sport "spinning" (vélo d'appartement, MET 8.5) :
+- `src/pages/activity/activityComponents.js:446` : `case 'spinning':`
+- `src/pages/activity/activityConstants.js:43, 347` : entry MET pour activité physique
+
+✅ **Aucun lien avec le système Lix&Spin**. Conserver.
+
+### Verdict E
+🟡 **Le système Lix&Spin est déjà supprimé. Reste uniquement du naming legacy `onGoToSpin` qui pointe en réalité vers Défi.**
+
+**Actions Phase 7** (renommage cosmétique, non bloquant Phase 1) :
+- Renommer prop/variable `onGoToSpin` → `onGoToDefi` dans `CharactersTab.js` + `LixVersePage.js`
+- Remplacer texte UI `'Obtenir via Spin ou Défis'` → `'Obtenir via Défis'` (l.388)
+- Vérifier qu'aucun autre fichier n'importe `onGoToSpin`
+
+**Aucun fichier à supprimer.** Sprint Phase 7 = ~20 minutes (cleanup naming).
+
+---
+
+## Section F — RPC Supabase utilisés
+
+### Tableau des 5 RPC V5 attendus
+
+| RPC V5 | Appelé ? | Fichier:ligne (LixVerse) | Aussi appelé ailleurs ? |
+|---|---|---|---|
+| `get_user_collection` | ✅ | `LixVersePage.js:224` | Dashboard:309, Repas:225, Activity:235 |
+| `get_character_powers` | ✅ | `LixVersePage.js:309` | Dashboard:313, Repas:231, Activity:240 |
+| `set_active_character` | ✅ | `LixVersePage.js:251` | LixVerse seul |
+| `use_character_power` | ✅ | `LixVersePage.js:319` | Dashboard:320, Repas:284, Activity:249 |
+| `recharge_character` | ✅ | `LixVersePage.js:344, 359` | LixVerse seul |
+
+🟢 **Les 5 RPC V5 sont tous correctement appelés.**
+
+### RPC Spin Anciens (à confirmer absence)
+```bash
+grep -rnE "get_characters\b|switch_character|activate_character|pull_character" src/
+# → vide
+```
+
+✅ **0 ancien RPC obsolète détecté**
+
+### Helper `supaRpc` (LixVersePage.js:189)
+```javascript
+const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fnName, {
+  method: 'POST',
+  headers: POST_HEADERS,
+  body: JSON.stringify(params)
+});
+return await res.json();
+```
+
+✅ **Pattern propre. Centralisé.**
+
+### Onboarding spécifique
+| RPC | Usage |
+|---|---|
+| `check_character_onboarding` | LixVersePage:214 — check si user a déjà choisi 1er compagnon |
+| `choose_first_character` | LixVersePage:237 — sélection 1er compagnon Standard |
+
+✅ **Cohérent avec la doc V5 section RPC.**
+
+### Format de parsing actuel
+**`get_user_collection`** retourné comme array :
+- `LixVersePage.js:221` : `setUserCollection((chars || []).map(c => ({ ... })))`
+- Mappage manuel pour ajouter `owned`, `level`, `fragments_required` (qu'il **écrase** avec FRAGS_NIV1, voir Section D)
+
+⚠️ **Le RPC retourne probablement déjà tout le nécessaire** (fragments, niveau, owned, frags_niv1...). Le mapping manuel **détruit l'info DB V5**. Phase 1 doit simplifier ce mapping.
+
+### Verdict F
+🟢 **Les 5 RPC V5 sont déjà branchés.** Aucun ancien RPC à migrer. Le seul problème = parsing post-RPC qui écrase les valeurs DB (cf. Section D).
+
+**Actions Phase 1** :
+- Inspecter le retour réel de `get_user_collection` (champs disponibles : `frags_niv1`, `display_name`, `owned`, `is_active`, `uses_remaining`, etc.)
+- Simplifier `LixVersePage.js:221` : `setUserCollection(chars || [])` sans mapping
+- Simplifier `LixVersePage.js:781` : pas de fallback hardcodé sur `FRAGS_NIV1`
+
+---
