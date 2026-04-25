@@ -11,22 +11,22 @@ var RECHARGE_COST_BY_TIER = {
 };
 
 const ALL_CHARACTERS = [
-  { id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', color: '#00D984', emoji: '🦉', image: null, desc: '3 recettes perso gratuites', uses: 3, unlock_hours: 0 },
-  { id: 'hawk_eye', name: 'HAWK EYE', tier: 'standard', color: '#4DA6FF', emoji: '🦅', desc: '2 Xscans gratuits', uses: 2, unlock_hours: 0 },
-  { id: 'ruby_tiger', name: 'RUBY TIGER', tier: 'standard', color: '#FF4757', emoji: '🐯', desc: '1 programme sport gratuit', uses: 1, unlock_hours: 0 },
-  { id: 'amber_fox', name: 'AMBER FOX', tier: 'standard', color: '#FF8C42', emoji: '🦊', desc: '2 substitutions ingrédients', uses: 2, unlock_hours: 0 },
-  { id: 'gipsy', name: 'GIPSY', tier: 'standard', color: '#9B6DFF', emoji: '🕷️', desc: 'Corrélations santé', uses: 2, unlock_hours: 0 },
-  { id: 'jade_phoenix', name: 'JADE PHOENIX', tier: 'rare', color: '#2ED573', emoji: '🔥', desc: '5 messages ALIXEN gratuits', uses: 5, unlock_hours: 0 },
-  { id: 'silver_wolf', name: 'SILVER WOLF', tier: 'rare', color: '#A4B0BE', emoji: '🐺', desc: 'MediBook 48h consultation', uses: 0, unlock_hours: 48 },
-  { id: 'boukki', name: 'BOUKKI', tier: 'rare', color: '#CD7F32', emoji: '🦴', desc: '3 indices de défi gratuits', uses: 3, unlock_hours: 0 },
-  { id: 'iron_rhino', name: 'IRON RHINO', tier: 'rare', color: '#747D8C', emoji: '🦏', desc: 'Secret Pocket 48h lecture', uses: 0, unlock_hours: 48 },
-  { id: 'coral_dolphin', name: 'CORAL DOLPHIN', tier: 'rare', color: '#FF6B81', emoji: '🐬', desc: '1 profil enfant 48h', uses: 1, unlock_hours: 48 },
-  { id: 'licornium', name: 'LICORNIUM', tier: 'elite', color: '#B388FF', emoji: '🦄', desc: 'Spécialiste Repas complet', uses: 2, unlock_hours: 0 },
-  { id: 'jaane_snake', name: 'JAANE SNAKE', tier: 'elite', color: '#FF6348', emoji: '🐍', desc: 'Spécialiste Activité complet', uses: 3, unlock_hours: 0 },
-  { id: 'mosquito', name: 'MOSQUITO', tier: 'elite', color: '#7BED9F', emoji: '🦟', desc: 'Joker toutes pages (Essaim)', uses: 2, unlock_hours: 0 },
-  { id: 'diamond_simba', name: 'DIAMOND SIMBA', tier: 'mythique', color: '#00CEC9', emoji: '🦁', desc: 'XP +50% + rapport PDF 7j', uses: 0, unlock_hours: 168 },
-  { id: 'alburax', name: 'ALBURAX', tier: 'mythique', color: '#D4AF37', emoji: '🐴', desc: 'Double Lix + streak shield 7j', uses: 0, unlock_hours: 168 },
-  { id: 'tardigrum', name: 'TARDIGRUM', tier: 'ultimate', color: '#DFE6E9', emoji: '🧬', desc: 'TOUT 365 jours — Le Graal', uses: 0, unlock_hours: 8760 },
+  { id: 'emerald_owl', tier: 'standard', color: '#00D984', emoji: '🦉', image: null, desc: '3 recettes perso gratuites', uses: 3, unlock_hours: 0 },
+  { id: 'hawk_eye', tier: 'standard', color: '#4DA6FF', emoji: '🦅', desc: '2 Xscans gratuits', uses: 2, unlock_hours: 0 },
+  { id: 'ruby_tiger', tier: 'standard', color: '#FF4757', emoji: '🐯', desc: '1 programme sport gratuit', uses: 1, unlock_hours: 0 },
+  { id: 'amber_fox', tier: 'standard', color: '#FF8C42', emoji: '🦊', desc: '2 substitutions ingrédients', uses: 2, unlock_hours: 0 },
+  { id: 'gipsy', tier: 'standard', color: '#9B6DFF', emoji: '🕷️', desc: 'Corrélations santé', uses: 2, unlock_hours: 0 },
+  { id: 'jade_phoenix', tier: 'rare', color: '#2ED573', emoji: '🔥', desc: '5 messages ALIXEN gratuits', uses: 5, unlock_hours: 0 },
+  { id: 'silver_wolf', tier: 'rare', color: '#A4B0BE', emoji: '🐺', desc: 'MediBook 48h consultation', uses: 0, unlock_hours: 48 },
+  { id: 'boukki', tier: 'rare', color: '#CD7F32', emoji: '🦴', desc: '3 indices de défi gratuits', uses: 3, unlock_hours: 0 },
+  { id: 'iron_rhino', tier: 'rare', color: '#747D8C', emoji: '🦏', desc: 'Secret Pocket 48h lecture', uses: 0, unlock_hours: 48 },
+  { id: 'coral_dolphin', tier: 'rare', color: '#FF6B81', emoji: '🐬', desc: '1 profil enfant 48h', uses: 1, unlock_hours: 48 },
+  { id: 'licornium', tier: 'elite', color: '#B388FF', emoji: '🦄', desc: 'Spécialiste Repas complet', uses: 2, unlock_hours: 0 },
+  { id: 'jaane_snake', tier: 'elite', color: '#FF6348', emoji: '🐍', desc: 'Spécialiste Activité complet', uses: 3, unlock_hours: 0 },
+  { id: 'mosquito', tier: 'elite', color: '#7BED9F', emoji: '🦟', desc: 'Joker toutes pages (Essaim)', uses: 2, unlock_hours: 0 },
+  { id: 'diamond_simba', tier: 'mythique', color: '#00CEC9', emoji: '🦁', desc: 'XP +50% + rapport PDF 7j', uses: 0, unlock_hours: 168 },
+  { id: 'alburax', tier: 'mythique', color: '#D4AF37', emoji: '🐴', desc: 'Double Lix + streak shield 7j', uses: 0, unlock_hours: 168 },
+  { id: 'tardigrum', tier: 'ultimate', color: '#DFE6E9', emoji: '🧬', desc: 'TOUT 365 jours — Le Graal', uses: 0, unlock_hours: 8760 },
 ];
 
 const LIXSIGNS = {
@@ -163,18 +163,6 @@ const CHAR_EMOJIS = {
   'tardigrum': '🧬',
 };
 
-const CHAR_NAMES = {
-  'emerald_owl': 'Emerald Owl', 'hawk_eye': 'Hawk Eye', 'ruby_tiger': 'Ruby Tiger',
-  'amber_fox': 'Amber Fox', 'gipsy': 'Gipsy',
-  'jade_phoenix': 'Jade Phoenix', 'silver_wolf': 'Silver Wolf', 'boukki': 'Boukki',
-  'iron_rhino': 'Iron Rhino', 'coral_dolphin': 'Coral Dolphin',
-  'licornium': 'LICORNIUM', 'jaane_snake': 'Jaane Snake', 'mosquito': 'MOSQUITO',
-  'diamond_simba': 'Diamond Simba', 'alburax': 'Alburax',
-  'tardigrum': 'TARDIGRUM',
-};
-
-const FRAGS_NIV1 = { standard: 3, rare: 4, elite: 5, mythique: 8, ultimate: 15 };
-
 const TIER_COLORS = {
   standard: '#00D984', rare: '#4DA6FF', elite: '#B388FF',
   mythique: '#D4AF37', ultimate: '#FF6B8A',
@@ -227,8 +215,6 @@ export {
   TIER_CONFIG,
   SLUGS_BY_TIER,
   CHAR_EMOJIS,
-  CHAR_NAMES,
-  FRAGS_NIV1,
   TIER_COLORS,
   CHARACTER_IMAGES,
   NAV_TABS,

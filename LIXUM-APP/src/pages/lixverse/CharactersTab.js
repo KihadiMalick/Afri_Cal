@@ -4,7 +4,7 @@ import { View, Text, ScrollView, Pressable, Animated,
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
-  ALL_CHARACTERS, TIER_CONFIG, CHAR_NAMES, FRAGS_NIV1,
+  ALL_CHARACTERS, TIER_CONFIG,
   CHARACTER_IMAGES, SUPABASE_URL,
   HEADERS, POST_HEADERS, getCharImage, RECHARGE_COST_BY_TIER
 } from './lixverseConstants';
@@ -44,10 +44,20 @@ export default function CharactersTab({
   onRechargeChar,
   onShouldConsumePower,
   onConsumePower,
-  onGoToSpin,
+  onGoToDefi,
   onNavigateTo,
 }) {
   var auth = useAuth(); var userId = auth.userId;
+
+  // Helper local : seuil de fragments à atteindre selon niveau actuel.
+  // Lit depuis les champs DB V5 (frags_niv1/2/max).
+  function getNextThreshold(ch) {
+    if (!ch) return 0;
+    if (!ch.owned) return ch.frags_niv1 || 0;
+    if (ch.level === 1) return ch.frags_niv2 || 0;
+    if (ch.level === 2) return ch.frags_max || 0;
+    return ch.frags_max || 0;
+  }
   const frontInterpolate = flipAnim.interpolate({
     inputRange: [0, 1], outputRange: [1, 0]
   });
@@ -135,7 +145,7 @@ export default function CharactersTab({
         </View>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: wp(8), marginBottom: wp(20) }}>
-          {(userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, fragments_required: FRAGS_NIV1[c.tier] || 3, is_active: false }))).map(ch => {
+          {(userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, is_active: false }))).map(ch => {
             const hasCard = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(ch.slug || ch.id);
             const own = hasCard && (ch.level || 0) >= 1;
             const isActive = (ch.slug || ch.id) === activeCharSlug;
@@ -181,11 +191,11 @@ export default function CharactersTab({
                           backgroundColor: ch.tier === 'mythique' ? '#D4AF37'
                             : ch.tier === 'elite' ? '#B388FF'
                             : ch.tier === 'rare' ? '#4DA6FF' : '#00D984',
-                          width: Math.min(100, Math.round(((ch.fragments || ch.duplicates_count || 0) / (ch.fragments_required || FRAGS_NIV1[ch.tier] || 3)) * 100)) + '%',
+                          width: Math.min(100, Math.round(((ch.fragments || ch.duplicates_count || 0) / (getNextThreshold(ch) || 1)) * 100)) + '%',
                         }} />
                       </View>
                       <Text style={{ fontSize: fp(7), color: 'rgba(255,255,255,0.25)' }}>
-                        {ch.fragments || ch.duplicates_count || 0}/{ch.fragments_required || FRAGS_NIV1[ch.tier] || 3} frags
+                        {ch.fragments || ch.duplicates_count || 0}/{getNextThreshold(ch)} frags
                       </Text>
                     </View>
                   )}
@@ -262,13 +272,13 @@ export default function CharactersTab({
                           const ac = ALL_CHARACTERS[cardViewIndex];
                           if (!ac) return null;
                           const acSlug = ac.id;
-                          const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, fragments_required: FRAGS_NIV1[c.tier] || 3, is_active: false }));
+                          const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, is_active: false }));
                           const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
                           const charImg = getCharImage(acSlug);
                           const own = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
                           const usesRem = ch.uses_remaining || 0;
                           const usesMax = ch.uses_max || ac.uses || 10;
-                          const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
+                          const name = ch.name || acSlug;
 
                           return (
                             <View style={{ width: wp(280), height: wp(370), borderRadius: wp(8), overflow: 'hidden', backgroundColor: '#000' }}>
@@ -307,19 +317,19 @@ export default function CharactersTab({
                       const ac = ALL_CHARACTERS[cardViewIndex];
                       if (!ac) return null;
                       const acSlug = ac.id;
-                      const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, fragments_required: FRAGS_NIV1[c.tier] || 3, is_active: false }));
+                      const coll = userCollection.length > 0 ? userCollection : ALL_CHARACTERS.map(c => ({ ...c, slug: c.id, owned: ownedCharacters.includes(c.id), level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: 10, fragments: 0, is_active: false }));
                       const ch = coll.find(c => (c.slug || c.id) === acSlug) || { ...ac, slug: acSlug, owned: false };
                       const hasCardCheck = ch.owned !== false && ch.owned !== undefined ? ch.owned : ownedCharacters.includes(acSlug);
                       const own = hasCardCheck && (ch.level || 0) >= 1;
                       const isActiveChar = acSlug === activeCharSlug;
                       const tier = ch.tier || ac.tier || 'standard';
-                      const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
+                      const name = ch.name || acSlug;
                       const usesRem = ch.uses_remaining || 0;
                       const usesMax = ch.uses_max || ac.uses || 10;
                       const xp = ch.xp || 0;
                       const xpNext = ch.xp_next || 1000;
                       const frags = ch.fragments || ch.duplicates_count || 0;
-                      const fragsReq = ch.fragments_required || FRAGS_NIV1[tier] || 3;
+                      const fragsReq = getNextThreshold(ch);
 
                       return (
                         <View style={{ paddingHorizontal: (SCREEN_WIDTH - wp(280)) / 2 }}>
@@ -358,8 +368,8 @@ export default function CharactersTab({
                             <Pressable delayPressIn={120}
                               onPress={() => {
                                 if (!own && (ch.fragments || ch.duplicates_count || 0) > 0) {
-                                  const remaining = (ch.fragments_required || FRAGS_NIV1[tier] || 3) - (ch.fragments || ch.duplicates_count || 0);
-                                  showLixAlert('🧩 Fragments manquants', 'Il te manque encore ' + remaining + ' fragment' + (remaining > 1 ? 's' : '') + ' pour débloquer ' + name + '.\n\nParticipe aux défis pour obtenir des fragments !', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'OK', style: 'cancel' }], '🧩');
+                                  const remaining = getNextThreshold(ch) - (ch.fragments || ch.duplicates_count || 0);
+                                  showLixAlert('🧩 Fragments manquants', 'Il te manque encore ' + remaining + ' fragment' + (remaining > 1 ? 's' : '') + ' pour débloquer ' + name + '.\n\nParticipe aux défis pour obtenir des fragments !', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToDefi(); } }, { text: 'OK', style: 'cancel' }], '🧩');
                                   return;
                                 }
                                 if (own && usesRem === 0) {
@@ -374,7 +384,7 @@ export default function CharactersTab({
                               <LinearGradient colors={(own && usesRem === 0) ? ['#333A42','#2A2F36'] : ['#3A3520','#2A2815']} style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center' }}>
                                 <Text style={{ fontSize: fp(12), fontWeight: '700', color: '#B8A472' }}>
                                   {!own && (ch.fragments || ch.duplicates_count || 0) > 0
-                                    ? 'Fragments : ' + (ch.fragments || ch.duplicates_count || 0) + '/' + (ch.fragments_required || FRAGS_NIV1[tier] || 3)
+                                    ? 'Fragments : ' + (ch.fragments || ch.duplicates_count || 0) + '/' + getNextThreshold(ch)
                                     : (own && usesRem === 0) ? 'Recharger'
                                     : own ? 'Pouvoirs →'
                                     : 'Aperçu Pouvoirs →'}
@@ -382,10 +392,10 @@ export default function CharactersTab({
                               </LinearGradient>
                             </Pressable>
                             {!own && (
-                              <Pressable delayPressIn={120} onPress={() => { closeCharModal(); onGoToSpin(); }}
+                              <Pressable delayPressIn={120} onPress={() => { closeCharModal(); onGoToDefi(); }}
                                 style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.95 : 1 }] })}>
                                 <View style={{ paddingVertical: wp(10), borderRadius: wp(10), alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>Obtenir via Spin ou Défis</Text>
+                                  <Text style={{ fontSize: fp(11), fontWeight: '700', color: 'rgba(255,255,255,0.3)' }}>Obtenir via Défis</Text>
                                 </View>
                               </Pressable>
                             )}
@@ -508,7 +518,7 @@ export default function CharactersTab({
                                           const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
                                           const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
                                           if (!isOwnedCheck) {
-                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + 'cette carte' + ' pour utiliser ce pouvoir.', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToDefi(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
                                             return;
                                           }
                                           if (onShouldConsumePower(power)) {
@@ -539,7 +549,7 @@ export default function CharactersTab({
                                           const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
                                           const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
                                           if (!isOwnedCheck) {
-                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + 'cette carte' + ' pour utiliser ce pouvoir.', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToDefi(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
                                             return;
                                           }
                                           const r = await onConsumePower(power.power_key);
@@ -599,7 +609,7 @@ export default function CharactersTab({
                                           const currentSlugCheck = ALL_CHARACTERS[cardViewIndexRef.current]?.id;
                                           const isOwnedCheck = userCollection.some(c => (c.slug || c.id) === currentSlugCheck && c.owned !== false) || ownedCharacters.includes(currentSlugCheck);
                                           if (!isOwnedCheck) {
-                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + (CHAR_NAMES[currentSlugCheck] || 'cette carte') + ' pour utiliser ce pouvoir.', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToSpin(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
+                                            showLixAlert('🔒 Carte requise', 'Obtiens ' + 'cette carte' + ' pour utiliser ce pouvoir.', [{ text: 'Voir les Défis', color: '#D4AF37', onPress: () => { closeCharModal(); onGoToDefi(); } }, { text: 'Fermer', style: 'cancel' }], '🔒');
                                             return;
                                           }
                                           if (onShouldConsumePower(power)) {
