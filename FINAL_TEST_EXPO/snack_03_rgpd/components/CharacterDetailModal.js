@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, ScrollView, Pressable, Modal, Animated, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ScrollView, Pressable, Modal, Animated, Dimensions, ActivityIndicator, Easing, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TIER_CONFIG, CHARACTER_EMOJIS, CHARACTER_LORE, getCharacterImageUrl, SUPABASE_URL, POST_HEADERS } from '../lixverseConstants';
 import { useAuth } from '../MockAuthContext';
@@ -54,13 +54,14 @@ export default function CharacterDetailModal(props) {
 
   function flipCard() {
     hapticMedium();
-    var toValue = flipped ? 0 : 1;
     Animated.timing(flipAnim, {
-      toValue: toValue,
-      duration: 300,
+      toValue: flipped ? 0 : 1,
+      duration: 450,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: false
-    }).start();
-    setFlipped(!flipped);
+    }).start(function() {
+      setFlipped(!flipped);
+    });
   }
 
   function close() {
@@ -70,6 +71,32 @@ export default function CharacterDetailModal(props) {
 
   function handleImageError() {
     setImageFailed(true);
+  }
+
+  function handleActivate() {
+    hapticMedium();
+    console.log('[Phase 5] handleActivate appelé pour', ch && ch.slug);
+  }
+
+  function getFragsMax() {
+    if (!ch) return 10;
+    var lvl = ch.level || 0;
+    if (lvl === 0) return ch.frags_niv1 || 10;
+    if (lvl === 1) return ch.frags_niv2 || 20;
+    if (lvl >= 2) return ch.frags_max || 30;
+    return 10;
+  }
+
+  function renderDecoratedHeader(label) {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 12 }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: '#D4AF37', maxWidth: 40, marginRight: 12 }} />
+        <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 2 }}>
+          {label}
+        </Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: '#D4AF37', maxWidth: 40, marginLeft: 12 }} />
+      </View>
+    );
   }
 
   if (!ch) return null;
@@ -85,35 +112,41 @@ export default function CharacterDetailModal(props) {
   var backOpacity = flipAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
   function renderStatsGrid() {
+    if (!owned) return null;
+
+    function renderStatCard(label, value) {
+      return (
+        <View style={{
+          flex: 1,
+          marginHorizontal: 4,
+          paddingVertical: 12,
+          paddingHorizontal: 8,
+          backgroundColor: 'rgba(255,255,255,0.04)',
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.06)',
+          alignItems: 'center'
+        }}>
+          <Text style={{ color: '#6B6F75', fontSize: fp(9), fontWeight: '600', letterSpacing: 1.5, marginBottom: 4 }}>
+            {label}
+          </Text>
+          <Text style={{ color: '#FFFFFF', fontSize: fp(18), fontWeight: 'bold' }}>
+            {value}
+          </Text>
+        </View>
+      );
+    }
+
+    var fragsCurrent = ch.fragments || 0;
+    var fragsMax = getFragsMax();
+    var bonusValue = ch.efficiency_bonus ? '×' + (1 + ch.efficiency_bonus).toFixed(1) : '×1.0';
+
     return (
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 18, paddingVertical: 14, paddingHorizontal: 12, marginHorizontal: 16, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 12 }}>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#9A9EA3', fontSize: 10, letterSpacing: 1 }}>{t('level')}</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginTop: 2 }}>
-            {ch.level === 3 ? t('max') : ch.level}
-          </Text>
-        </View>
-        <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#9A9EA3', fontSize: 10, letterSpacing: 1 }}>FRAGS</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginTop: 2 }}>
-            {ch.fragments || 0}
-          </Text>
-        </View>
-        <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#9A9EA3', fontSize: 10, letterSpacing: 1 }}>USES</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginTop: 2 }}>
-            {ch.uses_remaining || 0}/{ch.max_uses_per_cycle || 3}
-          </Text>
-        </View>
-        <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
-        <View style={{ alignItems: 'center' }}>
-          <Text style={{ color: '#9A9EA3', fontSize: 10, letterSpacing: 1 }}>{t('bonus')}</Text>
-          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: 'bold', marginTop: 2 }}>
-            ×{ch.efficiency_bonus || 1}
-          </Text>
-        </View>
+      <View style={{ flexDirection: 'row', marginTop: 18, marginHorizontal: 12 }}>
+        {renderStatCard('NIV', ch.level || 1)}
+        {renderStatCard('FRAGS', fragsCurrent + '/' + fragsMax)}
+        {renderStatCard('USES', (ch.uses_remaining || 0) + '/' + (ch.max_uses_per_cycle || 3))}
+        {renderStatCard('BONUS', bonusValue)}
       </View>
     );
   }
@@ -137,40 +170,78 @@ export default function CharacterDetailModal(props) {
   }
 
   function renderActionButtons() {
-    if (!owned) {
-      return (
-        <View style={{ marginHorizontal: 16, marginTop: 14, padding: 12, backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)', alignItems: 'center' }}>
-          <Text style={{ color: '#D4AF37', fontSize: 12, fontWeight: '600' }}>
-            Obtenir via Défis ou Map LIX-QUEST
-          </Text>
-        </View>
-      );
-    }
-
     return (
-      <View style={{ marginHorizontal: 16, marginTop: 18 }}>
+      <View style={{ marginTop: 18, marginHorizontal: 16 }}>
+
+        {/* Bouton "Voir les détails →" — outline emerald (référence) */}
         <Pressable
           onPress={flipCard}
-          style={{ paddingVertical: 14, backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: 12, alignItems: 'center', borderWidth: 1.5, borderColor: '#00D984', marginBottom: 10 }}
+          style={{
+            paddingVertical: 14,
+            backgroundColor: 'rgba(0, 217, 132, 0.08)',
+            borderRadius: 12,
+            alignItems: 'center',
+            borderWidth: 1.5,
+            borderColor: '#00D984',
+            marginBottom: 10
+          }}
         >
-          <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>
+          <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: 'bold' }}>
             Voir les détails →
           </Text>
         </Pressable>
 
-        {isActive ? (
-          <View style={{ paddingVertical: 14, backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: 12, alignItems: 'center', borderWidth: 1.5, borderColor: '#00D984' }}>
-            <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>
+        {/* Caractère actif : badge outline emerald (cohérence) */}
+        {owned && isActive ? (
+          <View style={{
+            paddingVertical: 14,
+            backgroundColor: 'rgba(0, 217, 132, 0.08)',
+            borderRadius: 12,
+            alignItems: 'center',
+            borderWidth: 1.5,
+            borderColor: '#00D984'
+          }}>
+            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: 'bold' }}>
               ✓ Caractère actuellement actif
             </Text>
           </View>
-        ) : (
-          <View style={{ paddingVertical: 14, backgroundColor: '#3A3F46', borderRadius: 12, alignItems: 'center' }}>
-            <Text style={{ color: '#9A9EA3', fontSize: 14, fontWeight: 'bold' }}>
-              {t('activate')} (Phase 5)
+        ) : null}
+
+        {/* Caractère possédé non actif : "Activer ce caractère" outline emerald */}
+        {owned && !isActive ? (
+          <Pressable
+            onPress={handleActivate}
+            style={{
+              paddingVertical: 14,
+              backgroundColor: 'rgba(0, 217, 132, 0.08)',
+              borderRadius: 12,
+              alignItems: 'center',
+              borderWidth: 1.5,
+              borderColor: '#00D984'
+            }}
+          >
+            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: 'bold' }}>
+              Activer ce caractère (Phase 5)
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {/* Caractère locked : CTA "Obtenir via Défis ou Map" — outline gold */}
+        {!owned ? (
+          <View style={{
+            paddingVertical: 14,
+            backgroundColor: 'rgba(212, 175, 55, 0.08)',
+            borderRadius: 12,
+            alignItems: 'center',
+            borderWidth: 1.5,
+            borderColor: '#D4AF37'
+          }}>
+            <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '600' }}>
+              Obtenir via Défis ou Map LIX-QUEST
             </Text>
           </View>
-        )}
+        ) : null}
+
       </View>
     );
   }
@@ -182,8 +253,21 @@ export default function CharacterDetailModal(props) {
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: frontOpacity }}
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+
+          {/* === IMAGE CARTE — sans cadre, sans nom, sans tier badge === */}
           <View style={{ alignItems: 'center', marginTop: 12 }}>
-            <View style={{ width: wp(280), height: wp(370), borderRadius: wp(8), overflow: 'hidden', borderWidth: 2, borderColor: config.primary, backgroundColor: '#000' }}>
+            <View style={{
+              width: wp(280),
+              height: wp(370),
+              borderRadius: wp(8),
+              overflow: 'hidden',
+              backgroundColor: '#000',
+              shadowColor: config.primary,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+              elevation: 12
+            }}>
               {canShowImage ? (
                 <Image
                   source={{ uri: imageUrl }}
@@ -193,35 +277,45 @@ export default function CharacterDetailModal(props) {
                 />
               ) : (
                 <LinearGradient colors={config.gradient} style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ fontSize: fp(110), opacity: owned ? 1 : 0.4 }}>{emoji}</Text>
+                  <Text style={{ fontSize: fp(110) }}>{emoji}</Text>
                 </LinearGradient>
               )}
+
+              {/* Badge "À DÉBLOQUER" si non possédé — remplace l'overlay sombre + 🔒 */}
               {!owned ? (
-                <View style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ fontSize: fp(48) }}>🔒</Text>
+                <View style={{
+                  position: 'absolute',
+                  top: wp(12),
+                  right: wp(12),
+                  paddingHorizontal: wp(10),
+                  paddingVertical: wp(4),
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: '#9A9EA3',
+                  backgroundColor: 'rgba(15, 18, 21, 0.85)'
+                }}>
+                  <Text style={{
+                    color: '#E5E7EB',
+                    fontSize: fp(10),
+                    fontWeight: 'bold',
+                    letterSpacing: 1.2
+                  }}>
+                    À DÉBLOQUER
+                  </Text>
                 </View>
               ) : null}
             </View>
-            <View style={{ marginTop: 12, paddingHorizontal: 14, paddingVertical: 5, backgroundColor: config.secondary, borderRadius: 8 }}>
-              <Text style={{ color: config.primary, fontSize: 11, fontWeight: 'bold', letterSpacing: 2 }}>
-                {config.label}
-              </Text>
-            </View>
           </View>
 
-          <Text style={{ color: '#FFFFFF', fontSize: fp(24), fontWeight: 'bold', textAlign: 'center', marginTop: 16 }}>
-            {owned ? ch.name : '???'}
-          </Text>
+          {/* === STATS GRID === */}
+          {renderStatsGrid()}
 
-          {owned ? (
-            <Text style={{ color: config.primary, fontSize: fp(12), textAlign: 'center', marginTop: 4, fontWeight: '600' }}>
-              {ch.specialty_fr || ''}
-            </Text>
-          ) : null}
+          {/* === UNLOCK PROGRESS si !owned === */}
+          {!owned ? renderUnlockProgress() : null}
 
-          {owned ? renderStatsGrid() : renderUnlockProgress()}
-
+          {/* === BOUTONS D'ACTION === */}
           {renderActionButtons()}
+
         </ScrollView>
       </Animated.View>
     );
@@ -271,26 +365,38 @@ export default function CharacterDetailModal(props) {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
 
           {/* === SECTION DESCRIPTION === */}
-          <View style={{ alignItems: 'center', marginTop: 12 }}>
-            <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 1 }}>
-              DESCRIPTION
-            </Text>
-            <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4 }}>
-              {ch.name}
-            </Text>
-          </View>
+          {renderDecoratedHeader('DESCRIPTION')}
+          <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4, textAlign: 'center' }}>
+            {ch.name}
+          </Text>
 
           {lore ? (
-            <View style={{ marginTop: 16, marginHorizontal: 16 }}>
-              <Text style={{ color: '#E5E7EB', fontSize: fp(13), lineHeight: fp(20), fontStyle: 'italic', textAlign: 'center' }}>
+            <View style={{ marginTop: 18, marginHorizontal: 16 }}>
+              {/* Tagline plus discrète — introduction */}
+              <Text style={{
+                color: '#9A9EA3',
+                fontSize: fp(12),
+                lineHeight: fp(18),
+                fontStyle: 'italic',
+                textAlign: 'center'
+              }}>
                 {lore.tagline}
               </Text>
-              <Text style={{ color: '#FFFFFF', fontSize: fp(13), lineHeight: fp(20), marginTop: 12, textAlign: 'center', fontWeight: '500' }}>
+
+              {/* Pouvoir ancestral plus impactant — cœur du message */}
+              <Text style={{
+                color: '#FFFFFF',
+                fontSize: fp(14),
+                lineHeight: fp(22),
+                marginTop: 14,
+                textAlign: 'center',
+                fontWeight: '500'
+              }}>
                 {lore.power}
               </Text>
 
               {/* Localisation */}
-              <View style={{ marginTop: 16, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+              <View style={{ marginTop: 18, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={{ fontSize: fp(14), marginRight: 8 }}>📍</Text>
                   <Text style={{ color: '#E5E7EB', fontSize: fp(12), flex: 1 }}>
@@ -313,14 +419,10 @@ export default function CharacterDetailModal(props) {
           <View style={{ marginVertical: 20, marginHorizontal: 32, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
 
           {/* === SECTION POUVOIRS === */}
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 1 }}>
-              POUVOIRS
-            </Text>
-            <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4 }}>
-              {ch.name}
-            </Text>
-          </View>
+          {renderDecoratedHeader('POUVOIRS')}
+          <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4, textAlign: 'center' }}>
+            {ch.name}
+          </Text>
 
           <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
             {powers.length === 0 ? (
@@ -349,33 +451,45 @@ export default function CharacterDetailModal(props) {
     );
   }
 
+  var gradientStart = config.secondary || 'rgba(60,60,60,0.3)';
+
   return (
     <Modal visible={true} transparent={true} animationType="fade" onRequestClose={close}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'flex-end' }}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}>
         <View style={{
-          backgroundColor: '#1A1D22',
+          height: SCREEN_HEIGHT * 0.92,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
-          height: SCREEN_HEIGHT * 0.95,
           borderTopWidth: 2,
           borderTopColor: isActive ? '#00D984' : config.primary,
           overflow: 'hidden'
         }}>
-          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-            <View style={{ width: 40, height: 4, backgroundColor: '#3A3F46', borderRadius: 2 }} />
-          </View>
-
-          <View style={{ flex: 1, position: 'relative' }}>
-            {renderFrontView()}
-            {renderBackView()}
-          </View>
-
-          <Pressable
-            onPress={close}
-            style={{ paddingVertical: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: '#2A2F36' }}
+          <LinearGradient
+            colors={[gradientStart, '#0F1215']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 0.5 }}
+            style={{
+              flex: 1,
+              paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 12,
+              paddingBottom: 34
+            }}
           >
-            <Text style={{ color: '#9A9EA3', fontSize: 14 }}>{t('close')}</Text>
-          </Pressable>
+            {/* Drag handle visuel en haut */}
+            <View style={{ alignItems: 'center', marginBottom: 8 }}>
+              <View style={{ width: 40, height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
+            </View>
+
+            {/* Container relatif pour les 2 vues empilées en absolute */}
+            <View style={{ flex: 1, position: 'relative' }}>
+              {renderFrontView()}
+              {renderBackView()}
+            </View>
+
+            {/* Bouton Fermer (safe area respectée) */}
+            <Pressable onPress={close} style={{ paddingVertical: 12, alignItems: 'center', marginBottom: 4 }}>
+              <Text style={{ color: '#9A9EA3', fontSize: fp(14) }}>{t('close')}</Text>
+            </Pressable>
+          </LinearGradient>
         </View>
       </View>
     </Modal>
