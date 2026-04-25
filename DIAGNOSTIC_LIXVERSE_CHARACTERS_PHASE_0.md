@@ -354,3 +354,129 @@ return await res.json();
 - Simplifier `LixVersePage.js:781` : pas de fallback hardcodé sur `FRAGS_NIV1`
 
 ---
+
+## Section G — Modal détail + flip pouvoirs (BUG VISUEL CONFIRMÉ)
+
+### Architecture
+**1 SEUL Modal** (`CharactersTab.js:208-1231`) avec **2 vues superposées** gérées par 2 `Animated.View` :
+
+```javascript
+{/* Front view */}
+<Animated.View pointerEvents={charFlipped ? 'none' : 'auto'}
+  style={{
+    opacity: frontInterpolate,
+    position: charFlipped ? 'absolute' : 'relative',
+    width: '100%'
+  }}>  // l.212
+  ... carte personnage zoom + overlays + bouton CTA ...
+</Animated.View>
+
+{/* Back view */}
+<Animated.View pointerEvents={!charFlipped ? 'none' : 'auto'}
+  style={{
+    opacity: backInterpolate,
+    position: !charFlipped ? 'absolute' : 'relative',
+    width: '100%'
+  }}>  // l.420
+  <ScrollView style={{ flex: 1, maxHeight: SCREEN_WIDTH * 1.1 }}>  // l.423
+    ... 3 niveaux pouvoirs Niv1/Niv2/MAX ...
+  </ScrollView>
+</Animated.View>
+```
+
+### Animation
+- **Animated.Value** : `flipAnim` créé dans `LixVersePage.js:146`
+- **Fonction** : `flipCard()` (LixVersePage:195-200)
+  ```javascript
+  Animated.timing(flipAnim, { toValue: charFlipped ? 0 : 1, duration: 400 })
+    .start(() => setCharFlipped(!charFlipped));
+  ```
+- Pas un vrai flip 3D rotateY, mais un crossfade `opacity` (front 1→0 / back 0→1)
+
+### Dimensions
+| Élément | Hauteur |
+|---|---|
+| Root Modal `<View>` | `maxHeight: '95%'` (l.211) |
+| ScrollView racine (front) | `flex: 1` (l.75) |
+| ScrollView pouvoirs (back) | `maxHeight: SCREEN_WIDTH * 1.1` (l.423) |
+| Cards pouvoirs Niv1/Niv2/MAX | `maxHeight: wp(300)` chacune (l.682, 714, 772, 816, 858, 886) |
+
+### Hypothèse bug "fenêtre qui rétrécit"
+🔴 **Vue avant et vue arrière ont des hauteurs naturelles très différentes**.
+
+- **Vue avant** (carte zoomée + overlays + bouton CTA) : hauteur ~85% écran
+- **Vue arrière** (3 cards pouvoirs ScrollView avec `maxHeight: SCREEN_WIDTH * 1.1`) : hauteur ~50-60% écran
+
+Quand `charFlipped` passe de `false` à `true` :
+1. Front view passe en `position: 'absolute'` → sort du flow → **n'occupe plus de hauteur**
+2. Back view passe en `position: 'relative'` → entre dans le flow → impose **sa hauteur naturelle plus courte**
+3. Le modal `maxHeight: '95%'` se contracte au contenu **= visuel "rétrécit et descend au milieu"**
+
+**Cause racine** : pas de hauteur fixe garantie entre les deux vues lors du flip.
+
+### Verdict G
+🔴 **Bug confirmé : architecture absolute/relative cause une re-layout brutale au flip.**
+
+**Actions Phase 2** (refonte visuelle) :
+- **Option A** : fixer `minHeight` ou `height` au container parent du modal pour que la vue garde toujours la même taille (le plus simple)
+- **Option B** : conserver les 2 vues toujours en `position: 'absolute'` (les empiler en permanence), sans switch relative/absolute
+- **Option C** : 2 modals séparés au lieu de 1 (transition différente, fade au lieu de flip)
+
+Recommandation : **Option B** — empilement permanent en absolute. Élimine le re-layout. Plus proche du flip 3D réel.
+
+---
+
+## Section H — Overlays dynamiques sur image carte (PRÉPARATION PHASE 2)
+
+### Composant card individuelle
+**Aucun fichier `CharacterCard.js` ou `CharacterTile.js` séparé**. Tout est **inline dans `CharactersTab.js`** :
+- **Grille 3 cols** : l.143-209 (~66 lignes)
+- **Carte zoom dans modal** : l.260-422 (~162 lignes)
+
+### Overlays présents (modal détail vue avant, l.260-422)
+
+| Overlay | Ligne | Position | Données | Style |
+|---|---|---|---|---|
+| Image personnage | 276 | full | `charImg.img` via `getCharImage(slug)` | `width:100%, height:100%, resizeMode:cover` |
+| Background fallback (sans image) | 278 | full | `#1E2530` background | rendered si `charImg.img === null` |
+| Badge niveau | 284 | `top: wp(32), right: wp(28)` | `Niv X` ou `MAX` | `bg:rgba(0,0,0,0.65), border 1.5 rouge/or selon niveau` |
+| Badge XP | 291 | `top: wp(58), right: wp(28)` | `XP/XP_next` | `bg:rgba(0,0,0,0.65)` |
+| Overlay locked sombre | 296 | full (top:0, left:0, right:0, bottom:0) | rendered si `!owned` | `bg:rgba(0,0,0,0.6), centered icon 🔒` |
+| Cadenas grille (small card) | 169 | `position:'absolute', center` | `🔒` | si `!owned` |
+| Flèche navigation gauche | 221 | `left: wp(6), top: wp(370)/2 - wp(22)` | chevron | `zIndex: 20` |
+| Flèche navigation droite | 238 | `right: wp(6), top: wp(370)/2 - wp(22)` | chevron | `zIndex: 20` |
+
+### Affichages textuels sous l'image (pas overlay, mais flow JSX)
+- Nom personnage (CHAR_NAMES) — l.316-320
+- Tier label (STANDARD / RARE / etc.) — l.323-327
+- Description courte — l.328-332
+- Bar progression XP `xp/xp_next` (vue front) — l.330
+- Bar progression Fragments `frags/fragsReq` (vue front si !owned) — l.338
+- Texte CTA "Obtenir via Spin ou Défis" — l.388
+
+### Évitement médaillon doré in-image ?
+🔴 **Aucune logique** pour éviter le médaillon doré présent dans certaines illustrations (top-left de l'image Emerald Owl par exemple).
+
+Tous les overlays badges/XP sont positionnés en **top-right** de l'image, donc **ne masquent pas** le médaillon top-left. ✅
+
+Mais **l'overlay locked sombre** (l.296) couvre toute l'image avec `bg:rgba(0,0,0,0.6)` ce qui inclut le médaillon. Pour les personnages non-possédés, le médaillon décoratif est invisible. Pas grave UX (cohérent avec "carte verrouillée").
+
+### Tailles font / couleurs / backgrounds des overlays
+| Overlay | Font | Color | Background |
+|---|---|---|---|
+| Badge niveau | `fp(11), fontWeight:800` | `#FFF` | `rgba(0,0,0,0.65)` + border 1.5 (or `#D4AF37` si MAX, sinon emerald `rgba(0,217,132,0.5)`) |
+| Badge XP | `fp(11), fontWeight:700` | `#FFF` | `rgba(0,0,0,0.65)` |
+| Locked overlay | `fp(20)` | text dim | `rgba(0,0,0,0.6)` |
+
+### Verdict H
+🟢 **Overlays adaptables Phase 2 sans refonte complète.**
+
+Tous les overlays badges/navigation utilisent des positions relatives au container (`wp(...)`), donc s'adapteront automatiquement si la taille du modal change.
+
+**Actions Phase 2 recommandées** :
+- Si on agrandit la zone image (cf. fix bug Section G), recalculer `top: wp(370)/2 - wp(22)` des flèches navigation pour rester centrées
+- Garder positions top-right des badges (bonne pratique : évite le médaillon décoratif)
+- Ajouter éventuellement un **3e overlay tier badge** (gauche) pour cohérence avec la grille (ex : badge `RARE`/`ELITE` toujours visible)
+- Considérer extraction `CharacterCard.js` shared component pour découpler les overlays du fichier monolithique 1235 lignes
+
+---
