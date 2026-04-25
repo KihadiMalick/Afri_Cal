@@ -248,3 +248,102 @@ Les frags Ultimate ne sont disponibles que lors d'événements rares :
 
 ---
 
+# ELITE — 3 PERSONNAGES
+
+## 11. LICORNIUM 🦄
+**Slug DB** : `licornium`
+**Spécialité** : Analyse nutritionnelle profonde et planification repas
+**Tier** : Elite | Frags : 7 → 14 → 20 | Recharge : 5é | Efficiency : 0.60
+**Description** : La licorne cristalline, maîtresse absolue de la nutrition avancée.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Analyse Complète | Après scan : macros + micros + score qualité nutritionnelle /10 | modal_inline |
+| 2 | Planificateur 3 Repas | Planifie petit-déj + déjeuner + dîner optimisés selon ton objectif (calcul DB) | redirect |
+| MAX | Corne Magique ⭐ | Détecte les carences probables sur 7 jours et suggère les aliments correctifs avec quantités exactes | redirect |
+
+---
+
+## 12. Jaane Snake 🐍
+**Slug DB** : `jaane_snake`
+**Spécialité** : Calculs fitness ultra-précis et programmes personnalisés
+**Tier** : Elite | Frags : 7 → 14 → 20 | Recharge : 5é | Efficiency : 0.60
+**Description** : Le serpent de Jaane, prédateur silencieux de la performance physique.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Venin Précis | Calcul calories ultra-précis basé sur poids + durée + intensité + MET spécifique à l'activité | modal_inline |
+| 2 | Mue Hebdo | Rapport hebdo complet : progression volume, intensité, comparaison semaine précédente | redirect |
+| MAX | Hypnose ⭐ | Programme d'entraînement personnalisé 4 semaines généré depuis ton historique d'activités | redirect |
+
+---
+
+## 13. MOSQUITO 🦟
+**Slug DB** : `mosquito`
+**Spécialité** : Accès rationné à tous les pouvoirs du jeu (Joker universel)
+**Tier** : Elite | Frags : 7 → 14 → 20 | Recharge : 5é | Efficiency : 0.60
+**Description** : Le moustique — petit mais redoutable. Accède à tout, partout, de manière rationnée.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Piqûre Nutrition | 1 analyse rapide post-scan avec score santé (version light) | modal_inline |
+| 2 | Piqûre Activité | 1 bilan post-activité enrichi avec zones d'intensité (version light) | modal_inline |
+| MAX | Essaim ⭐ | 1 accès/jour à N'IMPORTE quel pouvoir Niv1 de n'importe quelle carte du jeu, même non possédée | redirect |
+
+**Note** : MOSQUITO ne possède pas le pouvoir directement — il "emprunte" celui d'un autre personnage pour 1 utilisation.
+
+---
+
+# MYTHIQUE — 2 PERSONNAGES
+
+## 14. Diamond Simba 🦁
+**Slug DB** : `diamond_simba`
+**Spécialité** : Boost global XP + rapport mensuel complet
+**Tier** : Mythique | Frags : 6 → 12 → 18 | Recharge : 5é | Efficiency : 0.80
+**Description** : Le lion de diamant, roi incontesté de la savane digitale. Sa présence booste tout.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Rugissement | Boost XP +50% sur TOUTES les actions : scans, activités, humeur, hydratation | redirect_with_boost |
+| 2 | Territoire | Dashboard enrichi : mini-graphique tendance 30 jours nutrition + activité + hydratation | redirect |
+| MAX | Roi de la Savane ⭐ | Rapport mensuel complet PDF exportable : nutrition + activité + hydratation + humeur + évolution poids | redirect |
+
+---
+
+## 15. Alburax 🐴
+**Slug DB** : `alburax`
+**Spécialité** : Double Lix + protection streaks + MediBook avancé
+**Tier** : Mythique | Frags : 6 → 12 → 18 | Recharge : 5é | Efficiency : 0.80
+**Description** : La créature céleste, symbole de transcendance et de voyage entre les mondes.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Streak Shield | Protection 1 jour si tu casses ton streak. Activable une fois par semaine | redirect_with_boost |
+| 2 | MediBook avancé | Accès aux recherches médicales approfondies dans MediBook | redirect |
+| MAX | Transcendance ⭐ | Double Lix permanent + streak shield permanent + MediBook illimité | redirect_with_boost |
+
+---
+
+# ULTIMATE — 1 PERSONNAGE
+
+## 16. TARDIGRUM 🧬
+**Slug DB** : `tardigrum`
+**Spécialité** : Tous les pouvoirs combinés + statut légendaire
+**Tier** : Ultimate | Frags : 3 → 5 → 6 | Recharge : **0é (auto)** | Efficiency : 1.00
+**Description** : Le survivant ultime. Inspiré du tardigrade, l'organisme le plus résistant de l'univers. Indestructible.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Résistance | +30% XP toutes actions + efficacité énergie 100% (coût IA divisé par 2) | redirect_with_boost |
+| 2 | Adaptation | Accès à TOUS les pouvoirs Niv1 de TOUTES les cartes du jeu simultanément | toggle |
+| MAX | Immortel ⭐ | Badge Légendaire permanent sur Wall of Health + titre TARDIGRUM visible par tous + rapport santé illimité | redirect |
+
+**Auto-recharge** :
+- Niv 1 : auto 48h
+- Niv 2 : auto 36h
+- MAX : auto 24h
+
+**Note** : TARDIGRUM est volontairement presque impossible à obtenir. Ses fragments ne sont disponibles que lors d'événements rares organisés par LIXUM. Un détenteur de TARDIGRUM MAX est une légende de la communauté.
+
+---
+
