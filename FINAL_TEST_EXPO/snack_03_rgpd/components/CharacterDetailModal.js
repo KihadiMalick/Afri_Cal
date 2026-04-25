@@ -54,13 +54,14 @@ export default function CharacterDetailModal(props) {
 
   function flipCard() {
     hapticMedium();
-    var toValue = flipped ? 0 : 1;
     Animated.timing(flipAnim, {
-      toValue: toValue,
-      duration: 300,
+      toValue: flipped ? 0 : 1,
+      duration: 450,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: false
-    }).start();
-    setFlipped(!flipped);
+    }).start(function() {
+      setFlipped(!flipped);
+    });
   }
 
   function close() {
