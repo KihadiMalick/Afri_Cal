@@ -261,22 +261,68 @@ export default function CharacterDetailModal(props) {
   }
 
   function renderBackView() {
+    var lore = CHARACTER_LORE[ch.slug] || null;
+
     return (
       <Animated.View
         pointerEvents={flipped ? 'auto' : 'none'}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: backOpacity }}
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+
+          {/* === SECTION DESCRIPTION === */}
           <View style={{ alignItems: 'center', marginTop: 12 }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: 'bold', letterSpacing: 1 }}>
-              {t('powers')}
+            <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 1 }}>
+              DESCRIPTION
             </Text>
-            <Text style={{ color: config.primary, fontSize: 12, marginTop: 4 }}>
+            <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4 }}>
               {ch.name}
             </Text>
           </View>
 
-          <View style={{ marginTop: 18, paddingHorizontal: 16 }}>
+          {lore ? (
+            <View style={{ marginTop: 16, marginHorizontal: 16 }}>
+              <Text style={{ color: '#E5E7EB', fontSize: fp(13), lineHeight: fp(20), fontStyle: 'italic', textAlign: 'center' }}>
+                {lore.tagline}
+              </Text>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(13), lineHeight: fp(20), marginTop: 12, textAlign: 'center', fontWeight: '500' }}>
+                {lore.power}
+              </Text>
+
+              {/* Localisation */}
+              <View style={{ marginTop: 16, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(14), marginRight: 8 }}>📍</Text>
+                  <Text style={{ color: '#E5E7EB', fontSize: fp(12), flex: 1 }}>
+                    {lore.location}
+                  </Text>
+                </View>
+                {lore.time_window ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                    <Text style={{ fontSize: fp(14), marginRight: 8 }}>⏰</Text>
+                    <Text style={{ color: config.primary, fontSize: fp(12), fontWeight: '600', flex: 1 }}>
+                      {lore.time_window}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+
+          {/* === SÉPARATEUR === */}
+          <View style={{ marginVertical: 20, marginHorizontal: 32, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+
+          {/* === SECTION POUVOIRS === */}
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 1 }}>
+              POUVOIRS
+            </Text>
+            <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4 }}>
+              {ch.name}
+            </Text>
+          </View>
+
+          <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
             {powers.length === 0 ? (
               <View style={{ alignItems: 'center', padding: 40 }}>
                 <ActivityIndicator color={config.primary} />
@@ -286,16 +332,18 @@ export default function CharacterDetailModal(props) {
             )}
           </View>
 
+          {/* === BOUTON RETOUR === */}
           <View style={{ marginHorizontal: 16, marginTop: 18 }}>
             <Pressable
               onPress={flipCard}
               style={{ paddingVertical: 14, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#3A3F46' }}
             >
-              <Text style={{ color: '#9A9EA3', fontSize: 14, fontWeight: 'bold' }}>
+              <Text style={{ color: '#9A9EA3', fontSize: fp(14), fontWeight: 'bold' }}>
                 ← Retour
               </Text>
             </Pressable>
           </View>
+
         </ScrollView>
       </Animated.View>
     );
