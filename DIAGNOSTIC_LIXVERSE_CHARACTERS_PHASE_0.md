@@ -130,3 +130,125 @@ Lignes 73-1234 = un seul gros JSX :
 - `lixverseConstants.js` pour purger le code mort hardcodé
 
 ---
+
+## Section C — Naming legacy (CRITIQUE)
+
+### Anciens noms UPPERCASE détectés (2 sources)
+
+**1. `src/pages/lixverse/lixverseConstants.js`** dans `ALL_CHARACTERS` (l.13-30+) :
+```javascript
+{ id: 'emerald_owl', name: 'EMERALD OWL', tier: 'standard', ... },
+{ id: 'hawk_eye',    name: 'HAWK EYE',    tier: 'standard', ... },
+{ id: 'ruby_tiger',  name: 'RUBY TIGER',  tier: 'standard', ... },
+{ id: 'amber_fox',   name: 'AMBER FOX',   tier: 'standard', ... },
+{ id: 'jade_phoenix',name: 'JADE PHOENIX',tier: 'rare',     ... },
+{ id: 'silver_wolf', name: 'SILVER WOLF', tier: 'rare',     ... },
+// + 10 autres
+```
+
+**2. `src/pages/register/phases/Phase6Characters.js:85`** :
+```javascript
+name: 'EMERALD OWL', level: 'STANDARD', levelColor: '#00D984',
+```
+
+### Mapping local trouvé : `CHAR_NAMES` (l.166-175 lixverseConstants.js)
+```javascript
+const CHAR_NAMES = {
+  'emerald_owl': 'Emerald Owl', 'hawk_eye': 'Hawk Eye', 'ruby_tiger': 'Ruby Tiger',
+  'amber_fox': 'Amber Fox', 'gipsy': 'Gipsy',
+  'jade_phoenix': 'Jade Phoenix', 'silver_wolf': 'Silver Wolf', 'boukki': 'Boukki',
+  'iron_rhino': 'Iron Rhino', 'coral_dolphin': 'Coral Dolphin',
+  'licornium': 'LICORNIUM', 'jaane_snake': 'Jaane Snake', 'mosquito': 'MOSQUITO',
+  'diamond_simba': 'Diamond Simba', 'alburax': 'Alburax', 'tardigrum': 'TARDIGRUM',
+};
+```
+
+⚠️ **Ce mapping n'est PAS aligné V5** :
+- `hawk_eye` → `'Hawk Eye'` au lieu de **`Golden Eagle`**
+- `amber_fox` → `'Amber Fox'` au lieu de **`Mariposa`**
+- `silver_wolf` → `'Silver Wolf'` au lieu de **`Momo`**
+
+### Stratégie d'affichage actuelle (priorité descendante)
+Dans `CharactersTab.js:171, 271, 316, 511, 542, 602` :
+```javascript
+const name = CHAR_NAMES[acSlug] || ch.name || ac.name || acSlug;
+```
+
+L'ordre :
+1. **`CHAR_NAMES[slug]`** (mapping legacy local) ← gagne toujours en premier
+2. `ch.name` (collection DB) ← rarement consulté car CHAR_NAMES couvre les 16
+3. `ac.name` (ALL_CHARACTERS = UPPERCASE) ← fallback
+4. `acSlug` (string brut) ← dernier recours
+
+L.171 affiche `{ch.name || ch.slug}` — **utilise donc directement le `name` UPPERCASE de ALL_CHARACTERS** quand la collection est vide. C'est ça que voit l'utilisateur (`EMERALD OWL`).
+
+### Verdict C
+🔴 **Naming = mapping hardcodé local + ALL_CHARACTERS UPPERCASE legacy. Aucun appel DB pour display names.**
+
+**Actions Phase 1** :
+- Supprimer `CHAR_NAMES` et le champ `name: 'UPPERCASE'` de chaque entry `ALL_CHARACTERS`
+- Lire `character.display_name` (ou `character.name` selon schema DB) depuis `userCollection` retournée par `get_user_collection`
+- Appliquer renames V5 : `hawk_eye → Golden Eagle`, `amber_fox → Mariposa`, `silver_wolf → Momo`
+- Toucher aussi `Phase6Characters.js:85` pour cohérence onboarding
+
+---
+
+## Section D — Fragments thresholds (CRITIQUE)
+
+### Source actuelle : `FRAGS_NIV1` hardcodé (legacy V1)
+`src/pages/lixverse/lixverseConstants.js:176` :
+```javascript
+const FRAGS_NIV1 = { standard: 3, rare: 4, elite: 5, mythique: 8, ultimate: 15 };
+```
+
+### Champs DB V5 (`frags_niv1` / `frags_niv2` / `frags_max`)
+**0 référence** dans le code source :
+```bash
+grep -rnE "frags_niv1|frags_niv2|frags_max" src/   →   vide
+```
+
+🔴 **Le code n'utilise AUCUN champ DB V5 pour les seuils de fragments.**
+
+### Hardcodes trouvés (8 occurrences)
+| Fichier | Ligne | Usage |
+|---|---|---|
+| `lixverseConstants.js` | 176 | Définition `FRAGS_NIV1` |
+| `LixVersePage.js` | 221 | `fragments_required: FRAGS_NIV1[c.tier] || 3` (post-fetch RPC) |
+| `LixVersePage.js` | 781 | Fallback selectedChar avec `FRAGS_NIV1` |
+| `CharactersTab.js` | 138 | Map default collection avec `FRAGS_NIV1` |
+| `CharactersTab.js` | 184 | Bar progress fragments |
+| `CharactersTab.js` | 188 | Texte `X/Y frags` |
+| `CharactersTab.js` | 265, 310 | Map default collection (modal + modal pouvoirs) |
+| `CharactersTab.js` | 322, 361, 377 | Calculs et affichages dans modal |
+
+### Comparaison V1 hardcoded vs V5 doc
+
+| Tier | Hardcoded V1 | V5 DB attendu | Écart |
+|---|---|---|---|
+| standard | 3 | **10** | -70% (UI sous-estime) |
+| rare | 4 | **8** | -50% |
+| elite | 5 | **7** | -28% |
+| mythique | 8 | **6** | +33% (UI sur-estime) |
+| ultimate | 15 | **3** | +400% (UI complètement faux) |
+
+### Hypothèse bug "0/4 frags" pour Jade Phoenix (Rare)
+- DB V5 : `frags_niv1 = 8` pour Rare
+- Code lit `FRAGS_NIV1.rare = 4`
+- `LixVersePage.js:221` **écrase** `fragments_required` du RPC avec `FRAGS_NIV1[c.tier]` :
+  ```javascript
+  setUserCollection((chars || []).map(c => ({
+    ..., fragments_required: FRAGS_NIV1[c.tier] || 3
+  })));
+  ```
+- → l'utilisateur voit `0/4` au lieu de `0/8`
+
+### Verdict D
+🔴 **Tous les seuils hardcodés en V1, écrasent les valeurs DB.**
+
+**Actions Phase 1** :
+- Supprimer `FRAGS_NIV1` de `lixverseConstants.js`
+- Modifier `LixVersePage.js:221` pour **garder** `fragments_required` retourné par le RPC (ne pas l'écraser)
+- Vérifier que le RPC `get_user_collection` retourne bien `frags_niv1` ou `fragments_required` calculé selon le niveau actuel
+- Modifier les 8 fallback `FRAGS_NIV1[ch.tier] || 3` dans `CharactersTab.js` → `ch.fragments_required`
+
+---
