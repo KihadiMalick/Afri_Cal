@@ -82,7 +82,7 @@ function Phase6Characters({ lang }) {
 
   var characters = [
     {
-      name: 'EMERALD OWL', level: 'STANDARD', levelColor: '#00D984',
+      name: 'Emerald Owl', level: 'STANDARD', levelColor: '#00D984',
       borderColors: ['#00D984', '#00A866', '#006B40'],
       power: lang === 'fr' ? 'R\u00e9sum\u00e9 nutritionnel quotidien' : 'Daily nutrition summary',
       image: emeraldOwlImg,
@@ -96,7 +96,7 @@ function Phase6Characters({ lang }) {
       fallbackEmoji: '🦟',
     },
     {
-      name: 'DIAMOND SIMBA', level: lang === 'fr' ? 'MYTHIQUE' : 'MYTHIC', levelColor: '#D4AF37',
+      name: 'Diamond Simba', level: lang === 'fr' ? 'MYTHIQUE' : 'MYTHIC', levelColor: '#D4AF37',
       borderColors: ['#D4AF37', '#C5A028', '#8B7516'],
       power: lang === 'fr' ? 'XP +50% + Rapport PDF mensuel' : 'XP +50% + Monthly PDF report',
       image: diamondSimbaImg,
