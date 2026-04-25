@@ -451,33 +451,45 @@ export default function CharacterDetailModal(props) {
     );
   }
 
+  var gradientStart = config.secondary || 'rgba(60,60,60,0.3)';
+
   return (
     <Modal visible={true} transparent={true} animationType="fade" onRequestClose={close}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'flex-end' }}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}>
         <View style={{
-          backgroundColor: '#1A1D22',
+          height: SCREEN_HEIGHT * 0.92,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
-          height: SCREEN_HEIGHT * 0.95,
           borderTopWidth: 2,
           borderTopColor: isActive ? '#00D984' : config.primary,
           overflow: 'hidden'
         }}>
-          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-            <View style={{ width: 40, height: 4, backgroundColor: '#3A3F46', borderRadius: 2 }} />
-          </View>
-
-          <View style={{ flex: 1, position: 'relative' }}>
-            {renderFrontView()}
-            {renderBackView()}
-          </View>
-
-          <Pressable
-            onPress={close}
-            style={{ paddingVertical: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: '#2A2F36' }}
+          <LinearGradient
+            colors={[gradientStart, '#0F1215']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 0.5 }}
+            style={{
+              flex: 1,
+              paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 12,
+              paddingBottom: 34
+            }}
           >
-            <Text style={{ color: '#9A9EA3', fontSize: 14 }}>{t('close')}</Text>
-          </Pressable>
+            {/* Drag handle visuel en haut */}
+            <View style={{ alignItems: 'center', marginBottom: 8 }}>
+              <View style={{ width: 40, height: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
+            </View>
+
+            {/* Container relatif pour les 2 vues empilées en absolute */}
+            <View style={{ flex: 1, position: 'relative' }}>
+              {renderFrontView()}
+              {renderBackView()}
+            </View>
+
+            {/* Bouton Fermer (safe area respectée) */}
+            <Pressable onPress={close} style={{ paddingVertical: 12, alignItems: 'center', marginBottom: 4 }}>
+              <Text style={{ color: '#9A9EA3', fontSize: fp(14) }}>{t('close')}</Text>
+            </Pressable>
+          </LinearGradient>
         </View>
       </View>
     </Modal>
