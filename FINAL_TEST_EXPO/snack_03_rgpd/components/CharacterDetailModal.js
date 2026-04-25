@@ -208,8 +208,21 @@ export default function CharacterDetailModal(props) {
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: frontOpacity }}
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+
+          {/* === IMAGE CARTE — sans cadre, sans nom, sans tier badge === */}
           <View style={{ alignItems: 'center', marginTop: 12 }}>
-            <View style={{ width: wp(280), height: wp(370), borderRadius: wp(8), overflow: 'hidden', borderWidth: 2, borderColor: config.primary, backgroundColor: '#000' }}>
+            <View style={{
+              width: wp(280),
+              height: wp(370),
+              borderRadius: wp(8),
+              overflow: 'hidden',
+              backgroundColor: '#000',
+              shadowColor: config.primary,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+              elevation: 12
+            }}>
               {canShowImage ? (
                 <Image
                   source={{ uri: imageUrl }}
@@ -219,35 +232,45 @@ export default function CharacterDetailModal(props) {
                 />
               ) : (
                 <LinearGradient colors={config.gradient} style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ fontSize: fp(110), opacity: owned ? 1 : 0.4 }}>{emoji}</Text>
+                  <Text style={{ fontSize: fp(110) }}>{emoji}</Text>
                 </LinearGradient>
               )}
+
+              {/* Badge "À DÉBLOQUER" si non possédé — remplace l'overlay sombre + 🔒 */}
               {!owned ? (
-                <View style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ fontSize: fp(48) }}>🔒</Text>
+                <View style={{
+                  position: 'absolute',
+                  top: wp(12),
+                  right: wp(12),
+                  paddingHorizontal: wp(10),
+                  paddingVertical: wp(4),
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: '#9A9EA3',
+                  backgroundColor: 'rgba(15, 18, 21, 0.85)'
+                }}>
+                  <Text style={{
+                    color: '#E5E7EB',
+                    fontSize: fp(10),
+                    fontWeight: 'bold',
+                    letterSpacing: 1.2
+                  }}>
+                    À DÉBLOQUER
+                  </Text>
                 </View>
               ) : null}
             </View>
-            <View style={{ marginTop: 12, paddingHorizontal: 14, paddingVertical: 5, backgroundColor: config.secondary, borderRadius: 8 }}>
-              <Text style={{ color: config.primary, fontSize: 11, fontWeight: 'bold', letterSpacing: 2 }}>
-                {config.label}
-              </Text>
-            </View>
           </View>
 
-          <Text style={{ color: '#FFFFFF', fontSize: fp(24), fontWeight: 'bold', textAlign: 'center', marginTop: 16 }}>
-            {owned ? ch.name : '???'}
-          </Text>
+          {/* === STATS GRID === */}
+          {renderStatsGrid()}
 
-          {owned ? (
-            <Text style={{ color: config.primary, fontSize: fp(12), textAlign: 'center', marginTop: 4, fontWeight: '600' }}>
-              {ch.specialty_fr || ''}
-            </Text>
-          ) : null}
+          {/* === UNLOCK PROGRESS si !owned === */}
+          {!owned ? renderUnlockProgress() : null}
 
-          {owned ? renderStatsGrid() : renderUnlockProgress()}
-
+          {/* === BOUTONS D'ACTION === */}
           {renderActionButtons()}
+
         </ScrollView>
       </Animated.View>
     );
