@@ -327,16 +327,16 @@ export default function CharacterDetailModal(props) {
           {/* === IMAGE CARTE — sans cadre, sans nom, sans tier badge === */}
           <View style={{ alignItems: 'center', marginTop: 12 }}>
             <View style={{
-              width: wp(280),
-              height: wp(370),
+              width: wp(290),
+              height: wp(385),
               borderRadius: wp(8),
               overflow: 'hidden',
               backgroundColor: '#000',
-              shadowColor: config.primary,
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.3,
-              shadowRadius: 20,
-              elevation: 12
+              shadowColor: '#D4AF37',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0.25,
+              shadowRadius: 24,
+              elevation: 14
             }}>
               {canShowImage ? (
                 <Image
@@ -542,9 +542,10 @@ export default function CharacterDetailModal(props) {
           }]
         }}>
           <LinearGradient
-            colors={[gradientStart, '#0F1215']}
+            colors={['#0F1215', '#1A1D22', '#252A30']}
+            locations={[0, 0.5, 1]}
             start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 0.5 }}
+            end={{ x: 0.5, y: 1 }}
             style={{
               flex: 1,
               paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 12,
