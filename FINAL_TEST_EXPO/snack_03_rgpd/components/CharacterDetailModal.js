@@ -542,9 +542,10 @@ export default function CharacterDetailModal(props) {
           }]
         }}>
           <LinearGradient
-            colors={[gradientStart, '#0F1215']}
+            colors={['#0F1215', '#1A1D22', '#252A30']}
+            locations={[0, 0.5, 1]}
             start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 0.5 }}
+            end={{ x: 0.5, y: 1 }}
             style={{
               flex: 1,
               paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 8 : 12,
