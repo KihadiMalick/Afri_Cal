@@ -103,3 +103,76 @@ Les frags Ultimate ne sont disponibles que lors d'événements rares :
 - Jamais via abonnement, jamais via caisses
 
 ---
+
+# STANDARD — 5 PERSONNAGES
+
+## 1. Emerald Owl 🦉
+**Slug DB** : `emerald_owl`
+**Spécialité** : Résumés nutritionnels et suggestions repas
+**Tier** : Standard | Frags : 10 → 20 → 30 | Recharge : 5é | Efficiency : 0.30
+**Description** : Le hibou émeraude, sage gardien de la nutrition.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Résumé du jour | Récap macros P/G/L vs objectif avec indicateur vert/orange/rouge | modal_inline |
+| 2 | Alerte Macros | Notification quand un macro est en dessous de 80% de l'objectif | toggle |
+| MAX | Suggestion Repas ⭐ | 1 suggestion/jour du repas idéal pour compléter ta journée (calcul DB) | redirect |
+
+---
+
+## 2. Golden Eagle 🦅
+**Slug DB** : `hawk_eye`
+**Spécialité** : Micronutriments
+**Tier** : Standard | Frags : 10 → 20 → 30 | Recharge : 5é | Efficiency : 0.30
+**Description** : Le faucon à l'œil perçant, spécialiste des détails cachés.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Micronutriments | Affichage détaillé fer, zinc, calcium, vitamines après scan | modal_inline |
+| 2 | Comparateur Scans | Compare 2 scans côte à côte macros + micros | redirect |
+| MAX | Historique Scanner ⭐ | Historique 30 derniers scans avec tendances | redirect |
+
+---
+
+## 3. Ruby Tiger 🐯
+**Slug DB** : `ruby_tiger`
+**Spécialité** : Bonus XP activité physique
+**Tier** : Standard | Frags : 10 → 20 → 30 | Recharge : 5é | Efficiency : 0.30
+**Description** : Le tigre rubis, force brute et discipline de fer.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Boost XP +10% | +10% bonus XP appliqué à la prochaine activité enregistrée. Consomme 1 use. | redirect_with_boost |
+| 2 | Boost XP +20% | +20% bonus XP (remplace le +10%). Consomme 1 use. | redirect_with_boost |
+| MAX | Boost XP +30% + Badge ⭐ | +30% bonus XP + badge doré 🐯 sur le Wall of Health. Consomme 1 use. | redirect_with_boost |
+
+---
+
+## 4. Mariposa 🦋
+**Slug DB** : `amber_fox`
+**Spécialité** : Substitutions d'ingrédients
+**Tier** : Standard | Frags : 10 → 20 → 30 | Recharge : 5é | Efficiency : 0.30
+**Description** : Le renard ambre, rusé et adaptable à tout régime (display papillon = métamorphose alimentaire).
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Substitution ×1 | 1 substitution d'ingrédient par jour (calcul DB) | modal_inline |
+| 2 | Substitution ×2 | 2 substitutions par jour | modal_inline |
+| MAX | Mode Régime ⭐ | 3 sub/jour + filtre automatique scans (keto, végé, sans gluten) | redirect |
+
+---
+
+## 5. Gipsy 🕷️
+**Slug DB** : `gipsy`
+**Spécialité** : Corrélations humeur-nutrition-hydratation-activité
+**Tier** : Standard | Frags : 10 → 20 → 30 | Recharge : 5é | Efficiency : 0.30
+**Description** : L'araignée tisseuse, connecte les données de santé entre elles.
+
+| Niv | Pouvoir | Description | Type |
+|-----|---------|-------------|------|
+| 1 | Humeur ↔ Nutrition | Graphique hebdo corrélation humeur et nutrition | modal_inline |
+| 2 | Hydratation ↔ Énergie | Corrélation hydratation et niveau d'énergie perçu | modal_inline |
+| MAX | Toile de Santé ⭐ | Rapport mensuel croisé nutrition+humeur+hydratation+activité | redirect |
+
+---
+
