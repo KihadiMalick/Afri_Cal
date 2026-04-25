@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, Image, ScrollView, Pressable, Modal, Animated, Dimensions, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TIER_CONFIG, CHARACTER_EMOJIS, getCharacterImageUrl, SUPABASE_URL, POST_HEADERS } from '../lixverseConstants';
+import { TIER_CONFIG, CHARACTER_EMOJIS, CHARACTER_LORE, getCharacterImageUrl, SUPABASE_URL, POST_HEADERS } from '../lixverseConstants';
 import { useAuth } from '../MockAuthContext';
 import { hapticLight, hapticMedium } from '../utils/haptics';
+import { wp, fp } from '../utils/layout';
 import { t } from '../mockT';
 
 var SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -140,7 +141,7 @@ export default function CharacterDetailModal(props) {
       return (
         <View style={{ marginHorizontal: 16, marginTop: 14, padding: 12, backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)', alignItems: 'center' }}>
           <Text style={{ color: '#D4AF37', fontSize: 12, fontWeight: '600' }}>
-            Obtenir via Défis
+            Obtenir via Défis ou Map LIX-QUEST
           </Text>
         </View>
       );
@@ -153,7 +154,7 @@ export default function CharacterDetailModal(props) {
           style={{ paddingVertical: 14, backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: 12, alignItems: 'center', borderWidth: 1.5, borderColor: '#00D984', marginBottom: 10 }}
         >
           <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>
-            Voir les pouvoirs →
+            Voir les détails →
           </Text>
         </Pressable>
 
@@ -182,7 +183,7 @@ export default function CharacterDetailModal(props) {
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
           <View style={{ alignItems: 'center', marginTop: 12 }}>
-            <View style={{ width: 220, height: 290, borderRadius: 14, overflow: 'hidden', borderWidth: 2, borderColor: config.primary }}>
+            <View style={{ width: wp(280), height: wp(370), borderRadius: wp(8), overflow: 'hidden', borderWidth: 2, borderColor: config.primary, backgroundColor: '#000' }}>
               {canShowImage ? (
                 <Image
                   source={{ uri: imageUrl }}
@@ -192,12 +193,12 @@ export default function CharacterDetailModal(props) {
                 />
               ) : (
                 <LinearGradient colors={config.gradient} style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 110, opacity: owned ? 1 : 0.4 }}>{emoji}</Text>
+                  <Text style={{ fontSize: fp(110), opacity: owned ? 1 : 0.4 }}>{emoji}</Text>
                 </LinearGradient>
               )}
               {!owned ? (
                 <View style={{ position: 'absolute', width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 48 }}>🔒</Text>
+                  <Text style={{ fontSize: fp(48) }}>🔒</Text>
                 </View>
               ) : null}
             </View>
@@ -208,19 +209,13 @@ export default function CharacterDetailModal(props) {
             </View>
           </View>
 
-          <Text style={{ color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginTop: 16 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: fp(24), fontWeight: 'bold', textAlign: 'center', marginTop: 16 }}>
             {owned ? ch.name : '???'}
           </Text>
 
           {owned ? (
-            <Text style={{ color: config.primary, fontSize: 12, textAlign: 'center', marginTop: 4, fontWeight: '600' }}>
+            <Text style={{ color: config.primary, fontSize: fp(12), textAlign: 'center', marginTop: 4, fontWeight: '600' }}>
               {ch.specialty_fr || ''}
-            </Text>
-          ) : null}
-
-          {owned && ch.description_fr ? (
-            <Text style={{ color: '#E5E7EB', fontSize: 14, textAlign: 'center', marginTop: 12, lineHeight: 20, paddingHorizontal: 16 }}>
-              {ch.description_fr}
             </Text>
           ) : null}
 
@@ -266,22 +261,68 @@ export default function CharacterDetailModal(props) {
   }
 
   function renderBackView() {
+    var lore = CHARACTER_LORE[ch.slug] || null;
+
     return (
       <Animated.View
         pointerEvents={flipped ? 'auto' : 'none'}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: backOpacity }}
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+
+          {/* === SECTION DESCRIPTION === */}
           <View style={{ alignItems: 'center', marginTop: 12 }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 22, fontWeight: 'bold', letterSpacing: 1 }}>
-              {t('powers')}
+            <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 1 }}>
+              DESCRIPTION
             </Text>
-            <Text style={{ color: config.primary, fontSize: 12, marginTop: 4 }}>
+            <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4 }}>
               {ch.name}
             </Text>
           </View>
 
-          <View style={{ marginTop: 18, paddingHorizontal: 16 }}>
+          {lore ? (
+            <View style={{ marginTop: 16, marginHorizontal: 16 }}>
+              <Text style={{ color: '#E5E7EB', fontSize: fp(13), lineHeight: fp(20), fontStyle: 'italic', textAlign: 'center' }}>
+                {lore.tagline}
+              </Text>
+              <Text style={{ color: '#FFFFFF', fontSize: fp(13), lineHeight: fp(20), marginTop: 12, textAlign: 'center', fontWeight: '500' }}>
+                {lore.power}
+              </Text>
+
+              {/* Localisation */}
+              <View style={{ marginTop: 16, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: fp(14), marginRight: 8 }}>📍</Text>
+                  <Text style={{ color: '#E5E7EB', fontSize: fp(12), flex: 1 }}>
+                    {lore.location}
+                  </Text>
+                </View>
+                {lore.time_window ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                    <Text style={{ fontSize: fp(14), marginRight: 8 }}>⏰</Text>
+                    <Text style={{ color: config.primary, fontSize: fp(12), fontWeight: '600', flex: 1 }}>
+                      {lore.time_window}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+
+          {/* === SÉPARATEUR === */}
+          <View style={{ marginVertical: 20, marginHorizontal: 32, height: 1, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+
+          {/* === SECTION POUVOIRS === */}
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 1 }}>
+              POUVOIRS
+            </Text>
+            <Text style={{ color: config.primary, fontSize: fp(11), marginTop: 4 }}>
+              {ch.name}
+            </Text>
+          </View>
+
+          <View style={{ marginTop: 16, paddingHorizontal: 16 }}>
             {powers.length === 0 ? (
               <View style={{ alignItems: 'center', padding: 40 }}>
                 <ActivityIndicator color={config.primary} />
@@ -291,16 +332,18 @@ export default function CharacterDetailModal(props) {
             )}
           </View>
 
+          {/* === BOUTON RETOUR === */}
           <View style={{ marginHorizontal: 16, marginTop: 18 }}>
             <Pressable
               onPress={flipCard}
               style={{ paddingVertical: 14, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#3A3F46' }}
             >
-              <Text style={{ color: '#9A9EA3', fontSize: 14, fontWeight: 'bold' }}>
+              <Text style={{ color: '#9A9EA3', fontSize: fp(14), fontWeight: 'bold' }}>
                 ← Retour
               </Text>
             </Pressable>
           </View>
+
         </ScrollView>
       </Animated.View>
     );
