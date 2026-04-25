@@ -47,25 +47,29 @@ export default function CharacterCard(props) {
       style={{
         width: '47%',
         margin: '1.5%',
-        aspectRatio: 0.75,
         borderRadius: wp(12),
         overflow: 'hidden',
         borderWidth: isActive ? 2.5 : 1,
-        borderColor: isActive ? '#00D984' : (owned ? config.primary : '#3A3F46')
+        borderColor: isActive ? '#00D984' : (owned ? config.primary : '#3A3F46'),
+        position: 'relative'
       }}
     >
+      {/* === ENFANT PLACEHOLDER pour forcer la hauteur via aspectRatio === */}
+      {/* Yoga RN a besoin d'un enfant dans le flow normal pour calculer la hauteur quand tous les autres sont absolute */}
+      <View style={{ width: '100%', aspectRatio: 0.75 }} />
+
       {/* === IMAGE PLEINEMENT VISIBLE (pas d'overlay sombre) === */}
       {canShowImage ? (
         <Image
           source={{ uri: imageUrl }}
-          style={{ width: '100%', height: '100%', position: 'absolute' }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
           resizeMode="cover"
           onError={handleImageError}
         />
       ) : (
         <LinearGradient
           colors={config.gradient}
-          style={{ width: '100%', height: '100%', position: 'absolute', justifyContent: 'center', alignItems: 'center' }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' }}
         >
           <Text style={{ fontSize: fp(80) }}>{emoji}</Text>
         </LinearGradient>
