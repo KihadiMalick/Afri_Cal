@@ -480,3 +480,176 @@ Tous les overlays badges/navigation utilisent des positions relatives au contain
 - Considérer extraction `CharacterCard.js` shared component pour découpler les overlays du fichier monolithique 1235 lignes
 
 ---
+
+## Section I — Composants et helpers partagés
+
+### `ToastMessage` shared
+**Path** : `src/components/shared/ToastMessage.js` ✅
+**Interface** : `{ message, type ('success'|'error'|'info'|'warning'), visible, onDismiss? }`
+⚠️ **Pas utilisé dans `lixverse/`** actuellement. Aucune occurrence.
+
+### Helpers haptic
+**Localisation actuelle** : `src/pages/profile/EditProfilePage.js:32-48` (5 helpers définis localement)
+```javascript
+function hapticLight()  { try { Haptics.impactAsync(...Light) } catch(e) {} }
+function hapticMedium() { try { Haptics.impactAsync(...Medium) } catch(e) {} }
+function hapticSuccess() { try { Haptics.notificationAsync(...Success) } catch(e) {} }
+function hapticError() { ... }
+function hapticWarning() { ... }
+```
+
+🔴 **Pas factorisés en module shared.** Définis uniquement dans EditProfilePage.
+
+### Pattern Supabase client
+**LixVersePage.js:189** :
+```javascript
+const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fnName, {...});
+```
+
+Direct fetch via `SUPABASE_URL` (importé de `lixverseConstants`). Pas de wrapper `getSupabaseClient()`.
+
+**Helper `supaRpc`** centralisé localement dans LixVersePage:189-195 ✅
+
+### Pattern useAuth
+**Cohérent** entre `LixVersePage.js:34` et `CharactersTab.js:50` :
+```javascript
+var auth = useAuth(); var userId = auth.userId;
+```
+
+✅ Hook `useAuth` depuis `'../../config/AuthContext'`
+
+### Helper Storage URL
+🔴 **Aucun helper centralisé** pour générer les URL publiques Supabase Storage.
+
+Les images personnages sont actuellement chargées via `require()` statiques dans `CHARACTER_IMAGES` (lixverseConstants:183-209) :
+```javascript
+const CHARACTER_IMAGES = {
+  emerald_owl: { img: require('../../../assets/characters/emerald_owl.webp'), emoji: '🦉' },
+  // ... 15 autres
+};
+```
+
+**Implication V5** : si Phase 2 doit charger les images depuis Supabase Storage (URLs dynamiques), il faut :
+- Créer un helper `getCharacterImageUrl(slug)` dans `src/utils/storage.js`
+- Modifier `CHARACTER_IMAGES` pour soit garder les `require` (offline-first), soit migrer vers URL distantes
+
+### Verdict I
+
+| Composant | Status | Action Phase 1/2 |
+|---|---|---|
+| `ToastMessage` shared | ✅ existe | Importer dans LixVersePage pour notifs switch/use_power |
+| Helpers haptic | 🔴 locaux EditProfilePage | **Décision Phase 1** : factoriser dans `src/utils/haptics.js` OU dupliquer 5 fonctions au top de `LixVersePage.js` |
+| Supabase client (`supaRpc`) | ✅ centralisé local | Déplacer en helper shared si réutilisable |
+| `useAuth` | ✅ pattern cohérent | RAS |
+| Image storage URL | 🔴 absent | À créer si migration vers Storage distant prévue Phase 2 |
+
+**Recommandation** : factoriser haptic dans `src/utils/haptics.js` (5 lignes import) — cohérent avec règle LIXUM "single source of truth".
+
+---
+
+## Section J — Tables legacy DB et autres onglets LixVerse
+
+### Fichiers `src/pages/lixverse/`
+```
+CharactersTab.js          (1235 lignes — sujet du diagnostic)
+DefiTab.js                (onglet Défi)
+HumanTab.js               (onglet Human / binôme)
+LixShopTab.js             (onglet boutique)
+LixVersePage.js           (parent, gère tous les states + RPC)
+lixverseComponents.js     (composants helpers : LixGem, etc.)
+lixverseConstants.js      (constants : ALL_CHARACTERS, FRAGS_NIV1, CHAR_NAMES, etc.)
+```
+
+### Composants partagés `src/components/lixverse/`
+🔴 **Dossier inexistant.** Tous les composants spécifiques LixVerse vivent dans `pages/lixverse/lixverseComponents.js` (centralisé) ou inline.
+
+### Composants partagés entre onglets
+- **`lixverseComponents.js`** exporte `LixGem` (utilisé dans CharactersTab)
+- **`lixverseConstants.js`** exporte `SUPABASE_URL`, `HEADERS`, `POST_HEADERS`, `ALL_CHARACTERS`, `TIER_CONFIG`, `CHAR_NAMES`, `FRAGS_NIV1`, `CHARACTER_IMAGES`, `RECHARGE_COST_BY_TIER`, `getCharImage`, etc.
+
+⚠️ **Tous les onglets LixVerse partagent `lixverseConstants.js`**. Toucher `FRAGS_NIV1` ou `CHAR_NAMES` pourrait impacter `DefiTab.js`, `HumanTab.js`, `LixShopTab.js` si ces onglets les importent.
+
+### Vérification dépendances
+Recherche rapide à faire en Phase 1 avant suppression :
+```bash
+grep -rn "FRAGS_NIV1\|CHAR_NAMES\|ALL_CHARACTERS" src/pages/lixverse/{DefiTab,HumanTab,LixShopTab,lixverseComponents}.js
+```
+
+### Verdict J
+🟢 **Scope strict respectable** : Phase 1+ touche principalement `CharactersTab.js`, `LixVersePage.js`, `lixverseConstants.js`.
+
+**Risque latent** : si autres onglets (Défi/Human/LixShop) importent les constants legacy, il faudra adapter aussi. À vérifier en début de Phase 1.
+
+---
+
+## Synthèse globale
+
+### Complexité estimée
+
+| Sprint | Complexité | Fichiers à toucher | Estimation |
+|---|---|---|---|
+| **Phase 1** (alignement DB V5) | 🟡 **moyenne** | `LixVersePage.js`, `CharactersTab.js`, `lixverseConstants.js` (+ peut-être `Phase6Characters.js`) | ~1h30 |
+| **Phase 2** (refonte visuelle modal flip + overlays) | 🟠 **élevée** | `CharactersTab.js` (refonte modal), éventuellement extraction `CharacterCard.js` | ~2h |
+| **Phase 7** (cleanup naming Spin → Défi) | 🟢 **faible** | `LixVersePage.js`, `CharactersTab.js` | ~20 min |
+
+### Total fichiers à modifier (toutes phases)
+- Phase 1 : 3-4 fichiers
+- Phase 2 : 1-2 fichiers
+- Phase 7 : 2 fichiers
+- **Total** : ~5-6 fichiers (sans doublon)
+
+### Risques identifiés
+
+| Risque | Mitigation |
+|---|---|
+| Suppression `FRAGS_NIV1` casse autres onglets LixVerse | Grep préalable avant suppression (Phase 1 step 0) |
+| RPC `get_user_collection` ne retourne pas `frags_niv1` | Tester en isolation avant Phase 1 (Malick a déjà confirmé DB OK) |
+| Refonte modal Section G casse l'animation flipAnim parente | Garder `flipAnim` dans LixVersePage, n'utiliser que les nouvelles dims côté CharactersTab |
+| Migration `CHAR_NAMES` casse onboarding `Phase6Characters.js:85` | Inclure ce fichier dans le scope Phase 1 |
+| Helpers haptic dupliqués si non factorisés | Décision Phase 1 : factoriser dès la 1ère utilisation hors EditProfilePage |
+| 19 fichiers `useNativeDriver: true` (dette PR #727) | Hors scope. Ne pas introduire de nouveau `useNativeDriver: true` en Phase 2 |
+
+### Questions ouvertes pour Malick
+
+1. **Format DB retour `get_user_collection`** : peux-tu confirmer les champs retournés par le RPC ? Notamment :
+   - `display_name` ou `name` (lowercase V5) ?
+   - `frags_niv1`, `frags_niv2`, `frags_max` directement ?
+   - `fragments_required` calculé selon le niveau actuel ?
+   - `is_active`, `uses_remaining`, `uses_max` ?
+   → **Crucial pour Phase 1**
+
+2. **Renommage `onGoToSpin` → `onGoToDefi`** : faire dans Phase 1 ou attendre Phase 7 dédié ?
+   → Recommandation : Phase 1 si on touche déjà `CharactersTab.js` ; Phase 7 sinon (cohérence sprint)
+
+3. **Helpers haptic** : factoriser dans `src/utils/haptics.js` immédiatement ou dupliquer pour ce sprint ?
+   → Recommandation : factoriser maintenant (single source of truth)
+
+4. **Refonte modal flip Section G** : Option A (fix minHeight), B (toujours absolute), C (2 modals séparés) ?
+   → Recommandation : Option B
+
+5. **Extraction `CharacterCard.js`** : ouvrir Phase 2 ou attendre Phase 8 ?
+   → Recommandation : conserver inline pour Phase 2 si scope contenu, extraire seulement si CharactersTab dépasse 1500 lignes
+
+6. **Tags v1.9** : poser `v1.9-profile-edit-complete` et `v1.9.2-polish-final` maintenant ou après merge PR Phase 1 ?
+   → Recommandation : poser maintenant (post PR #727 mergée)
+
+### Verdict global
+🟢 **Diagnostic clair, scope cadré, aucune zone d'ombre majeure.**
+
+Les principaux problèmes sont :
+- ❌ **Naming legacy V1** dur-codé (Section C) — Phase 1 obligatoire
+- ❌ **Fragments hardcodés** qui écrasent DB (Section D) — Phase 1 obligatoire
+- ❌ **Bug modal flip** (Section G) — Phase 2 obligatoire
+
+Les bonnes nouvelles :
+- ✅ Les 5 RPC V5 sont déjà branchés (Section F)
+- ✅ Système Spin déjà supprimé (Section E)
+- ✅ Architecture composant propre (vue contrôlée)
+- ✅ Overlays adaptables sans refonte complète (Section H)
+- ✅ Helpers `useAuth` / `supaRpc` propres (Section I)
+
+**Ready for Phase 1.** En attente de réponses Malick sur les 6 questions ouvertes.
+
+---
+
+**Diagnostic Phase 0 produit le 25 avril 2026. Aucune modification du code source `LIXUM-APP/src/`. Seul fichier créé : ce rapport à la racine du repo.**
