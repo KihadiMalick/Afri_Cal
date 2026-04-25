@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, ScrollView, Pressable, Modal, Animated, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ScrollView, Pressable, Modal, Animated, Dimensions, ActivityIndicator, Easing, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TIER_CONFIG, CHARACTER_EMOJIS, CHARACTER_LORE, getCharacterImageUrl, SUPABASE_URL, POST_HEADERS } from '../lixverseConstants';
 import { useAuth } from '../MockAuthContext';
@@ -70,6 +70,32 @@ export default function CharacterDetailModal(props) {
 
   function handleImageError() {
     setImageFailed(true);
+  }
+
+  function handleActivate() {
+    hapticMedium();
+    console.log('[Phase 5] handleActivate appelé pour', ch && ch.slug);
+  }
+
+  function getFragsMax() {
+    if (!ch) return 10;
+    var lvl = ch.level || 0;
+    if (lvl === 0) return ch.frags_niv1 || 10;
+    if (lvl === 1) return ch.frags_niv2 || 20;
+    if (lvl >= 2) return ch.frags_max || 30;
+    return 10;
+  }
+
+  function renderDecoratedHeader(label) {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 12 }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: '#D4AF37', maxWidth: 40, marginRight: 12 }} />
+        <Text style={{ color: '#FFFFFF', fontSize: fp(20), fontWeight: 'bold', letterSpacing: 2 }}>
+          {label}
+        </Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: '#D4AF37', maxWidth: 40, marginLeft: 12 }} />
+      </View>
+    );
   }
 
   if (!ch) return null;
