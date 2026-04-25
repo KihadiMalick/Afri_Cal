@@ -347,3 +347,118 @@ Les frags Ultimate ne sont disponibles que lors d'événements rares :
 
 ---
 
+# SYSTÈME DE RECHARGE
+
+Chaque personnage a **3 utilisations par charge**.
+Après 3 utilisations, le personnage doit être rechargé.
+
+| Tier | Coût recharge | Temps auto (uniquement TARDIGRUM) |
+|------|--------------|-----------------------------------|
+| Standard | 5 énergie | — |
+| Rare | 5 énergie | — |
+| Elite | 5 énergie | — |
+| Mythique | 5 énergie | — |
+| Ultimate (TARDIGRUM) | **0é** | Auto 48h / 36h / 24h selon niveau |
+
+**Recharge uniforme à 5é** pour tous les tiers Std/Rare/Elite/Myth = décision V5 pour simplifier l'UX et éviter la confusion. L'équilibrage est géré par la **rareté des fragments** et l'**efficiency_bonus**.
+
+---
+
+# SWITCH DE PERSONNAGE ACTIF
+
+Un seul personnage actif à la fois. Le switch a les règles suivantes :
+
+- **Cooldown de 30 minutes** entre chaque switch (stocké dans `active_since` de `lixverse_user_characters`)
+- Pas de coût énergie pour switcher
+- Les pouvoirs Passifs du personnage précédent sont désactivés immédiatement
+- Le personnage actif apparaît dans le header du Dashboard et dans l'ALIXEN Zone
+
+---
+
+# ACTION_TYPE — Types de pouvoirs
+
+La DB catégorise les pouvoirs en 3 types techniques :
+
+| Action type | Comportement UI |
+|---|---|
+| `modal_inline` | Ouvre un modal inline avec le résultat (ex: affichage macros) |
+| `redirect` | Redirige vers une page dédiée avec filtre appliqué (ex: historique scanner) |
+| `redirect_with_boost` | Redirige vers la page cible + applique un multiplicateur actif pendant X temps |
+| `toggle` | Active/désactive un mode passif tant que le personnage est équipé |
+
+**`is_superpower = true`** marque le pouvoir MAX (niveau 3) de chaque personnage. Visuellement distingué dans l'UI par une icône ⭐.
+
+---
+
+# CARTES PHYSIQUES COLLECTOR
+
+Les joueurs qui atteignent le niveau MAX sur un personnage Mythique ou Ultimate reçoivent une carte physique collector envoyée **gratuitement** par LIXUM :
+
+- Carte plastique premium
+- Bordures métalliques **argentées** (Mythique) ou **dorées** (Ultimate)
+- Fines lignes d'or pour Mythique, or massif pour Ultimate
+- Nom du joueur et LixTag gravés
+- QR code vers le profil public du joueur
+- Édition limitée numérotée
+- Envoi mondial gratuit (budget marketing LIXUM)
+
+---
+
+# NOTIFICATIONS ALIXEN PAR PERSONNAGE
+
+Les personnages équipés au niveau MAX déclenchent des alertes ALIXEN automatiques (calcul DB, coût $0 d'IA). Ces alertes sont gérées par la RPC `check_and_generate_notifications` qui lit directement depuis `lixverse_user_characters` (fix V4+ appliqué le 24 avril).
+
+| Personnage | Alerte | Condition | trigger_key |
+|-----------|--------|-----------|-------------|
+| Golden Eagle MAX | Apport fer faible | Fer moyen <9mg sur 3 jours | `iron_low_3d` |
+| Golden Eagle MAX | Apport calcium faible | Calcium moyen <500mg sur 3 jours | `calcium_low_3d` |
+| Gipsy MAX | Humeur en baisse | Humeur <40% sur 3 jours | `mood_low_3d` |
+| Coral Dolphin MAX | Déshydratation | Hydratation <50% objectif sur 3 jours | `dehydration_3d` |
+| Momo (Silver Wolf) Niv1+ | Streak en danger | Streak actif + 20h sans action | `streak_at_risk` |
+
+**Autres alertes LIXUM** (indépendantes des caractères, activées globalement) :
+- `calorie_deficit_3d` : déficit calorique >40% sur 3 jours
+- `calorie_surplus_3d` : surplus calorique >30% sur 3 jours
+- `sedentary_5d` : aucune activité enregistrée depuis 5 jours
+- `streak_milestone_7` / `streak_milestone_30` : célébration paliers streak
+- `vaccine_overdue` : rappels vaccinaux en retard
+- `medication_reminder` : rappel médicaments actifs
+
+L'utilisateur voit "ALIXEN" comme émetteur — il ne sait pas qu'il s'agit d'un template déclenché par son personnage équipé.
+
+---
+
+# RPC SUPABASE CARACTÈRES
+
+Fonctions principales disponibles :
+
+| RPC | Signature | Usage |
+|-----|-----------|-------|
+| `get_user_collection` | `p_user_id uuid` | Retourne la collection complète avec fragments/niveau/actif |
+| `get_character_powers` | `p_user_id uuid, p_slug text` | Retourne les 3 pouvoirs d'un personnage |
+| `set_active_character` | `p_user_id uuid, p_slug text` | Change le personnage actif (cooldown 30min) |
+| `use_character_power` | `p_user_id uuid, p_power_key text` | Consomme 1 use et active le pouvoir |
+| `recharge_character` | `p_user_id uuid, p_slug text` | Recharge 3 uses (coûte 5é sauf TARDIGRUM) |
+| `add_character_fragments` | `p_user_id, p_slug, p_amount, p_reason` | Ajoute des fragments (source caisse/abo/défi/palier XP) |
+| `choose_first_character` | `p_user_id, p_slug` | Onboarding : choix 1er compagnon Standard |
+| `give_starting_character` | `p_user_id, p_character_id` | Onboarding auto |
+| `check_character_onboarding` | `p_user_id` | Vérifie si l'utilisateur a choisi son premier perso |
+| `set_character_avatar` | `p_user_id, p_character_id` | Définit l'avatar affiché |
+
+---
+
+# HISTORIQUE VERSIONS
+
+| Version | Date | Changements |
+|---------|------|-------------|
+| V1 | Mars 2026 | 12 persos, noms "colorés" (Gold Chicken, Iron Bull...) — **legacy supprimé 24/04/2026** |
+| V2 | Fin mars 2026 | Refonte complète — 16 persos, pouvoirs alignés santé |
+| V3 | 10 avril 2026 | Ajustement fragments + recharges |
+| V4 | 15 avril 2026 | Ajout MOSQUITO Joker — **Doc V4 obsolète, divergence DB** |
+| **V5** | **24 avril 2026** | Doc alignée sur DB réelle. Renames display : Golden Eagle/Mariposa/Momo. Recharge uniforme 5é. Fragments 10/20/30 · 8/18/25 · 7/14/20 · 6/12/18 · 3/5/6. |
+
+---
+
+**Document versionné figé le 24 avril 2026. Remplace toutes les versions antérieures.**
+**Toute modification DB des caractères doit déclencher une mise à jour de ce document.**
+
