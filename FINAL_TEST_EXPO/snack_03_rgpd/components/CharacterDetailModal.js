@@ -169,40 +169,78 @@ export default function CharacterDetailModal(props) {
   }
 
   function renderActionButtons() {
-    if (!owned) {
-      return (
-        <View style={{ marginHorizontal: 16, marginTop: 14, padding: 12, backgroundColor: 'rgba(212,175,55,0.08)', borderRadius: 10, borderWidth: 1, borderColor: 'rgba(212,175,55,0.3)', alignItems: 'center' }}>
-          <Text style={{ color: '#D4AF37', fontSize: 12, fontWeight: '600' }}>
-            Obtenir via Défis ou Map LIX-QUEST
-          </Text>
-        </View>
-      );
-    }
-
     return (
-      <View style={{ marginHorizontal: 16, marginTop: 18 }}>
+      <View style={{ marginTop: 18, marginHorizontal: 16 }}>
+
+        {/* Bouton "Voir les détails →" — outline emerald (référence) */}
         <Pressable
           onPress={flipCard}
-          style={{ paddingVertical: 14, backgroundColor: 'rgba(0,217,132,0.12)', borderRadius: 12, alignItems: 'center', borderWidth: 1.5, borderColor: '#00D984', marginBottom: 10 }}
+          style={{
+            paddingVertical: 14,
+            backgroundColor: 'rgba(0, 217, 132, 0.08)',
+            borderRadius: 12,
+            alignItems: 'center',
+            borderWidth: 1.5,
+            borderColor: '#00D984',
+            marginBottom: 10
+          }}
         >
-          <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>
+          <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: 'bold' }}>
             Voir les détails →
           </Text>
         </Pressable>
 
-        {isActive ? (
-          <View style={{ paddingVertical: 14, backgroundColor: 'rgba(0,217,132,0.15)', borderRadius: 12, alignItems: 'center', borderWidth: 1.5, borderColor: '#00D984' }}>
-            <Text style={{ color: '#00D984', fontSize: 14, fontWeight: 'bold' }}>
+        {/* Caractère actif : badge outline emerald (cohérence) */}
+        {owned && isActive ? (
+          <View style={{
+            paddingVertical: 14,
+            backgroundColor: 'rgba(0, 217, 132, 0.08)',
+            borderRadius: 12,
+            alignItems: 'center',
+            borderWidth: 1.5,
+            borderColor: '#00D984'
+          }}>
+            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: 'bold' }}>
               ✓ Caractère actuellement actif
             </Text>
           </View>
-        ) : (
-          <View style={{ paddingVertical: 14, backgroundColor: '#3A3F46', borderRadius: 12, alignItems: 'center' }}>
-            <Text style={{ color: '#9A9EA3', fontSize: 14, fontWeight: 'bold' }}>
-              {t('activate')} (Phase 5)
+        ) : null}
+
+        {/* Caractère possédé non actif : "Activer ce caractère" outline emerald */}
+        {owned && !isActive ? (
+          <Pressable
+            onPress={handleActivate}
+            style={{
+              paddingVertical: 14,
+              backgroundColor: 'rgba(0, 217, 132, 0.08)',
+              borderRadius: 12,
+              alignItems: 'center',
+              borderWidth: 1.5,
+              borderColor: '#00D984'
+            }}
+          >
+            <Text style={{ color: '#00D984', fontSize: fp(14), fontWeight: 'bold' }}>
+              Activer ce caractère (Phase 5)
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {/* Caractère locked : CTA "Obtenir via Défis ou Map" — outline gold */}
+        {!owned ? (
+          <View style={{
+            paddingVertical: 14,
+            backgroundColor: 'rgba(212, 175, 55, 0.08)',
+            borderRadius: 12,
+            alignItems: 'center',
+            borderWidth: 1.5,
+            borderColor: '#D4AF37'
+          }}>
+            <Text style={{ color: '#D4AF37', fontSize: fp(13), fontWeight: '600' }}>
+              Obtenir via Défis ou Map LIX-QUEST
             </Text>
           </View>
-        )}
+        ) : null}
+
       </View>
     );
   }
