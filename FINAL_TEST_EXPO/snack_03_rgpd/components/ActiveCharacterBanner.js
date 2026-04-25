@@ -1,14 +1,18 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TIER_CONFIG, CHARACTER_EMOJIS, getCharacterImageUrl } from '../lixverseConstants';
 import { t } from '../mockT';
 
 export default function ActiveCharacterBanner(props) {
   var ch = props.character;
+  var breathAnim = props.breathAnim;
   var _imageFailed = React.useState(false);
   var imageFailed = _imageFailed[0];
   var setImageFailed = _imageFailed[1];
+
+  // === BREATH avatar 64x64 (subtil A1) ===
+  var avatarScaleInterpolated = breathAnim ? breathAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }) : 1;
 
   function handleImageError() {
     setImageFailed(true);
@@ -81,13 +85,14 @@ export default function ActiveCharacterBanner(props) {
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={{
+        <Animated.View style={{
           width: 64,
           height: 64,
           borderRadius: 10,
           overflow: 'hidden',
           borderWidth: 1.5,
-          borderColor: config.primary
+          borderColor: config.primary,
+          transform: [{ scale: avatarScaleInterpolated }]
         }}>
           {canShowImage ? (
             <Image
@@ -104,7 +109,7 @@ export default function ActiveCharacterBanner(props) {
               <Text style={{ fontSize: 36 }}>{emoji}</Text>
             </LinearGradient>
           )}
-        </View>
+        </Animated.View>
 
         <View style={{ flex: 1, marginLeft: 14 }}>
           <Text style={{ color: '#00D984', fontSize: 10, fontWeight: 'bold', letterSpacing: 1.5 }}>

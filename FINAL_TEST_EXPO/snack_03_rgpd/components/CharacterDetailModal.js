@@ -7,6 +7,7 @@ import { useAuth } from '../MockAuthContext';
 import { hapticLight, hapticMedium } from '../utils/haptics';
 import { wp, fp } from '../utils/layout';
 import { t } from '../mockT';
+import GoldenParticles from './GoldenParticles';
 
 var SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -37,6 +38,13 @@ export default function CharacterDetailModal(props) {
   var DRAG_VELOCITY_THRESHOLD = 500; // px/s — swipe rapide ferme
 
   var ch = props.character;
+
+  // === PHASE 3 ANIMS partagées (pas de tilt — conflit drag/flip) ===
+  var breathAnim = props.breathAnim;
+  var floatAnim = props.floatAnim;
+  var auraAnim = props.auraAnim;
+  var particleAnim1 = props.particleAnim1;
+  var particleAnim2 = props.particleAnim2;
 
   React.useEffect(function() {
     if (ch && ch.owned) {
@@ -180,6 +188,20 @@ export default function CharacterDetailModal(props) {
 
   var frontOpacity = flipAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] });
   var backOpacity = flipAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+
+  // === INTERPOLATIONS Phase 3 (image card uniquement, pas de tilt) ===
+  var auraIntensityByTier = {
+    standard: 0.10,
+    rare: 0.15,
+    elite: 0.20,
+    mythic: 0.25,
+    ultimate: 0.35
+  };
+  var auraMaxOpacity = owned ? (auraIntensityByTier[ch.tier] || 0.10) : 0;
+
+  var modalScaleInterpolated = breathAnim ? breathAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }) : 1;
+  var modalTranslateYInterpolated = floatAnim ? floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -2] }) : 0;
+  var modalAuraOpacityInterpolated = auraAnim ? auraAnim.interpolate({ inputRange: [0, 1], outputRange: [0, auraMaxOpacity] }) : 0;
 
   function renderStatsGrid() {
     if (!owned) return null;
@@ -326,7 +348,7 @@ export default function CharacterDetailModal(props) {
 
           {/* === IMAGE CARTE — sans cadre, sans nom, sans tier badge === */}
           <View style={{ alignItems: 'center', marginTop: 12 }}>
-            <View style={{
+            <Animated.View style={{
               width: wp(290),
               height: wp(385),
               borderRadius: wp(8),
@@ -336,7 +358,11 @@ export default function CharacterDetailModal(props) {
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: 0.25,
               shadowRadius: 24,
-              elevation: 14
+              elevation: 14,
+              transform: [
+                { scale: modalScaleInterpolated },
+                { translateY: modalTranslateYInterpolated }
+              ]
             }}>
               {canShowImage ? (
                 <Image
@@ -350,6 +376,27 @@ export default function CharacterDetailModal(props) {
                   <Text style={{ fontSize: fp(110) }}>{emoji}</Text>
                 </LinearGradient>
               )}
+
+              {/* === AURA PULSE overlay (uniquement si owned) === */}
+              {owned ? (
+                <Animated.View
+                  pointerEvents="none"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: config.primary,
+                    opacity: modalAuraOpacityInterpolated
+                  }}
+                />
+              ) : null}
+
+              {/* === PARTICULES DORÉES (mythic + ultimate owned uniquement) === */}
+              {owned && (ch.tier === 'mythic' || ch.tier === 'ultimate') ? (
+                <GoldenParticles particleAnim1={particleAnim1} particleAnim2={particleAnim2} />
+              ) : null}
 
               {/* Badge "À DÉBLOQUER" si non possédé — remplace l'overlay sombre + 🔒 */}
               {!owned ? (
@@ -374,7 +421,7 @@ export default function CharacterDetailModal(props) {
                   </Text>
                 </View>
               ) : null}
-            </View>
+            </Animated.View>
           </View>
 
           {/* === STATS GRID === */}

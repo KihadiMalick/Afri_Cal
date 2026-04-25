@@ -1,16 +1,28 @@
 import React from 'react';
-import { View, Text, Pressable, Image } from 'react-native';
+import { View, Text, Pressable, Image, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TIER_CONFIG, CHARACTER_EMOJIS, getCharacterImageUrl } from '../lixverseConstants';
 import { wp, fp } from '../utils/layout';
 import { hapticLight } from '../utils/haptics';
+import GoldenParticles from './GoldenParticles';
+
+var AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function CharacterCard(props) {
   var ch = props.character;
   var onPress = props.onPress;
+  var breathAnim = props.breathAnim;
+  var floatAnim = props.floatAnim;
+  var auraAnim = props.auraAnim;
+  var particleAnim1 = props.particleAnim1;
+  var particleAnim2 = props.particleAnim2;
+
   var _imageFailed = React.useState(false);
   var imageFailed = _imageFailed[0];
   var setImageFailed = _imageFailed[1];
+
+  // === TILT ON TAP local (C1) ===
+  var tiltAnim = React.useRef(new Animated.Value(0)).current;
 
   var config = TIER_CONFIG[ch.tier] || TIER_CONFIG.standard;
   var imageUrl = getCharacterImageUrl(ch.image_url);
@@ -24,9 +36,43 @@ export default function CharacterCard(props) {
     if (onPress) onPress(ch);
   }
 
+  function handlePressIn() {
+    Animated.timing(tiltAnim, {
+      toValue: 1,
+      duration: 100,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false
+    }).start();
+  }
+
+  function handlePressOut() {
+    Animated.timing(tiltAnim, {
+      toValue: 0,
+      duration: 200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false
+    }).start();
+  }
+
   function handleImageError() {
     setImageFailed(true);
   }
+
+  // === INTERPOLATIONS Phase 3 ===
+  // Aura intensity selon tier (uniquement si owned)
+  var auraIntensityByTier = {
+    standard: 0.10,
+    rare: 0.15,
+    elite: 0.20,
+    mythic: 0.25,
+    ultimate: 0.35
+  };
+  var auraMaxOpacity = owned ? (auraIntensityByTier[ch.tier] || 0.10) : 0;
+
+  var scaleInterpolated = breathAnim ? breathAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }) : 1;
+  var translateYInterpolated = floatAnim ? floatAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -2] }) : 0;
+  var rotateXInterpolated = tiltAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '5deg'] });
+  var auraOpacityInterpolated = auraAnim ? auraAnim.interpolate({ inputRange: [0, 1], outputRange: [0, auraMaxOpacity] }) : 0;
 
   function getNextThreshold() {
     var lvl = ch.level || 0;
@@ -42,8 +88,10 @@ export default function CharacterCard(props) {
   var levelLabel = ch.level >= 2 ? 'MAX' : 'Niv ' + ((ch.level || 0) + 1);
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       style={{
         width: '47%',
         margin: '1.5%',
@@ -51,7 +99,13 @@ export default function CharacterCard(props) {
         overflow: 'hidden',
         borderWidth: isActive ? 2.5 : 1,
         borderColor: isActive ? '#00D984' : (owned ? config.primary : '#3A3F46'),
-        position: 'relative'
+        position: 'relative',
+        transform: [
+          { scale: scaleInterpolated },
+          { translateY: translateYInterpolated },
+          { perspective: 1000 },
+          { rotateX: rotateXInterpolated }
+        ]
       }}
     >
       {/* === ENFANT PLACEHOLDER pour forcer la hauteur via aspectRatio === */}
@@ -193,6 +247,27 @@ export default function CharacterCard(props) {
         </View>
       </LinearGradient>
 
-    </Pressable>
+      {/* === AURA PULSE overlay (uniquement si owned, intensité par tier) === */}
+      {owned ? (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: config.primary,
+            opacity: auraOpacityInterpolated
+          }}
+        />
+      ) : null}
+
+      {/* === PARTICULES DORÉES (uniquement mythic + ultimate owned) === */}
+      {owned && (ch.tier === 'mythic' || ch.tier === 'ultimate') ? (
+        <GoldenParticles particleAnim1={particleAnim1} particleAnim2={particleAnim2} />
+      ) : null}
+
+    </AnimatedPressable>
   );
 }
