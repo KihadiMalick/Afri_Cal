@@ -12,8 +12,8 @@ import { wp, fp } from '../../constants/layout';
 import BottomTabs from '../../components/shared/NavBar';
 import {
   SUPABASE_URL, SUPABASE_ANON_KEY,
-  HEADERS, POST_HEADERS, ALL_CHARACTERS, CHAR_NAMES,
-  CHAR_EMOJIS, FRAGS_NIV1, TIER_CONFIG, SLUGS_BY_TIER,
+  HEADERS, POST_HEADERS, ALL_CHARACTERS,
+  CHAR_EMOJIS, TIER_CONFIG, SLUGS_BY_TIER,
   randomSlugFromTier, NAV_TABS,
   WORLD_DOTS
 } from './lixverseConstants';
@@ -218,7 +218,7 @@ export default function LixVersePage({ navigation }) {
         setShowCharOnboarding(true);
         const charsRes = await fetch(SUPABASE_URL + '/rest/v1/lixverse_characters?tier=eq.standard&order=sort_order.asc', { headers: HEADERS });
         const chars = await charsRes.json();
-        setUserCollection((chars || []).map(c => ({ ...c, owned: false, level: 0, fragments: 0, fragments_required: FRAGS_NIV1[c.tier] || 3 })));
+        setUserCollection(chars || []);
         return;
       }
       const collection = await supaRpc('get_user_collection', { p_user_id: userId });
@@ -778,7 +778,7 @@ export default function LixVersePage({ navigation }) {
         setSelectedChar({ ...collectionChar, slug: collectionChar.slug || newCharId });
       } else {
         const fallback = ALL_CHARACTERS[cardViewIndex];
-        setSelectedChar({ ...fallback, slug: newCharId, owned: false, level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: fallback.uses || 10, fragments: 0, fragments_required: FRAGS_NIV1[fallback.tier] || 3 });
+        setSelectedChar({ ...fallback, slug: newCharId, owned: false, level: 0, xp: 0, xp_next: 1000, uses_remaining: 0, uses_max: fallback.uses || 10, fragments: 0 });
       }
       loadCharPowers(newCharId);
     }
@@ -999,7 +999,7 @@ export default function LixVersePage({ navigation }) {
             onSwitchActiveCharacter={switchActiveCharacter} onLoadCharPowers={loadCharPowers}
             onNavigateCard={navigateCard} onFlipCard={flipCard}
             onRechargeChar={rechargeChar} onShouldConsumePower={shouldConsumePower}
-            onConsumePower={consumePower} onGoToSpin={() => setActiveTab('defi')}
+            onConsumePower={consumePower} onGoToDefi={() => setActiveTab('defi')}
             onNavigateTo={navigateTo}
           />
         )}
